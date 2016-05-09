@@ -129,9 +129,11 @@ module SLang
 				case param
 					when Array
 						expr = Context.expression(param)
-						expr.address = X64.e2_r64(i)
-						@regs << expr.address if i > 0 && i < X64.count
-						i += 1
+						if !expr.is_a?(NilExpression)
+							expr.address = X64.e2_r64(i)
+							@regs << expr.address if i > 0 && i < X64.count
+							i += 1
+						end
 						expr
 					when String
 						const = Context.add_constant param

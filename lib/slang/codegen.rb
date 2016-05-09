@@ -82,6 +82,7 @@ module SLang
 	class Constant
 		@@seq = 0
 		attr_accessor :seq
+		attr_accessor :value
 
 		def initialize(value)
 			@value = value
@@ -92,9 +93,22 @@ module SLang
 		def to_asm
 			".LC#{seq}:\n\t.string \"#{value}\"\n"
 		end
+	end
+
+	class NumberLiteral
+		def address
+			"$#{value}"
+		end
+	end
+
+	class StringLiteral
+		def initialize(const)
+			@value = const.value
+			@seq = const.seq
+		end
 
 		def address
-			"$.LC#{seq}"
+			"$.LC#{@seq}"
 		end
 	end
 
@@ -120,7 +134,10 @@ module SLang
 						i += 1
 						expr
 					when String
-						Context.add_constant param
+						const = Context.add_constant param
+						StringLiteral.new(const)
+					when Fixnum
+						NumberLiteral.new(param)
 				end
 			end
 		end
@@ -129,7 +146,7 @@ module SLang
 			push_regs <<
 				init_stack <<
 				visit_sub_expression <<
-				visit_string_params <<
+				visit_params <<
 				"\tcall\t#{command}\n"
 		end
 
@@ -159,7 +176,7 @@ module SLang
 			s
 		end
 
-		def visit_string_params
+		def visit_params
 			s = ""
 			params.reverse.each_with_index do |param, idx|
 				i = params.length - idx - 1

@@ -1,5 +1,17 @@
 module SLang
-	class Constant
+	class NumberLiteral
+		attr_accessor :value
+
+		def initialize(value)
+			@value = value
+		end
+
+		def to_s
+			value.to_s
+		end
+	end
+
+	class StringLiteral
 		attr_accessor :value
 
 		def initialize(value)

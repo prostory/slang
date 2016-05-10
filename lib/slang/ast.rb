@@ -1,5 +1,11 @@
 module SLang
-	class NumberLiteral
+	class ASTNode
+		def to_s
+			raise "Invalid call"
+		end
+	end
+
+	class NumberLiteral < ASTNode
 		attr_accessor :value
 
 		def initialize(value)
@@ -11,7 +17,7 @@ module SLang
 		end
 	end
 
-	class StringLiteral
+	class StringLiteral < ASTNode
 		attr_accessor :value
 
 		def initialize(value)
@@ -23,27 +29,29 @@ module SLang
 		end
 	end
 
-	class Expression
-		attr_accessor :command
-		attr_accessor :params
+	class Do < ASTNode
+		attr_accessor :body
 
-		def initialize(expr)
-			init(expr)
-		end
-
-		def init(expr)
-			@command = expr[0].to_s
-			@params = expr[1..-1]
+		def initialize(body = [])
+			@body = body
 		end
 
 		def to_s
-			"#{@command}(#{@params.join(', ').to_s});\n"
+			"\t{\n#{body.map{|expr| "\t\t#{expr}#{';' if expr.is_a?(Call)}\n"}.join}\n\t}\n" if !body.empty?
 		end
 	end
 
-	class Block < Expression
+	class Call < ASTNode
+		attr_accessor :name
+		attr_accessor :params
+
+		def initialize(name, params = [])
+			@name = name
+			@params = params
+		end
+
 		def to_s
-			"\t{\n#{params.map{|p| "\t#{p}"}.join}\n\t}\n"
+			"#{name}(#{params.join(', ')})"
 		end
 	end
 
@@ -61,20 +69,16 @@ module SLang
 		end
 	end
 
-	class Function
+	class Function < ASTNode
 		attr_accessor :name
 		attr_accessor :args
 		attr_accessor :body
 		attr_accessor :return_type
 
 		def initialize(name, args, body, return_type = :void)
-			init(name, args, body, return_type)
-		end
-
-		def init(name, args, body, return_type)
 			@name = name
 			@args = args.map {|type, name| Argument.new(type, name) } || []
-			@body = Context.expression(body)
+			@body = body
 			@return_type = return_type
 		end
 
@@ -84,6 +88,26 @@ module SLang
 
 		def to_s
 			"#{return_type} #{name}(#{args.empty? ? :void : args.join(', ')})\n{\n#{body}}\n"
+		end
+	end
+
+	class If < ASTNode
+		attr_accessor :cond
+		attr_accessor :then
+		attr_accessor :else
+
+		def initialize(cond, a_then, a_else)
+			init(cond, a_then, a_else)
+		end
+
+		def init(cond, a_then, a_else)
+			@cond = cond
+			@then = a_then
+			@else = a_else
+		end
+
+		def to_s
+			"if (#{@cond}) {\n#{@then};\n}" << (@else ? " else {\n#{@else};}\n" : "\n")
 		end
 	end
 end

@@ -3,7 +3,7 @@ require_relative 'ast'
 module SLang
 	class CodeGen
 		def initialize(file, expr)
-			@expr = main_function(expr)
+			define_main_function(expr)
 			@file = file
 			@context = Context.new
 			puts @context.to_s
@@ -18,8 +18,8 @@ module SLang
 			"\t.file\t\"#{@file}\"\n"
 		end
 
-		def main_function(expr)
-			Context.expression([:fun, :main, [], expr])
+		def define_main_function(expr)
+			Function.from(:main, [], expr)
 		end
 	end
 
@@ -35,33 +35,16 @@ module SLang
 			return const
 		end
 
-		def self.add_function(expr)
-			name = expr[1]
+		def self.add_function(func)
+			name = func.name
 			raise "Function #{name} is redefined!" if @@global_functions[name]
-			@@global_functions[name] = Function.new(*expr[1..-1])
-			NilExpression.new
-		end
-
-		def self.expression(expr)
-			case expr[0]
-				when :do
-					do_block(expr)
-				when :fun
-					add_function(expr)
-				else
-					Expression.new(expr)
-			end
-		end
-
-		def self.do_block(expr)
-			Block.new(expr)
+			@@global_functions[name] = func
+			return func
 		end
 
 		def constants
 			s = "\t.section\t.rodata\n"
-			@@global_constants.each do |_, const|
-				s << const.to_asm
-			end
+			s << @@global_constants.values.map { |const| const.to_asm }.join
 			s << "\t.text\n"
 			s
 		end
@@ -96,92 +79,107 @@ module SLang
 	end
 
 	class NumberLiteral
+		def self.from(value)
+			new value
+		end
+
 		def address
 			"$#{value}"
+		end
+
+		def to_asm
+			""
 		end
 	end
 
 	class StringLiteral
-		def initialize(const)
-			@value = const.value
-			@seq = const.seq
+		attr_accessor :seq
+
+		def self.from(value)
+			const = Context.add_constant value
+			s = new(value)
+			s.seq = const.seq
+			s
 		end
 
 		def address
 			"$.LC#{@seq}"
 		end
+
+		def to_asm
+			""
+		end
 	end
 
 	class Expression
+		def self.from(expr)
+			case expr[0]
+				when :do
+					Do.from(expr[1..-1])
+				when :fun
+					Function.from(*expr[1..-1])
+				when :if
+					If.from(*expr[1..-1])
+				else
+					Call.from(expr[0], expr[1..-1])
+			end
+		end
+	end
+
+	class Parameter
+		def self.from(obj)
+			case obj
+				when Array
+					Expression.from(obj)
+				when String
+					StringLiteral.from(obj)
+				when Fixnum
+					NumberLiteral.from(obj)
+			end
+		end
+	end
+
+	class Call
 		attr_accessor :address
 		attr_accessor :regs
 
-		def initialize(expr)
-			init expr
-			@regs = []
-			init_params
+		def self.from(name, params)
+			call = new(name, params.map{|p| Parameter.from(p)})
+			call.init_params
+			call
 		end
 
 		def init_params
 			@regs = []
 			i = 0
+			@params = @params.select {|p| p.respond_to?(:address)}
 			@params = @params.map do |param|
-				case param
-					when Array
-						expr = Context.expression(param)
-						if !expr.is_a?(NilExpression)
-							expr.address = X64.e2_r64(i)
-							@regs << expr.address if i > 0 && i < X64.count
-							i += 1
-						end
-						expr
-					when String
-						const = Context.add_constant param
-						StringLiteral.new(const)
-					when Fixnum
-						NumberLiteral.new(param)
-				end
+					if param.is_a?(Expression)
+						param.address = X64.e2_r64(i)
+						@regs << param.address if i > 0 && i < X64.count
+						i += 1
+					end
+					param
 			end
 		end
 
 		def to_asm
-			push_regs <<
-				init_stack <<
-				visit_sub_expression <<
-				visit_params <<
-				"\tcall\t#{command}\n"
-		end
-
-		def push_regs
 			s = ""
+
 			regs.each {|r| s << "\tpushq\t#{r}\n"}
-			s
-		end
 
-		def pop_regs
+			s << "\tsubq\t$#{X64.stack_size(params.length)}, %rsp\n" if params.length > X64.count
 
-		end
-
-		def init_stack
-			return "\tsubq\t$#{X64.stack_size(params.length)}, %rsp\n" if params.length > X64.count
-			""
-		end
-
-		def visit_sub_expression
-			s = ""
 			params.reverse.each do |param|
 				if param.is_a?(Expression)
 					s << param.to_asm
 					s << "\tmovq\t%rax, #{param.address}\n" if param.address != '%rax'
 				end
 			end
-			s
-		end
 
-		def visit_params
-			s = ""
 			params.reverse.each_with_index do |param, idx|
 				i = params.length - idx - 1
+
 				if i >= X64.count && param.address.include?('rbp')
 					s << "\tmovq\t#{param.address}, %rdx\n"
 					s << "\tmovq\t%rdx, #{X64.e1_r64(i)}\n"
@@ -189,26 +187,17 @@ module SLang
 					s << "\tmovq\t#{param.address}, #{X64.e1_r64(i)}\n"
 				end
 			end
-			s
+			s << "\tcall\t#{name}\n"
 		end
 	end
 
-	class NilExpression < Expression
-		def initialize
-		end
-
-		def to_s
-			""
+	class Do
+		def self.from(body)
+			new body.map{|expr| Expression.from(expr)}
 		end
 
 		def to_asm
-			""
-		end
-	end
-
-	class Block < Expression
-		def to_asm
-			params.map {|param| param.to_asm }.join
+			body.map {|expr| expr.to_asm }.join
 		end
 	end
 
@@ -217,9 +206,9 @@ module SLang
 
 		@@seq = 0
 
-		def initialize(name, args, body, return_type = :void)
-			init(name, args, body, return_type)
-			@seq = @@seq
+		def self.from(name, args, body, return_type = :void)
+			fun = Context.add_function Function.new(name, args, Expression.from(body), return_type)
+			fun.seq = @@seq
 			@@seq += 1
 		end
 
@@ -240,6 +229,32 @@ module SLang
 				"\tret\n\t.cfi_endproc\n" <<
 				".LFE#{seq}:\n" <<
 				"\t.size\t#{name}, .-#{name}\n"
+		end
+	end
+
+	class If
+		attr_accessor :seq
+
+		@@seq = 0
+
+		def self.from(cond, a_then, a_else)
+			@@seq += 2
+			s = new(Expression.from(cond), Expression.from(a_then), Expression.from(a_else))
+			s.seq = @@seq
+			s
+		end
+
+		def to_asm
+			else_seq = seq - 1
+			end_if_seq = seq
+			cond.to_asm <<
+				"\ttestl\t%eax, %eax\n" <<
+				"\tje\t.L#{else_seq}\n" <<
+				@then.to_asm <<
+				"\tjmp\t.L#{end_if_seq}\n" <<
+				".L#{else_seq}:\n" <<
+				@else.to_asm <<
+				".L#{end_if_seq}:\n"
 		end
 	end
 end

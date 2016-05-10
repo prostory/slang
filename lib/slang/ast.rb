@@ -3,6 +3,10 @@ module SLang
 		def to_s
 			raise "Invalid call"
 		end
+
+		def end
+			to_s
+		end
 	end
 
 	class NumberLiteral < ASTNode
@@ -37,7 +41,7 @@ module SLang
 		end
 
 		def to_s
-			"\t{\n#{body.map{|expr| "\t\t#{expr}#{';' if expr.is_a?(Call)}\n"}.join}\n\t}\n" if !body.empty?
+			"\t{\n#{body.map{|expr| "\t\t#{expr.end}"}.join}\n\t}\n" if !body.empty?
 		end
 	end
 
@@ -52,6 +56,10 @@ module SLang
 
 		def to_s
 			"#{name}(#{params.join(', ')})"
+		end
+
+		def end
+			"#{to_s};\n"
 		end
 	end
 
@@ -87,7 +95,7 @@ module SLang
 		end
 
 		def to_s
-			"#{return_type} #{name}(#{args.empty? ? :void : args.join(', ')})\n{\n#{body}}\n"
+			"#{return_type} #{name}(#{args.empty? ? :void : args.join(', ')})\n{\n#{body.end}}\n"
 		end
 	end
 
@@ -109,5 +117,8 @@ module SLang
 		def to_s
 			"if (#{@cond}) {\n#{@then};\n}" << (@else ? " else {\n#{@else};}\n" : "\n")
 		end
+	end
+
+	class Lambda < Function
 	end
 end

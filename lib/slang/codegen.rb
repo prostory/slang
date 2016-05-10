@@ -120,6 +120,10 @@ module SLang
 					Function.from(*expr[1..-1])
 				when :if
 					If.from(*expr[1..-1])
+				when :call
+					Call.from(expr[1], expr[2])
+				when :lambda
+					Lambda.from(*expr[1..-1])
 				else
 					Call.from(expr[0], expr[1..-1])
 			end
@@ -143,7 +147,8 @@ module SLang
 		attr_accessor :address
 		attr_accessor :regs
 
-		def self.from(name, params)
+		def self.from(func, params)
+			name = func.is_a?(Array) ? Expression.from(func).name : func
 			call = new(name, params.map{|p| Parameter.from(p)})
 			call.init_params
 			call
@@ -154,7 +159,7 @@ module SLang
 			i = 0
 			@params = @params.select {|p| p.respond_to?(:address)}
 			@params = @params.map do |param|
-					if param.is_a?(Expression)
+					if param.is_a?(Call)
 						param.address = X64.e2_r64(i)
 						@regs << param.address if i > 0 && i < X64.count
 						i += 1
@@ -207,7 +212,7 @@ module SLang
 		@@seq = 0
 
 		def self.from(name, args, body, return_type = :void)
-			fun = Context.add_function Function.new(name, args, Expression.from(body), return_type)
+			fun = Context.add_function new(name, args, Expression.from(body), return_type)
 			fun.seq = @@seq
 			@@seq += 1
 		end
@@ -223,7 +228,7 @@ module SLang
 				"\t.cfi_offset 6, -16\n" <<
 				"\tmovq\t%rsp, %rbp\n" <<
 				"\t.cfi_def_cfa_register 6\n" <<
-				"#{body.to_asm}" <<
+				body.to_asm <<
 				"\tleave\n" <<
 				"\t.cfi_def_cfa 7, 8\n" <<
 				"\tret\n\t.cfi_endproc\n" <<
@@ -255,6 +260,24 @@ module SLang
 				".L#{else_seq}:\n" <<
 				@else.to_asm <<
 				".L#{end_if_seq}:\n"
+		end
+	end
+
+	class Lambda
+		attr_accessor :seq
+
+		@@seq = 0
+
+		def self.from(args, body, return_type = :void)
+			name = "__lambda_#{@@seq}"
+			lambda = Context.add_function new(name, args, Expression.from(body), return_type)
+			lambda.seq = @@seq
+			@@seq += 1
+			lambda
+		end
+
+		def address
+			"$#{name}"
 		end
 	end
 end

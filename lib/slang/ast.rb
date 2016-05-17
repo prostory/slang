@@ -1,101 +1,134 @@
 module SLang
 	class ASTNode
-		def to_s
-			raise "Invalid call"
+
+	end
+
+	class Expressions < ASTNode
+		include Enumerable
+
+		attr_accessor :children
+
+		def self.from(obj)
+			case obj
+				when nil
+					new
+				when Array
+					new obj
+				when Expressions
+					obj
+				when Do
+					new obj.children
+				else
+					new [obj]
+			end
 		end
 
-		def end
-			to_s
+		def initialize(expressions = [])
+			@children = expressions
+		end
+
+		def each(&block)
+			@children.each(&block)
+		end
+
+		def [](i)
+			@children[i]
+		end
+
+		def last
+			@children.last
+		end
+
+		def ==(other)
+			other.class == self.class && other.children == children
 		end
 	end
 
-	class NumberLiteral < ASTNode
+	class Do < Expressions
+	end
+
+	class Literal < ASTNode
 		attr_accessor :value
 
 		def initialize(value)
 			@value = value
 		end
 
-		def to_s
-			value.to_s
+		def ==(other)
+			other.class == self.class && other.value == value
 		end
 	end
 
-	class StringLiteral < ASTNode
-		attr_accessor :value
-
+	class Int < Literal
 		def initialize(value)
-			@value = value
+			@value = value.to_i
 		end
 
-		def to_s
-			"\"#{value}\""
+		def ==(other)
+			other.class == self.class && other.value.to_i == value.to_i
 		end
 	end
 
-	class Do < ASTNode
-		attr_accessor :body
+	class String < Literal
+	end
 
-		def initialize(body = [])
-			@body = body
+	class Variable < ASTNode
+		attr_accessor :name
+
+		def initialize(name)
+			@name = name
 		end
 
-		def to_s
-			"\t{\n#{body.map{|expr| "\t\t#{expr.end}"}.join}\n\t}\n" if !body.empty?
+		def ==(other)
+			other.class == self.class && other.name == name
 		end
+	end
+
+	class Argument < Variable
 	end
 
 	class Call < ASTNode
 		attr_accessor :name
-		attr_accessor :params
+		attr_accessor :args
 
-		def initialize(name, params = [])
+		def initialize(name, args = [])
+			@name = name
+			@args = args
+		end
+
+		def ==(other)
+			other.class == self.class && other.name == name && other.args == args
+		end
+	end
+
+	class Def < ASTNode
+		attr_accessor :name
+		attr_accessor :params
+		attr_accessor :body
+
+		def initialize(name, params = [], body = [])
 			@name = name
 			@params = params
+			@body = Expressions.from body
 		end
 
-		def to_s
-			"#{name}(#{params.join(', ')})"
-		end
-
-		def end
-			"#{to_s};\n"
+		def ==(other)
+			other.class == self.class && other.name == name && other.params == params &&
+				other.body == body
 		end
 	end
 
-	class Argument
-		attr_accessor :type
-		attr_accessor :name
+	class Lambda < Def
+		@@sequence = 0
 
-		def initialize(type, name)
-			@type = type
-			@name = name
+		def initialize(params = [], body = [])
+			name = :"lambda__#{@@sequence}"
+			super name, params, body
+			@@sequence += 1
 		end
 
-		def to_s
-			"#{@type} #{@name}"
-		end
-	end
-
-	class Function < ASTNode
-		attr_accessor :name
-		attr_accessor :args
-		attr_accessor :body
-		attr_accessor :return_type
-
-		def initialize(name, args, body, return_type = :void)
-			@name = name
-			@args = args.map {|type, name| Argument.new(type, name) } || []
-			@body = body
-			@return_type = return_type
-		end
-
-		def main?
-			name == :main
-		end
-
-		def to_s
-			"#{return_type} #{name}(#{args.empty? ? :void : args.join(', ')})\n{\n#{body.end}}\n"
+		def ==(other)
+			other.class == self.class && other.params == params && other.body == body
 		end
 	end
 
@@ -104,21 +137,29 @@ module SLang
 		attr_accessor :then
 		attr_accessor :else
 
-		def initialize(cond, a_then, a_else)
-			init(cond, a_then, a_else)
-		end
-
-		def init(cond, a_then, a_else)
+		def initialize(cond, a_then, a_else = nil)
 			@cond = cond
-			@then = a_then
-			@else = a_else
+			@then = Expressions.from a_then
+			@else = Expressions.from a_else
 		end
 
-		def to_s
-			"if (#{@cond}) {\n#{@then};\n}" << (@else ? " else {\n#{@else};}\n" : "\n")
+		def ==(other)
+			other.class == self.class && other.cond == cond && other.then == self.then &&
+				other.else == self.else
 		end
 	end
 
-	class Lambda < Function
+	class While < ASTNode
+		attr_accessor :cond
+		attr_accessor :body
+
+		def initialize(cond, body)
+			@cond = cond
+			@body = Expressions.from body
+		end
+
+		def ==(other)
+			other.class == self.class && other.cond == cond && other.body == self.body
+		end
 	end
 end

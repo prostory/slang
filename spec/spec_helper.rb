@@ -10,12 +10,12 @@ include SLang
 
 class Fixnum
 	def int
-		Int.new(self)
+		NumberLiteral.new(self)
 	end
 end
 
 class String
 	def string
-		SLang::String.new(self)
+		StringLiteral.new(self)
 	end
 end

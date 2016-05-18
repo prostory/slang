@@ -1,6 +1,34 @@
 module SLang
-	class ASTNode
+	class Module
+		def simple_name
+			name.gsub /^.*::/, ''
+		end
+	end
 
+	class Visitor
+	end
+
+	class ASTNode
+		def self.inherited(klass) name = klass.simple_name.underscore
+
+		klass.class_eval %Q(
+        def accept(visitor)
+          if visitor.visit_#{name} self
+            accept_children visitor
+          end
+          visitor.end_visit_#{name} self
+        end
+      ) Visitor.class_eval %Q(
+        def visit_#{name}(node)
+          true
+        end
+
+        def end_visit_#{name}(node)
+        end
+      )
+		end
+
+		def accept_children(visitor) end
 	end
 
 	class Expressions < ASTNode
@@ -10,16 +38,13 @@ module SLang
 
 		def self.from(obj)
 			case obj
-				when nil
-					new
-				when Array
-					new obj
-				when Expressions
-					obj
-				when Do
-					new obj.children
-				else
-					new [obj]
+			when nil
+				new
+			when Array
+				new obj
+			when Expressions, Do
+				new obj.children
+			else new [obj]
 			end
 		end
 
@@ -27,16 +52,24 @@ module SLang
 			@children = expressions
 		end
 
-		def each(&block)
-			@children.each(&block)
+		def each(&block) children.each(&block)
 		end
 
-		def [](i)
-			@children[i]
+		def [](i) children[i]
+		end
+
+		def <<(exp) children << exp
 		end
 
 		def last
-			@children.last
+			children.last
+		end
+
+		def empty?
+			children.empty?
+		end
+
+		def accept_children(visitor) children.map { |child| child.accept(visitor) }
 		end
 
 		def ==(other)
@@ -59,17 +92,15 @@ module SLang
 		end
 	end
 
-	class Int < Literal
+	class NumberLiteral < Literal
 		def initialize(value)
 			@value = value.to_i
 		end
-
-		def ==(other)
-			other.class == self.class && other.value.to_i == value.to_i
-		end
 	end
 
-	class String < Literal
+	class StringLiteral < Literal
+		def initialize(value) @value = value.to_s
+		end
 	end
 
 	class Variable < ASTNode
@@ -96,6 +127,9 @@ module SLang
 			@args = args
 		end
 
+		def accept_children(visitor) args.map { |arg| arg.accept visitor }
+		end
+
 		def ==(other)
 			other.class == self.class && other.name == name && other.args == args
 		end
@@ -110,6 +144,10 @@ module SLang
 			@name = name
 			@params = params
 			@body = Expressions.from body
+		end
+
+		def accept_children(visitor) params.map { |param| param.accept visitor }
+		body.accept visitor
 		end
 
 		def ==(other)
@@ -143,6 +181,9 @@ module SLang
 			@else = Expressions.from a_else
 		end
 
+		def accept_children(visitor) @cond.accept visitor @then.accept visitor @else.accept visitor if @else
+		end
+
 		def ==(other)
 			other.class == self.class && other.cond == cond && other.then == self.then &&
 				other.else == self.else
@@ -156,6 +197,9 @@ module SLang
 		def initialize(cond, body)
 			@cond = cond
 			@body = Expressions.from body
+		end
+
+		def accept_children(visitor) cond.accept visitor body.accept visitor
 		end
 
 		def ==(other)

@@ -12,8 +12,8 @@ module SLang
 				parse_children(exp)
 			when :do
 				Do.new parse_expression(exp[1..-1])
-			when :def
-				Def.new exp[1], parse_params(exp[2]), parse_expression(exp[3])
+			when :fun
+				Function.new exp[1], parse_params(exp[2]), parse_expression(exp[3])
 			when :lambda
 				Lambda.new parse_params(exp[1]), parse_expression(exp[2])
 			when :call
@@ -52,7 +52,5 @@ module SLang
 				end
 			end
 		end
-
-
 	end
 end

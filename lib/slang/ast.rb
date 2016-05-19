@@ -1,31 +1,42 @@
-module SLang
-	class Module
-		def simple_name
-			name.gsub /^.*::/, ''
-		end
+class Module
+	def simple_name
+		name.gsub /^.*::/, ''
 	end
+end
 
+class String
+	def underscore
+		self.to_s.gsub(/::/, '/').
+			gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2').
+			gsub(/([a-z\d])([A-Z])/, '\1_\2').
+			tr('-', '_').
+			downcase
+	end
+end
+
+module SLang
 	class Visitor
 	end
 
 	class ASTNode
-		def self.inherited(klass) name = klass.simple_name.underscore
+		def self.inherited(klass)
+			name = klass.simple_name.underscore
+			klass.class_eval %Q(
+	        def accept(visitor)
+	          if visitor.visit_#{name} self
+	            accept_children visitor
+	          end
+	          visitor.end_visit_#{name} self
+	        end
+	      )
+			Visitor.class_eval %Q(
+	        def visit_#{name}(node)
+	          true
+	        end
 
-		klass.class_eval %Q(
-        def accept(visitor)
-          if visitor.visit_#{name} self
-            accept_children visitor
-          end
-          visitor.end_visit_#{name} self
-        end
-      ) Visitor.class_eval %Q(
-        def visit_#{name}(node)
-          true
-        end
-
-        def end_visit_#{name}(node)
-        end
-      )
+	        def end_visit_#{name}(node)
+	        end
+	      )
 		end
 
 		def accept_children(visitor) end
@@ -135,7 +146,7 @@ module SLang
 		end
 	end
 
-	class Def < ASTNode
+	class Function < ASTNode
 		attr_accessor :name
 		attr_accessor :params
 		attr_accessor :body
@@ -156,7 +167,7 @@ module SLang
 		end
 	end
 
-	class Lambda < Def
+	class Lambda < Function
 		@@sequence = 0
 
 		def initialize(params = [], body = [])

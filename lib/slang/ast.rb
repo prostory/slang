@@ -80,11 +80,16 @@ module SLang
 			children.empty?
 		end
 
-		def accept_children(visitor) children.map { |child| child.accept(visitor) }
+		def accept_children(visitor)
+			children.map { |child| child.accept(visitor) }
 		end
 
 		def ==(other)
 			other.class == self.class && other.children == children
+		end
+
+		def clone
+			self.class.new children.map(&:clone)
 		end
 	end
 
@@ -100,6 +105,10 @@ module SLang
 
 		def ==(other)
 			other.class == self.class && other.value == value
+		end
+
+		def clone
+			self.class.new value
 		end
 	end
 
@@ -124,6 +133,10 @@ module SLang
 		def ==(other)
 			other.class == self.class && other.name == name
 		end
+
+		def clone
+			self.class.new name
+		end
 	end
 
 	class Argument < Variable
@@ -138,11 +151,16 @@ module SLang
 			@args = args
 		end
 
-		def accept_children(visitor) args.map { |arg| arg.accept visitor }
+		def accept_children(visitor)
+			args.map { |arg| arg.accept visitor }
 		end
 
 		def ==(other)
 			other.class == self.class && other.name == name && other.args == args
+		end
+
+		def clone
+			self.class.new name, args.map(&:clone)
 		end
 	end
 
@@ -157,27 +175,38 @@ module SLang
 			@body = Expressions.from body
 		end
 
-		def accept_children(visitor) params.map { |param| param.accept visitor }
-		body.accept visitor
+		def accept_children(visitor)
+			params.map { |param| param.accept visitor }
+			body.accept visitor
 		end
 
 		def ==(other)
 			other.class == self.class && other.name == name && other.params == params &&
 				other.body == body
 		end
+
+		def clone
+			self.class.new name, params.map(&:clone), body.clone
+		end
 	end
 
 	class Lambda < Function
 		@@sequence = 0
 
-		def initialize(params = [], body = [])
+		def initialize(params = [], body = [], is_clone = false)
 			name = :"lambda__#{@@sequence}"
 			super name, params, body
-			@@sequence += 1
+			@@sequence += 1 unless is_clone
 		end
 
 		def ==(other)
 			other.class == self.class && other.params == params && other.body == body
+		end
+
+		def clone
+			lambda = self.class.new params, body, true
+			lambda.name = name
+			lambda
 		end
 	end
 
@@ -192,12 +221,17 @@ module SLang
 			@else = Expressions.from a_else
 		end
 
-		def accept_children(visitor) @cond.accept visitor @then.accept visitor @else.accept visitor if @else
+		def accept_children(visitor)
+			@cond.accept visitor @then.accept visitor @else.accept visitor if @else
 		end
 
 		def ==(other)
 			other.class == self.class && other.cond == cond && other.then == self.then &&
 				other.else == self.else
+		end
+
+		def clone
+			self.class.new cond.clone, @then.clone, @else.clone
 		end
 	end
 
@@ -210,11 +244,36 @@ module SLang
 			@body = Expressions.from body
 		end
 
-		def accept_children(visitor) cond.accept visitor body.accept visitor
+		def accept_children(visitor)
+			cond.accept visitor body.accept visitor
 		end
 
 		def ==(other)
 			other.class == self.class && other.cond == cond && other.body == self.body
+		end
+
+		def clone
+			self.class.new cond.clone, body.clone
+		end
+	end
+
+	class Return < ASTNode
+		attr_accessor :values
+
+		def initialize(values)
+			@values = values
+		end
+
+		def accept_children(visitor)
+			@values.each {|v| v.accept visitor}
+		end
+
+		def ==(other)
+			other.class == self.class && other.values == values
+		end
+
+		def clone
+			self.class.new values.map(&:clone)
 		end
 	end
 end

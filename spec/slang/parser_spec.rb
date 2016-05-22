@@ -18,4 +18,5 @@ describe Parser do
 	it_parse [:call, [:lambda, [], [:foo]], []], Expressions.new([Lambda.new([], [Call.new(:foo)]), Call.new(:lambda__3)])
 	it_parse [:if, [:test], [:foo], [:bar]], If.new(Call.new(:test), [Call.new(:foo)], [Call.new(:bar)])
 	it_parse [:while, [:test], [:foo]], While.new(Call.new(:test), [Call.new(:foo)])
+  it_parse [:fun, :foo, [], [:ret, 1]], Function.new(:foo, [], [Return.new([1.int])])
 end

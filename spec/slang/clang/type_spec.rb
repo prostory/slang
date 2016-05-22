@@ -10,7 +10,7 @@ describe "CLang type" do
   end
 
   it "types string" do
-    context.string.type.should eq('char *')
+    context.raw_string.type.should eq('char *')
   end
 
   it "types struct with no name" do
@@ -24,17 +24,17 @@ describe "CLang type" do
   end
 
   it "types union with no name" do
-    value = context.union({i: context.int, s: context.string})
+    value = context.union({i: context.int, s: context.raw_string})
     value.type.should eq('union { int i; char * s; }')
   end
 
   it "types union width name" do
-    value = context.union({i: context.int, s: context.string}, :Value)
+    value = context.union({i: context.int, s: context.raw_string}, :Value)
     value.define.should eq('typedef union { int i; char * s; } Value;')
   end
 
   it "types merge" do
     context.merge(context.int, context.int).should eq(context.int)
-    context.merge(context.int, context.string).should eq(context.union([context.int, context.string]))
+    context.merge(context.int, context.raw_string).should eq(context.union([context.int, context.raw_string]))
   end
 end

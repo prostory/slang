@@ -2,21 +2,25 @@ module SLang
   module CLang
     class Context
       attr_accessor :type
+      attr_accessor :scopes
+      attr_accessor :functions
 
       def initialize
         @type = CType.new
+        @scopes = [Scope.new(main)]
+        @functions = {}
       end
 
       def void
-        type.base(:void, :Void)
+        base(:void, :Void)
       end
 
       def int
-        type.base(:int, :Int)
+        base(:int, :Int)
       end
 
-      def string
-        type.base('char *', :String)
+      def raw_string
+        base('char *', :RawString)
       end
 
       def base(ctype, name)
@@ -35,8 +39,31 @@ module SLang
         type.merge t1, t2
       end
 
-      def unmerge(t1, t2)
-        type.unmerge t1, t2
+      def main
+        nil
+      end
+
+      def type_inference(node)
+        node.accept TypeVisitor.new(self)
+        self
+      end
+
+      def define_variable(var)
+        scope << var
+      end
+
+      def lookup_variable(name)
+        scope.lookup name
+      end
+
+      def new_scope(obj)
+        @scopes.push(Scope.new obj)
+        yield
+        @scopes.pop
+      end
+
+      def scope
+        @scopes.last
       end
     end
   end

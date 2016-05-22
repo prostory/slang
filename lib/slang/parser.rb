@@ -10,6 +10,13 @@ module SLang
 			case exp[0]
 			when Array
 				parse_children(exp)
+			when Symbol
+				parse_command(exp)
+			end
+		end
+
+		def self.parse_command(exp)
+			case exp[0]
 			when :do
 				Do.new parse_expression(exp[1..-1])
 			when :fun
@@ -26,7 +33,10 @@ module SLang
 				If.new(parse_expression(exp[1]), parse_expression(exp[2]), parse_expression(exp[3]))
 			when :while
 				While.new(parse_expression(exp[1]), parse_expression(exp[2]))
-			else Call.new exp[0], parse_args(exp[1..-1])
+			when :ret
+				Return.new(parse_args(exp[1..-1]))
+			else
+				Call.new exp[0], parse_args(exp[1..-1])
 			end
 		end
 

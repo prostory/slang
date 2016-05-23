@@ -14,7 +14,7 @@ module SLang
       end
 
       def to_s
-        type.to_s
+        name.to_s
       end
 
       def ==(other)
@@ -51,8 +51,19 @@ module SLang
     end
 
     class CType
-      def initialize
+      attr_accessor :context
+      attr_accessor :types
+
+      def initialize(context)
+        @context = context
         @types = {}
+      end
+
+      def define_types
+        types.each do |_, type|
+          stream << type.define.to_s
+          stream << "\n"
+        end
       end
 
       def base(ctype, name)
@@ -89,6 +100,11 @@ module SLang
         else
           union [t1, t2].flatten.uniq
         end
+      end
+
+      private
+      def stream
+        context.codegen.stream
       end
     end
   end

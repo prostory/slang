@@ -7,8 +7,6 @@ describe Parser do
 		end
 	end
 
-
-
 	it_parse [:foo], Call.new(:foo)
 	it_parse [:inc, 1], Call.new(:inc, [1.int])
 	it_parse [:puts, "Hello World"], Call.new(:puts, ["Hello World".string])

@@ -1,3 +1,11 @@
-Dir["#{File.expand_path('../',  __FILE__)}/**/*.rb"].each do |filename|
-	require filename
+Dir["#{File.expand_path('../',  __FILE__)}/slang/**/*.rb"].uniq.each do |filename|
+	require filename if filename.include? ".rb"
 end
+
+include SLang
+
+prog = [:do, [:fun, :foo, [:arg], [:ret, :arg]], [:foo, 1], [:foo, "Hello World"]]
+
+main_prog = [:fun, :main, [], prog]
+
+puts CLang::Context.new.gen_code(Parser.parse(main_prog))

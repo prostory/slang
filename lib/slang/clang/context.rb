@@ -1,14 +1,16 @@
 module SLang
   module CLang
     class Context
-      attr_accessor :type
       attr_accessor :scopes
-      attr_accessor :functions
+      attr_accessor :type
+      attr_accessor :codegen
 
       def initialize
-        @type = CType.new
+        @ctype = CType.new(self)
+        @cfunc = CFunction.new(self)
         @scopes = [Scope.new(main)]
-        @functions = {}
+        @type = TypeVisitor.new(self)
+        @codegen = CodeGenVisitor.new(self)
       end
 
       def void
@@ -23,20 +25,20 @@ module SLang
         base('char *', :RawString)
       end
 
-      def base(ctype, name)
-        type.base(ctype, name)
+      def base(type, name)
+        @ctype.base(type, name)
       end
 
       def struct(members, name = nil)
-        type.struct members, name
+        @ctype.struct members, name
       end
 
       def union(members, name = nil)
-        type.union members, name
+        @ctype.union members, name
       end
 
       def merge(t1, t2)
-        type.merge t1, t2
+        @ctype.merge t1, t2
       end
 
       def main
@@ -44,8 +46,26 @@ module SLang
       end
 
       def type_inference(node)
-        node.accept TypeVisitor.new(self)
+        node.accept type
         self
+      end
+
+      def gen_code(node)
+        type_inference node
+
+        @ctype.define_types
+        @cfunc.declear_functions
+        @cfunc.define_functions
+
+        codegen.to_s
+      end
+
+      def add_function(fun)
+        @cfunc << fun
+      end
+
+      def lookup_function(name)
+        @cfunc[name]
       end
 
       def define_variable(var)

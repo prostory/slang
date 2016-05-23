@@ -1,3 +1,4 @@
+require_relative 'ast'
 require_relative 'clang/context'
 
 module SLang
@@ -63,7 +64,7 @@ module SLang
     end
 
     def visit_call(node)
-      unless untyped_fun = context.functions[node.name]
+      unless untyped_fun = context.lookup_function(node.name)
         raise "undefined function '#{node.name}'"
       end
 
@@ -79,19 +80,18 @@ module SLang
         node.type = typed_fun.body.type
         return
       end
-      unless typed_fun
-        typed_fun = untyped_fun.clone
 
-        context.new_scope(untyped_fun) do
-          typed_fun.params.each_with_index do |arg, i|
-            typed_fun.params[i].type = node.args[i].type
-            context.define_variable typed_fun.params[i]
-          end
+      typed_fun ||= untyped_fun.clone
+      typed_fun.body.type = context.void
 
-          typed_fun.body.accept self
+      context.new_scope(untyped_fun) do
+        untyped_fun.params.each_with_index do |_, i|
+          typed_fun.params[i].type = node.args[i].type
+          context.define_variable typed_fun.params[i]
         end
 
         untyped_fun << typed_fun
+        typed_fun.body.accept self
       end
 
       node.target_fun = typed_fun
@@ -101,7 +101,12 @@ module SLang
     end
 
     def visit_function(node)
-      context.functions[node.name] = node
+      context.add_function node
+      if node.name == :main
+        node.body.accept self
+        node.body.type = context.void
+        node << node
+      end
       false
     end
 

@@ -18,7 +18,7 @@ module SLang
       end
 
       def declear_functions
-        functions.values.each { |fun| declear_function fun unless fun.name == 'main' }
+        functions.values.each { |fun| declear_function fun unless fun.name == :main }
       end
 
       def define_functions

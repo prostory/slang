@@ -82,25 +82,19 @@ module SLang
         raise "wrong number of arguments for '#{node.name}' (#{node.args.length} for #{untyped_fun.params.length})"
       end
 
-      if untyped_fun.is_a? External
-        if types == untyped_fun.params.map(&:type)
-          typed_fun = untyped_fun[types]
-          unless typed_fun
-            typed_fun = untyped_fun.clone
-            typed_fun.body.type = context.ctypes[typed_fun.return_type]
-            untyped_fun << typed_fun
-          end
-
-          node.target_fun = typed_fun
-          node.type = typed_fun.body.type
-          return
-        end
-
+      if untyped_fun.is_a?(External) && types != untyped_fun.params.map(&:type)
         raise "undefined function #{node.name}(#{types.join ', '})"
       end
 
       typed_fun = untyped_fun[types]
-      if typed_fun && context.scopes.any? {|s| s.func == untyped_fun }
+
+      if untyped_fun.is_a?(External) && typed_fun == nil
+        typed_fun = untyped_fun.clone
+        typed_fun.body.type = context.ctypes[typed_fun.return_type]
+        untyped_fun << typed_fun
+      end
+
+      if typed_fun
         node.target_fun = typed_fun
         node.type = typed_fun.body.type
         return

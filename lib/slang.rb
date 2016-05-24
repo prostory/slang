@@ -4,7 +4,7 @@ end
 
 include SLang
 
-prog = [:do, [:external, :puts, [:RawString], :Int], [:fun, :foo, [:arg], [:puts, :arg]], [:foo, "Hello World"]]
+prog = [:do, [:external, :puts, [:RawString], :Int], [:fun, :foo, [:arg], [:ret, :arg]], [:foo, "Hello World"], [:foo, 1], [:foo, "Hello World"]]
 
 main_prog = [:fun, :main, [], prog]
 

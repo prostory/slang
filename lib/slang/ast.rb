@@ -224,7 +224,9 @@ module SLang
 		end
 
 		def clone
-			self.class.new name, params.map(&:clone), return_type
+			external = self.class.new name, params.map(&:clone), return_type
+			external.body = body
+			external
 		end
 	end
 

@@ -222,6 +222,10 @@ module SLang
 		def initialize(name, params = [], return_type = :unknown)
 			super name, params, [], return_type
 		end
+
+		def clone
+			self.class.new name, params.map(&:clone), return_type
+		end
 	end
 
 	class If < ASTNode

@@ -46,7 +46,7 @@ module SLang
       end
 
       def ctypes
-        @ctype.types
+        @ctype
       end
 
       def main

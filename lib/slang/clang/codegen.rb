@@ -25,18 +25,13 @@ module SLang
 
   class Function
     def mangled_name
+      return name unless mangled
       self.class.mangled_name(name, params.map(&:type))
     end
 
     def self.mangled_name(name, param_types)
       mangled_params = param_types.map(&:name).join '_'
       "#{name}" << (param_types.any? ? "$#{mangled_params}" : "" )
-    end
-  end
-
-  class External
-    def mangled_name
-      name
     end
   end
 

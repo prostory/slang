@@ -11,10 +11,15 @@ module SLang
   end
 
   class Function
+    attr_accessor :mangled
     attr_accessor :instances
 
     def <<(instance)
       @instances ||= {}
+      if @mangled = @instances.size > 0
+        @instances.each_value {|instance| instance.mangled = @mangled}
+      end
+      instance.mangled = @mangled
       @instances[instance.params.map(&:type)] = instance
     end
 
@@ -67,18 +72,31 @@ module SLang
     end
 
     def visit_call(node)
+      types = node.args.each {|arg| arg.accept self}.map(&:type)
+
       unless untyped_fun = context.lookup_function(node.name)
-        raise "undefined function '#{node.name}'"
+        raise "undefined function #{node.name}(#{types.join ', '})"
+      end
+
+      if untyped_fun.is_a? External
+        if types == untyped_fun.params.map(&:type)
+          untyped_fun.body.type = context.ctypes[untyped_fun.return_type]
+          untyped_fun << untyped_fun
+
+          node.target_fun = untyped_fun
+          node.type = untyped_fun.body.type
+          return
+        end
+
+        raise "undefined function #{node.name}(#{types.join ', '})"
       end
 
       if node.args.length != untyped_fun.params.length
         raise "wrong number of arguments for '#{node.name}' (#{node.args.length} for #{untyped_fun.params.length})"
       end
 
-      types = node.args.each {|arg| arg.accept self}.map(&:type)
-
       typed_fun = untyped_fun[types]
-      if typed_fun && context.scopes.any? {|s| s.func == untyped_fun}
+      if typed_fun && context.scopes.any? {|s| s.func == untyped_fun }
         node.target_fun = typed_fun
         node.type = typed_fun.body.type
         return
@@ -110,7 +128,7 @@ module SLang
       context.add_function node
       if node.name == :main
         node.body.accept self
-        node.body.type = context.void
+        node.body.type = context.ctypes[node.return_type]
         node << node
       end
       false
@@ -120,10 +138,9 @@ module SLang
       visit_function node
     end
 
-    def end_visit_external(node)
+    def visit_external(node)
       context.add_function node
-      node.body.type = context.ctypes[node.return_type]
-      node << node
+      true
     end
 
     def end_visit_if(node)

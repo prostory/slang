@@ -59,6 +59,11 @@ module SLang
         @types = {}
       end
 
+      def [](name)
+        return context.void if name == :unknown
+        types[name]
+      end
+
       def define_types
         types.each do |_, type|
           stream << type.define.to_s

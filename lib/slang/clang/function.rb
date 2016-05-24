@@ -3,26 +3,30 @@ module SLang
     class CFunction
       attr_accessor :context
       attr_accessor :functions
+      attr_accessor :externals
 
       def initialize(context)
         @context = context
         @functions = {}
+        @externals = {}
       end
 
       def <<(fun)
-        @functions[fun.name] = fun
+        @functions[fun.name] = fun if fun.instance_of? Function
+        @externals[fun.name] = fun if fun.is_a? External
       end
 
       def [](name)
-        @functions[name]
+        @functions[name] || @externals[name]
       end
 
       def declear_functions
+        externals.values.each { |fun| declear_function fun }
         functions.values.each { |fun| declear_function fun unless fun.name == :main }
       end
 
       def define_functions
-        functions.values.each { |fun| define_function fun unless fun.is_a? External }
+        functions.values.each { |fun| define_function fun }
       end
 
       def declear_function(node)

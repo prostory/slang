@@ -22,7 +22,7 @@ module SLang
       end
 
       def define_functions
-        functions.values.each { |fun| define_function fun }
+        functions.values.each { |fun| define_function fun unless fun.is_a? External }
       end
 
       def declear_function(node)

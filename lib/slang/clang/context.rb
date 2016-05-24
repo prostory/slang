@@ -11,21 +11,25 @@ module SLang
         @scopes = [Scope.new(main)]
         @type = TypeVisitor.new(self)
         @codegen = CodeGenVisitor.new(self)
+
+        base_type(:void, :Void)
+        base_type(:int, :Int)
+        base_type('char *', :RawString)
       end
 
       def void
-        base(:void, :Void)
+        ctypes[:Void]
       end
 
       def int
-        base(:int, :Int)
+        ctypes[:Int]
       end
 
       def raw_string
-        base('char *', :RawString)
+        ctypes[:RawString]
       end
 
-      def base(type, name)
+      def base_type(type, name)
         @ctype.base(type, name)
       end
 
@@ -39,6 +43,10 @@ module SLang
 
       def merge(t1, t2)
         @ctype.merge t1, t2
+      end
+
+      def ctypes
+        @ctype.types
       end
 
       def main

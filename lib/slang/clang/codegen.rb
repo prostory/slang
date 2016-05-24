@@ -17,6 +17,12 @@ module SLang
     end
   end
 
+  class Return
+    def terminator
+      ";"
+    end
+  end
+
   class Function
     def mangled_name
       self.class.mangled_name(name, params.map(&:type))
@@ -25,6 +31,12 @@ module SLang
     def self.mangled_name(name, param_types)
       mangled_params = param_types.map(&:name).join '_'
       "#{name}" << (param_types.any? ? "$#{mangled_params}" : "" )
+    end
+  end
+
+  class External
+    def mangled_name
+      name
     end
   end
 
@@ -83,6 +95,12 @@ module SLang
         false
       end
 
+      def visit_paramter(node)
+        stream << "#{node.type}"
+        stream << " #{node.name}" if node.name
+        false
+      end
+
       def visit_function(node)
         false
       end
@@ -127,7 +145,6 @@ module SLang
       def visit_return(node)
         stream << 'return '
         node.values[0].accept self
-        stream << ';'
         false
       end
 

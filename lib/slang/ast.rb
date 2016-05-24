@@ -125,18 +125,23 @@ module SLang
 
 	class Variable < ASTNode
 		attr_accessor :name
+		attr_accessor :type
 
-		def initialize(name)
+		def initialize(name, type = :unknown)
 			@name = name
+			@type = type
 		end
 
 		def ==(other)
-			other.class == self.class && other.name == name
+			other.class == self.class && other.name == name && other.type == type
 		end
 
 		def clone
-			self.class.new name
+			self.class.new name, type
 		end
+	end
+
+	class Paramter < Variable
 	end
 
 	class Argument < Variable
@@ -168,11 +173,13 @@ module SLang
 		attr_accessor :name
 		attr_accessor :params
 		attr_accessor :body
+		attr_accessor :return_type
 
-		def initialize(name, params = [], body = [])
+		def initialize(name, params = [], body = [], return_type = :unknown)
 			@name = name
 			@params = params
 			@body = Expressions.from body
+			@return_type = return_type || :unknown
 		end
 
 		def accept_children(visitor)
@@ -182,31 +189,38 @@ module SLang
 
 		def ==(other)
 			other.class == self.class && other.name == name && other.params == params &&
-				other.body == body
+				other.body == body && other.return_type == return_type
 		end
 
 		def clone
-			self.class.new name, params.map(&:clone), body.clone
+			self.class.new name, params.map(&:clone), body.clone, return_type
 		end
 	end
 
 	class Lambda < Function
 		@@sequence = 0
 
-		def initialize(params = [], body = [], is_clone = false)
+		def initialize(params = [], body = [], return_type = :unknown, is_clone = false)
 			name = :"lambda__#{@@sequence}"
-			super name, params, body
+			super name, params, body, return_type
 			@@sequence += 1 unless is_clone
 		end
 
 		def ==(other)
-			other.class == self.class && other.params == params && other.body == body
+			other.class == self.class && other.params == params && other.body == body &&
+				other.return_type == return_type
 		end
 
 		def clone
-			lambda = self.class.new params, body, true
+			lambda = self.class.new params, body, return_type, true
 			lambda.name = name
 			lambda
+		end
+	end
+
+	class External < Function
+		def initialize(name, params = [], return_type = :unknown)
+			super name, params, [], return_type
 		end
 	end
 

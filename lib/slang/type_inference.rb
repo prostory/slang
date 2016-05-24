@@ -23,8 +23,6 @@ module SLang
     end
   end
 
-
-
   class TypeVisitor < Visitor
     attr_accessor :context
 
@@ -56,6 +54,11 @@ module SLang
 
     def visit_variable(node)
       node.type = context.lookup_variable node.name
+      false
+    end
+
+    def visit_paramter(node)
+      node.type = context.ctypes[node.type]
       false
     end
 
@@ -92,6 +95,9 @@ module SLang
 
         untyped_fun << typed_fun
         typed_fun.body.accept self
+        unless typed_fun.return_type == :unknown
+          typed_fun.body.type = context.ctypes[typed_fun.return_type]
+        end
       end
 
       node.target_fun = typed_fun
@@ -108,6 +114,16 @@ module SLang
         node << node
       end
       false
+    end
+
+    def visit_lambda(node)
+      visit_function node
+    end
+
+    def end_visit_external(node)
+      context.add_function node
+      node.body.type = context.ctypes[node.return_type]
+      node << node
     end
 
     def end_visit_if(node)

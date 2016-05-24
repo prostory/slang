@@ -20,21 +20,23 @@ module SLang
 			when :do
 				Do.new parse_expression(exp[1..-1])
 			when :fun
-				Function.new exp[1], parse_params(exp[2]), parse_expression(exp[3])
+				Function.new exp[1], parse_vars(exp[2]), parse_expression(exp[3]), exp[4]
 			when :lambda
-				Lambda.new parse_params(exp[1]), parse_expression(exp[2])
+				Lambda.new parse_vars(exp[1]), parse_expression(exp[2]), exp[4]
 			when :call
 				if exp[1].is_a? Array
 					func = parse_expression(exp[1])
-					return Expressions.new([func, Call.new(func.name, parse_params(exp[2]))])
+					return Expressions.new([func, Call.new(func.name, parse_vars(exp[2]))])
 				end
-				Call.new(exp[1], parse_params(expr[2]))
+				Call.new(exp[1], parse_vars(exp[2]))
 			when :if
 				If.new(parse_expression(exp[1]), parse_expression(exp[2]), parse_expression(exp[3]))
 			when :while
 				While.new(parse_expression(exp[1]), parse_expression(exp[2]))
 			when :ret
 				Return.new(parse_args(exp[1..-1]))
+			when :external
+				External.new(exp[1], parse_params(exp[2]), exp[3])
 			else
 				Call.new exp[0], parse_args(exp[1..-1])
 			end
@@ -44,8 +46,14 @@ module SLang
 			children.map {|child| parse_expression(child)}
 		end
 
+		def self.parse_vars(vars)
+			return vars.map {|var| Variable.new(var)} if vars.is_a? Array
+			return vars.map {|name, type| Variable.new(name, type)} if vars.is_a? Hash
+		end
+
 		def self.parse_params(params)
-			params.map {|param| Variable.new(param)}
+			return params.map {|type| Paramter.new(nil, type)} if params.is_a? Array
+			return params.map {|name, type| Paramter.new(name, type)} if params.is_a? Hash
 		end
 
 		def self.parse_args(args)

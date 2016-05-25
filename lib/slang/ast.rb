@@ -19,6 +19,8 @@ module SLang
 	end
 
 	class ASTNode
+		attr_accessor :parent
+
 		def self.inherited(klass)
 			name = klass.simple_name.underscore
 			klass.class_eval %Q(
@@ -61,15 +63,20 @@ module SLang
 
 		def initialize(expressions = [])
 			@children = expressions
+			@children.each {|child| child.parent = self}
 		end
 
-		def each(&block) children.each(&block)
+		def each(&block)
+			children.each(&block)
 		end
 
-		def [](i) children[i]
+		def [](i)
+			children[i]
 		end
 
-		def <<(exp) children << exp
+		def <<(child)
+			child.parent = self
+			children << child
 		end
 
 		def last
@@ -123,6 +130,35 @@ module SLang
 		end
 	end
 
+	class ClassDef < ASTNode
+		attr_accessor :name
+		attr_accessor :body
+		attr_accessor :superclass
+
+		def initialize(name, superclass = nil, body = nil)
+			@name = name
+			@body = Expressions.from body
+			@body.parent = self
+			@superclass = superclass
+		end
+
+		def <<(fun)
+			body << fun
+		end
+
+		def accept_children(visitor)
+			body.accept visitor
+		end
+
+		def ==(other)
+			other.class == self.class && other.name == name && other.body == body && other.superclass == superclass
+		end
+
+		def clone
+			self.class.new name, body.clone, superclass
+		end
+	end
+
 	class Variable < ASTNode
 		attr_accessor :name
 		attr_accessor :type
@@ -148,12 +184,15 @@ module SLang
 	end
 
 	class Call < ASTNode
+		attr_accessor :obj
 		attr_accessor :name
 		attr_accessor :args
 
-		def initialize(name, args = [])
+		def initialize(name, args = [], obj = nil)
 			@name = name
 			@args = args
+			@args.each {|arg| arg.parent = self}
+			@obj = obj
 		end
 
 		def accept_children(visitor)
@@ -174,12 +213,17 @@ module SLang
 		attr_accessor :params
 		attr_accessor :body
 		attr_accessor :return_type
+		attr_accessor :receiver
 
-		def initialize(name, params = [], body = [], return_type = :unknown)
+		def initialize(name, params = [], body = [], return_type = :unknown, receiver = nil)
 			@name = name
 			@params = params
+			@params.each {|param| param.parent = self}
 			@body = Expressions.from body
+			@body.parent = self
 			@return_type = return_type || :unknown
+			@receiver = receiver
+			@receiver.parent = self if receiver
 		end
 
 		def accept_children(visitor)
@@ -189,11 +233,11 @@ module SLang
 
 		def ==(other)
 			other.class == self.class && other.name == name && other.params == params &&
-				other.body == body && other.return_type == return_type
+				other.body == body && other.return_type == return_type && other.receiver == receiver
 		end
 
 		def clone
-			self.class.new name, params.map(&:clone), body.clone, return_type
+			self.class.new name, params.map(&:clone), body.clone, return_type, receiver
 		end
 	end
 
@@ -219,12 +263,12 @@ module SLang
 	end
 
 	class External < Function
-		def initialize(name, params = [], return_type = :unknown)
-			super name, params, [], return_type
+		def initialize(name, params = [], return_type = :unknown, receiver = nil)
+			super name, params, [], return_type, receiver
 		end
 
 		def clone
-			external = self.class.new name, params.map(&:clone), return_type
+			external = self.class.new name, params.map(&:clone), return_type, receiver
 			external.body = body
 			external
 		end
@@ -237,8 +281,11 @@ module SLang
 
 		def initialize(cond, a_then, a_else = nil)
 			@cond = cond
+			@cond.parent = self
 			@then = Expressions.from a_then
+			@then.parent = self
 			@else = Expressions.from a_else
+			@else.parent = self
 		end
 
 		def accept_children(visitor)
@@ -261,7 +308,9 @@ module SLang
 
 		def initialize(cond, body)
 			@cond = cond
+			@cond.parent = self
 			@body = Expressions.from body
+			@body.parent = self
 		end
 
 		def accept_children(visitor)
@@ -282,6 +331,7 @@ module SLang
 
 		def initialize(values)
 			@values = values
+			@values.each {|value| value.parent = self}
 		end
 
 		def accept_children(visitor)

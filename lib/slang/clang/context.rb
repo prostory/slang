@@ -14,7 +14,7 @@ module SLang
 
         base_type(:void, :Void)
         base_type(:int, :Int)
-        base_type('char *', :RawString)
+        base_type('char *', :String)
       end
 
       def void
@@ -26,7 +26,7 @@ module SLang
       end
 
       def raw_string
-        ctypes[:RawString]
+        ctypes[:String]
       end
 
       def base_type(type, name)
@@ -62,18 +62,28 @@ module SLang
         type_inference node
 
         @ctype.define_types
+
+        @ctype.declear_functions
         @cfunc.declear_functions
+
+        @ctype.define_functions
         @cfunc.define_functions
 
         codegen.to_s
       end
 
       def add_function(fun)
-        @cfunc << fun
+        class_def = fun.parent.parent
+        if class_def.is_a? ClassDef
+          @ctype.types[class_def.name].cfunc << fun
+        else
+          @cfunc << fun
+        end
+
       end
 
-      def lookup_function(name)
-        @cfunc[name]
+      def lookup_function(obj, name)
+        obj ? obj.type.cfunc[name] : @cfunc[name]
       end
 
       def define_variable(var)

@@ -11,13 +11,16 @@ module SLang
   end
 
   class Function
+    attr_accessor :owner
     attr_accessor :mangled
     attr_accessor :instances
 
     def <<(instance)
       @instances ||= {}
-      if @mangled = @instances.size > 0
-        @instances.each_value {|instance| instance.mangled = @mangled}
+      unless mangled
+        if @mangled = @instances.size > 0
+          @instances.each_value {|instance| instance.mangled = @mangled}
+        end
       end
       instance.mangled = @mangled
       @instances[instance.params.map(&:type)] = instance
@@ -72,10 +75,16 @@ module SLang
     end
 
     def visit_call(node)
+      if node.obj
+        node.obj.accept self
+      end
+
       types = node.args.each {|arg| arg.accept self}.map(&:type)
 
-      unless untyped_fun = context.lookup_function(node.name)
-        raise "undefined function #{node.name}(#{types.join ', '})"
+      unless untyped_fun = context.lookup_function(node.obj, node.name)
+        error = "undefined function '#{node.name}'"
+        error << " for #{node.obj.type.name}" if node.obj
+        raise error
       end
 
       if node.args.length != untyped_fun.params.length
@@ -83,7 +92,9 @@ module SLang
       end
 
       if untyped_fun.is_a?(External) && types != untyped_fun.params.map(&:type)
-        raise "undefined function #{node.name}(#{types.join ', '})"
+        error = "undefined function '#{node.name}'"
+        error << " for #{node.obj.type.name}" if node.obj
+        raise error
       end
 
       typed_fun = untyped_fun[types]
@@ -101,9 +112,17 @@ module SLang
       end
 
       typed_fun ||= untyped_fun.clone
+      typed_fun.owner = node.obj.type if node.obj
       typed_fun.body.type = context.void
 
       context.new_scope(untyped_fun) do
+        if node.obj
+          self_var = Variable.new(:self)
+          self_var.type = node.obj.type
+          context.define_variable self_var
+          typed_fun.params.unshift self_var
+        end
+
         untyped_fun.params.each_with_index do |_, i|
           typed_fun.params[i].type = node.args[i].type
           context.define_variable typed_fun.params[i]
@@ -134,6 +153,11 @@ module SLang
 
     def visit_lambda(node)
       visit_function node
+    end
+
+    def visit_method(node)
+      context.add_function node
+      false
     end
 
     def visit_external(node)

@@ -26,9 +26,9 @@ module SLang
 			when :call
 				if exp[1].is_a? Array
 					func = parse_expression(exp[1])
-					return Expressions.new([func, Call.new(func.name, parse_vars(exp[2]))])
+					return Expressions.new([func, Call.new(func.name, parse_args(exp[3]), parse_obj(exp[2]))])
 				end
-				Call.new(exp[1], parse_vars(exp[2]))
+				Call.new(exp[1], parse_args(exp[3]), parse_obj(exp[2]))
 			when :if
 				If.new(parse_expression(exp[1]), parse_expression(exp[2]), parse_expression(exp[3]))
 			when :while
@@ -37,8 +37,12 @@ module SLang
 				Return.new(parse_args(exp[1..-1]))
 			when :external
 				External.new(exp[1], parse_params(exp[2]), exp[3])
+			when :class
+				class_def = ClassDef.new(exp[1], exp[2])
+				parse_methods(class_def, exp[3..-1])
+				class_def
 			else
-				Call.new exp[0], parse_args(exp[1..-1])
+				Call.new exp[0], parse_args(exp[2]), parse_obj(exp[1])
 			end
 		end
 
@@ -57,16 +61,32 @@ module SLang
 		end
 
 		def self.parse_args(args)
+			return [] if args.nil?
 			args.map do|arg|
-				case arg
-				when Array
-					parse_expression(arg)
-				when String
-					StringLiteral.new(arg)
-				when Fixnum
-					NumberLiteral.new(arg)
-				when Symbol
-					Argument.new(arg)
+				parse_obj arg
+			end
+		end
+
+		def self.parse_obj(obj)
+			case obj
+			when Array
+				parse_expression(obj)
+			when String
+				StringLiteral.new(obj)
+			when Fixnum
+				NumberLiteral.new(obj)
+			when Symbol
+				Argument.new(obj)
+			end
+		end
+
+		def self.parse_methods(target, exps)
+			exps.each do |exp|
+				case exp[0]
+				when :fun
+					target << Function.new(exp[1], parse_vars(exp[2]), parse_expression(exp[3]), exp[4], target)
+				when :external
+					target << External.new(exp[1], parse_vars(exp[2]), exp[3], target)
 				end
 			end
 		end

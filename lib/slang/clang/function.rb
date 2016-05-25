@@ -12,12 +12,15 @@ module SLang
       end
 
       def <<(fun)
-        @functions[fun.name] = fun if fun.instance_of? Function
-        @externals[fun.name] = fun if fun.is_a? External
+        if fun.is_a? External
+          externals[fun.name] = fun
+        else
+          functions[fun.name] = fun
+        end
       end
 
       def [](name)
-        @functions[name] || @externals[name]
+        functions[name] || externals[name]
       end
 
       def declear_functions

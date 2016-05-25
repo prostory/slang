@@ -1,12 +1,14 @@
 module SLang
   module CLang
     class BaseType
+      attr_reader :type
       attr_accessor :name
-      attr_accessor :type
+      attr_accessor :cfunc
 
-      def initialize(name, type)
+      def initialize(context, name, type)
         @name = name
         @type = type
+        @cfunc = CFunction.new(context)
       end
 
       def define
@@ -26,8 +28,8 @@ module SLang
     class CStruct < BaseType
       attr_accessor :members
 
-      def initialize(members, name)
-        @name = name
+      def initialize(context, members, name)
+        super context, name, nil
         @members = members
       end
 
@@ -65,15 +67,20 @@ module SLang
       end
 
       def define_types
-        types.each do |_, type|
-          stream << type.define.to_s
-          stream << "\n"
-        end
+        types.values.each { |type| stream << "#{type.define}\n" }
+      end
+
+      def declear_functions
+        types.values.each { |type| type.cfunc.declear_functions }
+      end
+
+      def define_functions
+        types.values.each { |type| type.cfunc.define_functions }
       end
 
       def base(ctype, name)
         @types[name] if @types.has_key? name
-        type = BaseType.new(name, ctype)
+        type = BaseType.new(context, name, ctype)
         @types[name] = type
         type
       end
@@ -81,7 +88,7 @@ module SLang
       def struct(members, name = nil)
         key = name.nil? ? members : name
         @types[key] if @types.has_key? key
-        type = CStruct.new(members, name)
+        type = CStruct.new(context, members, name)
         @types[key] = type
         type
       end
@@ -94,7 +101,7 @@ module SLang
         end
         key = name.nil? ? types : name
         @types[key] if @types.has_key? key
-        type = CUnion.new(types, name)
+        type = CUnion.new(context, types, name)
         @types[key] = type
         type
       end

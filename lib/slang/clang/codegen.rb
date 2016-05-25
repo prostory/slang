@@ -25,13 +25,24 @@ module SLang
 
   class Function
     def mangled_name
-      return name unless mangled
-      self.class.mangled_name(name, params.map(&:type))
+      self.class.mangled_name(owner, name) <<
+        self.class.mangled_params(params.map(&:type), mangled)
     end
 
-    def self.mangled_name(name, param_types)
-      mangled_params = param_types.map(&:name).join '_'
-      "#{name}" << (param_types.any? ? "$#{mangled_params}" : "" )
+    def self.mangled_name(owner, name)
+      if owner
+        "#{owner.name}$$#{name}"
+      else
+        "#{name}"
+      end
+    end
+
+    def self.mangled_params(param_types, mangled)
+      if param_types.any? && mangled
+        "$#{param_types.map(&:name).join '_'}"
+      else
+        ''
+      end
     end
   end
 
@@ -56,6 +67,10 @@ module SLang
         stream << '"'
       end
 
+      def visit_class_def(node)
+        false
+      end
+
       def visit_expressions(node)
         node.children.each do |exp|
           unless exp.is_a? Function
@@ -72,8 +87,11 @@ module SLang
         stream << node.target_fun.mangled_name.to_s
 
         stream << '('
+        if node.obj
+          node.obj.accept self
+        end
         node.args.each_with_index do |arg, i|
-          stream << ', ' if i > 0
+          stream << ', ' if i > 0 || node.obj
           arg.accept self
         end
         stream << ')'

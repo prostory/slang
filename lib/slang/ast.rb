@@ -274,6 +274,9 @@ module SLang
 		end
 	end
 
+	class Operator < External
+	end
+
 	class If < ASTNode
 		attr_accessor :cond
 		attr_accessor :then

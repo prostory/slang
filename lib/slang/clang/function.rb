@@ -24,7 +24,7 @@ module SLang
       end
 
       def declear_functions
-        externals.values.each { |fun| declear_function fun }
+        externals.values.each { |fun| declear_function fun unless fun.is_a? Operator}
         functions.values.each { |fun| declear_function fun unless fun.name == :main }
       end
 

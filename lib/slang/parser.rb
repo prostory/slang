@@ -41,6 +41,8 @@ module SLang
 				class_def = ClassDef.new(exp[1], exp[2])
 				parse_methods(class_def, exp[3..-1])
 				class_def
+			when :operator
+				Operator.new(exp[1], parse_params(exp[2]), exp[3])
 			else
 				Call.new exp[0], parse_args(exp[2]), parse_obj(exp[1])
 			end
@@ -86,7 +88,9 @@ module SLang
 				when :fun
 					target << Function.new(exp[1], parse_vars(exp[2]), parse_expression(exp[3]), exp[4], target)
 				when :external
-					target << External.new(exp[1], parse_vars(exp[2]), exp[3], target)
+					target << External.new(exp[1], parse_params(exp[2]), exp[3], target)
+				when :operator
+					target << Operator.new(exp[1], parse_params(exp[2]), exp[3], target)
 				end
 			end
 		end

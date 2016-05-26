@@ -5,14 +5,20 @@ end
 include SLang
 
 prog = [:do,
-        [:external, :puts, [:String], :Int],
-        [:class, :String, nil,
-         [:fun, :dump, [], [:puts, nil, [:self]]]
-        ],
-        [:dump, "Hello World"],
-        [:puts, nil, ["Hello World"]]
+        [:operator, :+, [:Integer, :Integer], :Integer],
+        [:operator, :-, [:Integer, :Integer], :Integer],
+        [:operator, :*, [:Integer, :Integer], :Integer],
+        [:operator, :/, [:Integer, :Integer], :Integer],
+        [:operator, :%, [:Integer, :Integer], :Integer],
+        [:class, :Integer, nil,
+         [:fun, :+, [:n], [:ret, [:+, nil, [:self, :n]]]],
+         [:fun, :-, [:n], [:ret, [:-, nil, [:self, :n]]]],
+         [:fun, :*, [:n], [:ret, [:*, nil, [:self, :n]]]],
+         [:fun, :/, [:n], [:ret, [:/, nil, [:self, :n]]]],
+         [:fun, :%, [:n], [:ret, [:%, nil, [:self, :n]]]],
+        ]
 ]
 
-main_prog = [:fun, :main, [], prog << [:ret, 0], :Int]
+main_prog = [:fun, :main, [], prog << [:ret, [:*, 1, [[:+, 2, [3]]]]], :Integer]
 
 puts CLang::Context.new.gen_code(Parser.parse(main_prog))

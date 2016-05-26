@@ -24,8 +24,17 @@ module SLang
   end
 
   class Function
+    def simple_name
+      return @simple_name if @simple_name
+      @simple_name = ''
+      name.to_s.each_char do |c|
+        @simple_name << CLang::Specific.convert(c)
+      end
+      @simple_name
+    end
+
     def mangled_name
-      self.class.mangled_name(owner, name) <<
+      self.class.mangled_name(owner, simple_name) <<
         self.class.mangled_params(params.map(&:type), mangled)
     end
 
@@ -43,6 +52,12 @@ module SLang
       else
         ''
       end
+    end
+  end
+
+  class External
+    def mangled_name
+      name
     end
   end
 
@@ -84,6 +99,20 @@ module SLang
       end
 
       def visit_call(node)
+        if node.target_fun.is_a? Operator
+          op = node.target_fun.mangled_name.to_s
+          stream << '('
+          if node.obj
+            node.obj.accept self
+          end
+          node.args.each_with_index do |arg, i|
+            stream << " #{op} " if i > 0 || node.obj
+            arg.accept self
+          end
+          stream << ')'
+          return false
+        end
+
         stream << node.target_fun.mangled_name.to_s
 
         stream << '('
@@ -119,6 +148,14 @@ module SLang
       end
 
       def visit_lambda(node)
+        false
+      end
+
+      def visit_external(node)
+        false
+      end
+
+      def visit_operator(node)
         false
       end
 

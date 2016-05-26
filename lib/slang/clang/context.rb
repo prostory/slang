@@ -13,7 +13,7 @@ module SLang
         @codegen = CodeGenVisitor.new(self)
 
         base_type(:void, :Void)
-        base_type(:int, :Int)
+        base_type(:int, :Integer)
         base_type('char *', :String)
       end
 
@@ -22,7 +22,7 @@ module SLang
       end
 
       def int
-        ctypes[:Int]
+        ctypes[:Integer]
       end
 
       def raw_string

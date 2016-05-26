@@ -120,13 +120,14 @@ module SLang
           self_var = Variable.new(:self)
           self_var.type = node.obj.type
           context.define_variable self_var
-          typed_fun.params.unshift self_var
         end
 
         untyped_fun.params.each_with_index do |_, i|
           typed_fun.params[i].type = node.args[i].type
           context.define_variable typed_fun.params[i]
         end
+
+        typed_fun.params.unshift self_var if self_var
 
         untyped_fun << typed_fun
         typed_fun.body.accept self
@@ -155,14 +156,13 @@ module SLang
       visit_function node
     end
 
-    def visit_method(node)
-      context.add_function node
-      false
-    end
-
     def visit_external(node)
       context.add_function node
       true
+    end
+
+    def visit_operator(node)
+      visit_external node
     end
 
     def end_visit_if(node)

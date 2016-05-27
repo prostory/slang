@@ -120,14 +120,12 @@ module SLang
 	end
 
 	class NumberLiteral < Literal
-		def initialize(value)
-			@value = value.to_i
-		end
+	end
+
+	class BoolLiteral < Literal
 	end
 
 	class StringLiteral < Literal
-		def initialize(value) @value = value.to_s
-		end
 	end
 
 	class ClassDef < ASTNode

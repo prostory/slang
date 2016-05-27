@@ -14,7 +14,9 @@ module SLang
 
         base_type(:void, :Void)
         base_type(:int, :Integer)
+        base_type(:double, :Float)
         base_type('char *', :String)
+        enum([:False, :True], :Bool)
       end
 
       def void
@@ -25,7 +27,15 @@ module SLang
         ctypes[:Integer]
       end
 
-      def raw_string
+      def float
+        ctypes[:Float]
+      end
+
+      def bool
+        ctypes[:Bool]
+      end
+
+      def string
         ctypes[:String]
       end
 
@@ -39,6 +49,10 @@ module SLang
 
       def union(members, name = nil)
         @ctype.union members, name
+      end
+
+      def enum(members, name = nil)
+        @ctype.enum members, name
       end
 
       def merge(t1, t2)
@@ -82,7 +96,7 @@ module SLang
 
       end
 
-      def lookup_function(obj, name)
+      def lookup_function(name, obj = nil)
         obj ? obj.type.cfunc[name] : @cfunc[name]
       end
 

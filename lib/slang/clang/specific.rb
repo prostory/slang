@@ -12,9 +12,15 @@ module SLang
       symbols[:*] = '__mul__'
       symbols[:/] = '__div__'
       symbols[:%] = '__mod__'
+      symbols[:>] = '__gt__'
+      symbols[:<] = '__lt__'
+      symbols[:>=] = '__ge__'
+      symbols[:<=] = '__le__'
+      symbols[:==] = '__eq__'
+      symbols[:!=] = '__ne__'
 
-      def self.convert(c)
-        symbols[c.to_sym] || c
+      def self.convert(s)
+        symbols[s.to_sym] || s
       end
     end
   end

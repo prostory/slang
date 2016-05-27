@@ -44,6 +44,7 @@ module SLang
       else
         node.type = node.last.type
       end
+
     end
 
     def end_visit_do(node)
@@ -51,12 +52,21 @@ module SLang
     end
 
     def visit_number_literal(node)
-      node.type = context.int
+      case node.value
+      when Fixnum
+        node.type = context.int
+      when Float
+        node.type = context.float
+      end
       false
     end
 
+    def visit_bool_literal(node)
+      node.type = context.bool
+    end
+
     def visit_string_literal(node)
-      node.type = context.raw_string
+      node.type = context.string
       false
     end
 
@@ -81,8 +91,10 @@ module SLang
 
       types = node.args.each {|arg| arg.accept self}.map(&:type)
 
-      unless untyped_fun = context.lookup_function(node.obj, node.name)
-        error = "undefined function '#{node.name}'"
+      types.unshift node.obj.type if node.obj
+
+      unless untyped_fun = context.lookup_function(node.name, node.obj)
+        error = "undefined function '#{node.name}' (#{types.join ', '})"
         error << " for #{node.obj.type.name}" if node.obj
         raise error
       end
@@ -91,15 +103,21 @@ module SLang
         raise "wrong number of arguments for '#{node.name}' (#{node.args.length} for #{untyped_fun.params.length})"
       end
 
-      if untyped_fun.is_a?(External) && types != untyped_fun.params.map(&:type)
-        error = "undefined function '#{node.name}'"
+      if untyped_fun.instance_of?(External) && types != untyped_fun.params.map(&:type)
+        error = "undefined function '#{node.name}' (#{types.join ', '})"
         error << " for #{node.obj.type.name}" if node.obj
         raise error
       end
 
       typed_fun = untyped_fun[types]
 
-      if untyped_fun.is_a?(External) && typed_fun == nil
+      if untyped_fun.is_a?(Operator) && typed_fun == nil
+        error = "undefined operator '#{node.name}' (#{types.join ', '})"
+        error << " for #{node.obj.type.name}" if node.obj
+        raise error
+      end
+
+      if untyped_fun.instance_of?(External) && typed_fun == nil
         typed_fun = untyped_fun.clone
         typed_fun.body.type = context.ctypes[typed_fun.return_type]
         untyped_fun << typed_fun
@@ -131,6 +149,7 @@ module SLang
 
         untyped_fun << typed_fun
         typed_fun.body.accept self
+
         unless typed_fun.return_type == :unknown
           typed_fun.body.type = context.ctypes[typed_fun.return_type]
         end
@@ -161,8 +180,15 @@ module SLang
       true
     end
 
-    def visit_operator(node)
-      visit_external node
+    def end_visit_operator(node)
+      node.body.type = context.ctypes[node.return_type]
+      op = context.lookup_function node.name
+      if op
+        op << node
+      else
+        context.add_function node
+        node << node.clone
+      end
     end
 
     def end_visit_if(node)
@@ -171,7 +197,6 @@ module SLang
       else
         node.type = node.then.type
       end
-      false
     end
 
     def end_visit_return(node)

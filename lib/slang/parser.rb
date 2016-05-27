@@ -75,8 +75,10 @@ module SLang
 				parse_expression(obj)
 			when String
 				StringLiteral.new(obj)
-			when Fixnum
+			when Fixnum, Float
 				NumberLiteral.new(obj)
+			when TrueClass, FalseClass
+				BoolLiteral.new(obj)
 			when Symbol
 				Argument.new(obj)
 			end

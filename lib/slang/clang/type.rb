@@ -52,6 +52,16 @@ module SLang
       end
     end
 
+    class CEnum < CStruct
+      def type
+        "enum { #{display_members} }"
+      end
+
+      def display_members
+        members.join ', '
+      end
+    end
+
     class CType
       attr_accessor :context
       attr_accessor :types
@@ -87,7 +97,7 @@ module SLang
 
       def struct(members, name = nil)
         key = name.nil? ? members : name
-        @types[key] if @types.has_key? key
+        return @types[key] if @types.has_key? key
         type = CStruct.new(context, members, name)
         @types[key] = type
         type
@@ -100,10 +110,18 @@ module SLang
           members.each_with_index { |mem, i| types["t#{i}"] = mem }
         end
         key = name.nil? ? types : name
-        @types[key] if @types.has_key? key
+        return @types[key] if @types.has_key? key
         type = CUnion.new(context, types, name)
         @types[key] = type
         type
+      end
+
+      def enum(members, name = nil)
+        key = name.nil? ? members : name
+        return @types[key] if @types.has_key? key
+        type = CEnum.new(context, members, name)
+        @types[key] = type
+        key
       end
 
       def merge(t1, t2)

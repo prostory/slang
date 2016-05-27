@@ -26,11 +26,7 @@ module SLang
   class Function
     def simple_name
       return @simple_name if @simple_name
-      @simple_name = ''
-      name.to_s.each_char do |c|
-        @simple_name << CLang::Specific.convert(c)
-      end
-      @simple_name
+      @simple_name = CLang::Specific.convert(name)
     end
 
     def mangled_name
@@ -76,6 +72,10 @@ module SLang
         stream << node.value.to_s
       end
 
+      def visit_bool_literal(node)
+        stream << context.bool.members[node.value ? 1 : 0].to_s
+      end
+
       def visit_string_literal(node)
         stream << '"'
         stream << node.value.to_s
@@ -88,7 +88,7 @@ module SLang
 
       def visit_expressions(node)
         node.children.each do |exp|
-          unless exp.is_a? Function
+          unless exp.is_a?(Function) || exp.is_a?(ClassDef)
             indent
             exp.accept self
             stream << exp.terminator

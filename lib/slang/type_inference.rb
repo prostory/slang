@@ -157,6 +157,15 @@ module SLang
         unless typed_fun.return_type == :unknown
           typed_fun.body.type = context.ctypes[typed_fun.return_type]
         end
+
+        unless typed_fun.body.type == context.void
+          unless typed_fun.body.last.is_a? Return
+            ret = Return.new([typed_fun.body.last])
+            ret.accept self
+            typed_fun.body.children.pop
+            typed_fun.body << ret
+          end
+        end
       end
 
       node.target_fun = typed_fun
@@ -204,7 +213,11 @@ module SLang
     end
 
     def end_visit_return(node)
-      node.type = node.values[0].type
+      if node.values.empty?
+        node.type = context.void
+      else
+        node.type = node.values[0].type
+      end
     end
 
     def visit_assign(node)
@@ -212,7 +225,6 @@ module SLang
       node.type = node.target.type = node.value.type
       node.target.defined = context.scope[node.target.name]
       context.define_variable node.target
-
       false
     end
   end

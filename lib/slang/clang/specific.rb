@@ -18,6 +18,8 @@ module SLang
       symbols[:<=] = '__le__'
       symbols[:==] = '__eq__'
       symbols[:!=] = '__ne__'
+      symbols[:<<] = '__lsh__'
+      symbols[:>>] = '__rsh__'
 
       def self.convert(s)
         symbols[s.to_sym] || s

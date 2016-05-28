@@ -20,6 +20,7 @@ module SLang
 
 	class ASTNode
 		attr_accessor :parent
+		attr_accessor :source_code
 
 		def self.inherited(klass)
 			name = klass.simple_name.underscore
@@ -202,7 +203,7 @@ module SLang
 		end
 
 		def clone
-			self.class.new name, args.map(&:clone)
+			self.class.new name, args.map(&:clone), obj
 		end
 	end
 
@@ -345,6 +346,31 @@ module SLang
 
 		def clone
 			self.class.new values.map(&:clone)
+		end
+	end
+
+	class Assign < ASTNode
+		attr_accessor :target
+		attr_accessor :value
+
+		def initialize(target, value)
+			@target = target
+			@target.parent = self
+			@value = value
+			@value.parent = self
+		end
+
+		def accept_children(visitor)
+			target.accept visitor
+			value.accept visitor
+		end
+
+		def ==(other)
+			other.class == self.class && other.target == target && other.value == value
+		end
+
+		def clone
+			self.class.new target.clone, value.clone
 		end
 	end
 end

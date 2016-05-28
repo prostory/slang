@@ -6,23 +6,23 @@ module SLang
 			Expressions.from parse_expression(exp)
 		end
 
-		def self.parse_expression(exp)
+		def self.parse_expression(exp, target = nil)
 			case exp[0]
 			when Array
-				parse_children(exp)
+				parse_children(exp, target)
 			when Symbol
-				parse_command(exp)
+				parse_command(exp, target)
 			end
 		end
 
-		def self.parse_command(exp)
-			case exp[0]
+		def self.parse_command(exp, target = nil)
+			obj = case exp[0]
 			when :do
 				Do.new parse_expression(exp[1..-1])
 			when :fun
-				Function.new exp[1], parse_vars(exp[2]), parse_expression(exp[3]), exp[4]
+				Function.new exp[1], parse_vars(exp[2]), parse_expression(exp[3]), exp[4], target
 			when :lambda
-				Lambda.new parse_vars(exp[1]), parse_expression(exp[2]), exp[4]
+				Lambda.new parse_vars(exp[1]), parse_expression(exp[2]), exp[4], target
 			when :call
 				if exp[1].is_a? Array
 					func = parse_expression(exp[1])
@@ -36,25 +36,37 @@ module SLang
 			when :ret
 				Return.new(parse_args(exp[1..-1]))
 			when :external
-				External.new(exp[1], parse_params(exp[2]), exp[3])
+				External.new(exp[1], parse_params(exp[2]), exp[3], target)
 			when :class
 				class_def = ClassDef.new(exp[1], exp[2])
 				parse_methods(class_def, exp[3..-1])
 				class_def
 			when :operator
-				Operator.new(exp[1], parse_params(exp[2]), exp[3])
+				Operator.new(exp[1], parse_params(exp[2]), exp[3], target)
+			when :set
+				Assign.new(parse_var(exp[1]), parse_obj(exp[2]))
 			else
 				Call.new exp[0], parse_args(exp[2]), parse_obj(exp[1])
 			end
+			obj.source_code = exp
+			obj
 		end
 
-		def self.parse_children(children)
-			children.map {|child| parse_expression(child)}
+		def self.parse_children(children, target = nil)
+			children.map {|child| parse_expression(child, target)}
 		end
 
 		def self.parse_vars(vars)
 			return vars.map {|var| Variable.new(var)} if vars.is_a? Array
 			return vars.map {|name, type| Variable.new(name, type)} if vars.is_a? Hash
+		end
+
+		def self.parse_var(exp)
+			return Variable.new(exp) if exp.is_a? Symbol
+			if exp.is_a? Hash
+				var = exp.to_a[0]
+				return Variable.new(var[0], var[1])
+			end
 		end
 
 		def self.parse_params(params)
@@ -86,14 +98,7 @@ module SLang
 
 		def self.parse_methods(target, exps)
 			exps.each do |exp|
-				case exp[0]
-				when :fun
-					target << Function.new(exp[1], parse_vars(exp[2]), parse_expression(exp[3]), exp[4], target)
-				when :external
-					target << External.new(exp[1], parse_params(exp[2]), exp[3], target)
-				when :operator
-					target << Operator.new(exp[1], parse_params(exp[2]), exp[3], target)
-				end
+				target << parse_expression(exp, target)
 			end
 		end
 	end

@@ -52,6 +52,13 @@ prog = [:do,
         [:operator, :'&&', [:Bool, :Bool], :Bool],
         [:operator, :'||', [:Bool, :Bool], :Bool],
         [:operator, :!, [:Bool, :Bool], :Bool],
+
+        [:external, :puts, [:String], :Integer],
+        [:external, :strlen, [:String], :Integer],
+        [:external, :realloc, [:String, :Integer], :String],
+        [:external, :strcat, [:String, :String], :String],
+        [:external, :strdup, [:String], :String],
+
         [:class, :Integer, nil,
          [:fun, :+, [:n], [:ret, [:+, nil, [:self, :n]]]],
          [:fun, :-, [:n], [:ret, [:-, nil, [:self, :n]]]],
@@ -82,7 +89,16 @@ prog = [:do,
          [:fun, :or, [:n], [:ret, [:'||', nil, [:self, :n]]]],
          [:fun, :and, [:n], [:ret, [:'&&', nil, [:self, :n]]]],
          [:fun, :not, [:n], [:ret, [:!, nil, [:self, :n]]]],
-        ]
+        ],
+        [:class, :String, nil,
+         [:fun, :echo, [], [:ret, [:puts, nil, [:self]]]],
+         [:fun, :len, [], [:ret, [:strlen, nil, [:self]]]],
+         [:fun, :<<, [:s], [[:set, :len, [:+, [:+, [:len, :self], [[:len, :s]]], [1]]],
+                            [:set, :self, [:realloc, nil, [:self, :len]]],
+                            [:ret, [:strcat, nil, [:self, :s]]]]],
+         [:fun, :dup, [], [:ret, [:strdup, nil, [:self]]]]
+        ],
+        [:echo, [:<<, [:dup, "Hello"], [" World"]]]
 ]
 
 main_prog = [:fun, :main, [], prog << [:ret, [:or, [:>, 1.5, [[:*, 1.2, [1.8]]]], [[:>, [:/, 5, [2.0]], [2]]]]], :Integer]

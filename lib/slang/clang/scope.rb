@@ -13,6 +13,10 @@ module SLang
         @vars[name] or raise "Bug: variable #{name} is not defined!"
       end
 
+      def [](name)
+        @vars[name]
+      end
+
       def <<(var)
         @vars[var.name] = var.type
       end

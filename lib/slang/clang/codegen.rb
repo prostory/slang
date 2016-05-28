@@ -23,6 +23,12 @@ module SLang
     end
   end
 
+  class Assign
+    def terminator
+      ";"
+    end
+  end
+
   class Function
     def simple_name
       return @simple_name if @simple_name
@@ -133,7 +139,8 @@ module SLang
       end
 
       def visit_variable(node)
-        stream << "#{node.type} #{node.name}"
+        stream << "#{node.type} " if !node.defined
+        stream << "#{node.name}"
         false
       end
 
@@ -196,6 +203,12 @@ module SLang
         stream << 'return '
         node.values[0].accept self
         false
+      end
+
+      def visit_assign(node)
+        node.target.accept self
+        stream << ' = '
+        node.value.accept self
       end
 
       def with_indent

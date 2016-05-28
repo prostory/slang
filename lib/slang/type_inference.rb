@@ -10,6 +10,10 @@ module SLang
     attr_accessor :target_fun
   end
 
+  class Variable
+    attr_accessor :defined
+  end
+
   class Function
     attr_accessor :owner
     attr_accessor :mangled
@@ -201,6 +205,15 @@ module SLang
 
     def end_visit_return(node)
       node.type = node.values[0].type
+    end
+
+    def visit_assign(node)
+      node.value.accept self
+      node.type = node.target.type = node.value.type
+      node.target.defined = context.scope[node.target.name]
+      context.define_variable node.target
+
+      false
     end
   end
 end

@@ -45,6 +45,8 @@ module SLang
 				Operator.new(exp[1], parse_params(exp[2]), exp[3], target)
 			when :set
 				Assign.new(parse_var(exp[1]), parse_obj(exp[2]))
+			when :list
+				ArrayLiteral.new(parse_args(exp[1..-1]))
 			else
 				Call.new exp[0], parse_args(exp[2]), parse_obj(exp[1])
 			end
@@ -62,10 +64,13 @@ module SLang
 		end
 
 		def self.parse_var(exp)
-			return Variable.new(exp) if exp.is_a? Symbol
-			if exp.is_a? Hash
-				var = exp.to_a[0]
-				return Variable.new(var[0], var[1])
+			case exp
+			when Symbol
+				if var = exp.to_s.match(/^@([^@]+)/)
+					InstanceVar.new(var[1].to_sym)
+				else
+					Variable.new(exp)
+				end
 			end
 		end
 
@@ -92,14 +97,18 @@ module SLang
 			when TrueClass, FalseClass
 				BoolLiteral.new(obj)
 			when Symbol
-				Argument.new(obj)
+				if obj.to_s.match /^[A-Z]/
+					Const.new(obj)
+				elsif var = obj.to_s.match(/^@([^@]+)/)
+					InstanceVar.new(var[1].to_sym)
+				else
+					Argument.new(obj)
+				end
 			end
 		end
 
 		def self.parse_methods(target, exps)
-			exps.each do |exp|
-				target << parse_expression(exp, target)
-			end
+			exps.each { |exp| target << parse_expression(exp, target) } if exps
 		end
 	end
 end

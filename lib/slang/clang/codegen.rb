@@ -150,6 +150,11 @@ module SLang
         false
       end
 
+      def visit_const(node)
+        stream << node.name.to_s
+        false
+      end
+
       def visit_function(node)
         false
       end

@@ -129,6 +129,9 @@ module SLang
 	class StringLiteral < Literal
 	end
 
+	class ArrayLiteral < Expressions
+	end
+
 	class ClassDef < ASTNode
 		attr_accessor :name
 		attr_accessor :body
@@ -179,7 +182,52 @@ module SLang
 	class Paramter < Variable
 	end
 
-	class Argument < Variable
+	class Argument < ASTNode
+		attr_accessor :name
+
+		def initialize(name)
+			@name = name
+		end
+
+		def ==(other)
+			other.class == self.class && other.name == name
+		end
+
+		def clone
+			self.class.new name
+		end
+	end
+
+	class Const < ASTNode
+		attr_accessor :name
+
+		def initialize(name)
+			@name = name
+		end
+
+		def ==(other)
+			other.class == self.class && other.name == name
+		end
+
+		def clone
+			self.class.new name
+		end
+	end
+
+	class InstanceVar < ASTNode
+		attr_accessor :name
+
+		def initialize(name)
+			@name = name
+		end
+
+		def ==(other)
+			other.class == self.class && other.name == name
+		end
+
+		def clone
+			self.class.new name
+		end
 	end
 
 	class Call < ASTNode

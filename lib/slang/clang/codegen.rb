@@ -133,11 +133,6 @@ module SLang
         false
       end
 
-      def visit_argument(node)
-        stream << "#{node.name}"
-        false
-      end
-
       def visit_variable(node)
         stream << "#{node.type} " if !node.defined
         stream << "#{node.name}"

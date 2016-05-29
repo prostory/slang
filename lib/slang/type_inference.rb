@@ -84,10 +84,6 @@ module SLang
       false
     end
 
-    def visit_argument(node)
-      visit_variable node
-    end
-
     def visit_call(node)
       if node.obj
         node.obj.accept self

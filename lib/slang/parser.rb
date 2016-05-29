@@ -66,7 +66,9 @@ module SLang
 		def self.parse_var(exp)
 			case exp
 			when Symbol
-				if var = exp.to_s.match(/^@([^@]+)/)
+				if exp.to_s.match /^[A-Z]/
+						 Const.new(exp)
+				elsif var = exp.to_s.match(/^@([^@]+)/)
 					InstanceVar.new(var[1].to_sym)
 				else
 					Variable.new(exp)
@@ -97,13 +99,7 @@ module SLang
 			when TrueClass, FalseClass
 				BoolLiteral.new(obj)
 			when Symbol
-				if obj.to_s.match /^[A-Z]/
-					Const.new(obj)
-				elsif var = obj.to_s.match(/^@([^@]+)/)
-					InstanceVar.new(var[1].to_sym)
-				else
-					Argument.new(obj)
-				end
+				parse_var(obj)
 			end
 		end
 

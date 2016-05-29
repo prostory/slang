@@ -76,10 +76,11 @@ module SLang
 
     def visit_variable(node)
       node.type = context.lookup_variable node.name
+      node.defined = true
       false
     end
 
-    def visit_paramter(node)
+    def visit_parameter(node)
       node.type = context.ctypes[node.type]
       false
     end
@@ -219,7 +220,6 @@ module SLang
     def visit_assign(node)
       node.value.accept self
       node.type = node.target.type = node.value.type
-      node.target.defined = context.scope[node.target.name]
       context.define_variable node.target
       false
     end

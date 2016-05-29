@@ -179,7 +179,14 @@ module SLang
 		end
 	end
 
-	class Paramter < Variable
+	class Parameter < Variable
+    def initialize(type, name = nil)
+      super name, type
+    end
+
+    def clone
+      self.class.new type, name
+    end
 	end
 
 	class Const < ASTNode

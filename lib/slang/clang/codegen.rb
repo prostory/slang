@@ -139,7 +139,7 @@ module SLang
         false
       end
 
-      def visit_paramter(node)
+      def visit_parameter(node)
         stream << "#{node.type}"
         stream << " #{node.name}" if node.name
         false

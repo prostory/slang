@@ -77,8 +77,8 @@ module SLang
 		end
 
 		def self.parse_params(params)
-			return params.map {|type| Paramter.new(nil, type)} if params.is_a? Array
-			return params.map {|name, type| Paramter.new(name, type)} if params.is_a? Hash
+			return params.map {|type| Parameter.new(type)} if params.is_a? Array
+			return params.map {|name, type| Parameter.new(type, name)} if params.is_a? Hash
 		end
 
 		def self.parse_args(args)

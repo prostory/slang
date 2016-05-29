@@ -205,7 +205,7 @@ module SLang
 		end
 	end
 
-	class InstanceVar < ASTNode
+	class Member < ASTNode
 		attr_accessor :name
 
 		def initialize(name)
@@ -242,7 +242,9 @@ module SLang
 		end
 
 		def clone
-			self.class.new name, args.map(&:clone), obj
+			call = self.class.new name, args.map(&:clone), obj
+			call.source_code = source_code
+			call
 		end
 	end
 

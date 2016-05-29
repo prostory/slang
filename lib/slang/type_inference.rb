@@ -81,11 +81,27 @@ module SLang
     end
 
     def visit_parameter(node)
-      node.type = context.ctypes[node.type]
+      node.type = context.types[node.type]
       false
     end
 
+    def visit_member(node)
+      node.type = context.scope.type.members[node.name]
+      false
+    end
+
+    def visit_class_def(node)
+      context.object_type node.name
+      true
+    end
+
     def visit_call(node)
+      if node.obj.is_a?(Const) && node.name == :new
+        type = context.types[node.obj.name] or raise "uninitialized constant #{node.obj.name}"
+        node.type = type
+        return false
+      end
+
       if node.obj
         node.obj.accept self
       end
@@ -120,7 +136,7 @@ module SLang
 
       if untyped_fun.instance_of?(External) && typed_fun == nil
         typed_fun = untyped_fun.clone
-        typed_fun.body.type = context.ctypes[typed_fun.return_type]
+        typed_fun.body.type = context.types[typed_fun.return_type]
         untyped_fun << typed_fun
       end
 
@@ -134,7 +150,7 @@ module SLang
       typed_fun.owner = node.obj.type if node.obj
       typed_fun.body.type = context.void
 
-      context.new_scope(untyped_fun) do
+      context.new_scope(untyped_fun, node.obj.type) do
         if node.obj
           self_var = Variable.new(:self)
           self_var.type = node.obj.type
@@ -152,7 +168,7 @@ module SLang
         typed_fun.body.accept self
 
         unless typed_fun.return_type == :unknown
-          typed_fun.body.type = context.ctypes[typed_fun.return_type]
+          typed_fun.body.type = context.types[typed_fun.return_type]
         end
 
         unless typed_fun.body.type == context.void
@@ -175,7 +191,7 @@ module SLang
       context.add_function node
       if node.name == :main
         node.body.accept self
-        node.body.type = context.ctypes[node.return_type]
+        node.body.type = context.types[node.return_type]
         node << node
       end
       false
@@ -191,7 +207,7 @@ module SLang
     end
 
     def end_visit_operator(node)
-      node.body.type = context.ctypes[node.return_type]
+      node.body.type = context.types[node.return_type]
       op = context.lookup_function node.name
       if op
         op << node
@@ -220,7 +236,14 @@ module SLang
     def visit_assign(node)
       node.value.accept self
       node.type = node.target.type = node.value.type
-      context.define_variable node.target
+
+      if node.target.is_a?(Member)
+        context.scope.type.members[node.target.name] = node.type
+      else
+        node.target.defined = context.scope[node.target.name]
+        context.define_variable node.target
+      end
+
       false
     end
   end

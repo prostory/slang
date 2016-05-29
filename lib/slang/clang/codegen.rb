@@ -119,6 +119,11 @@ module SLang
           return false
         end
 
+        if node.obj.is_a?(Const) && node.name == :new
+          stream << "calloc(sizeof(#{node.obj.name}), 1)"
+          return false
+        end
+
         stream << node.target_fun.mangled_name.to_s
 
         stream << '('
@@ -134,7 +139,7 @@ module SLang
       end
 
       def visit_variable(node)
-        stream << "#{node.type} " if !node.defined
+        stream << "#{node.type.ref} " if !node.defined
         stream << "#{node.name}"
         false
       end
@@ -147,6 +152,11 @@ module SLang
 
       def visit_const(node)
         stream << node.name.to_s
+        false
+      end
+
+      def visit_member(node)
+        stream << "self->#{node.name}"
         false
       end
 

@@ -8,7 +8,7 @@ module SLang
       def initialize
         @ctype = CType.new(self)
         @cfunc = CFunction.new(self)
-        @scopes = [Scope.new(main)]
+        @scopes = [Scope.new(main, nil)]
         @type = TypeVisitor.new(self)
         @codegen = CodeGenVisitor.new(self)
 
@@ -20,23 +20,23 @@ module SLang
       end
 
       def void
-        ctypes[:Void]
+        types[:Void]
       end
 
       def int
-        ctypes[:Integer]
+        types[:Integer]
       end
 
       def float
-        ctypes[:Float]
+        types[:Float]
       end
 
       def bool
-        ctypes[:Bool]
+        types[:Bool]
       end
 
       def string
-        ctypes[:String]
+        types[:String]
       end
 
       def base_type(type, name)
@@ -55,12 +55,16 @@ module SLang
         @ctype.enum members, name
       end
 
+      def object_type(name)
+        types[name] ||= ObjectType.new(self, name)
+      end
+
       def merge(t1, t2)
         @ctype.merge t1, t2
       end
 
-      def ctypes
-        @ctype
+      def types
+        @ctype.types
       end
 
       def main
@@ -108,8 +112,8 @@ module SLang
         scope.lookup name
       end
 
-      def new_scope(obj)
-        @scopes.push(Scope.new obj)
+      def new_scope(obj, type)
+        @scopes.push(Scope.new obj, type)
         yield
         @scopes.pop
       end

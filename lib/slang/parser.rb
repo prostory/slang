@@ -67,9 +67,9 @@ module SLang
 			case exp
 			when Symbol
 				if exp.to_s.match /^[A-Z]/
-						 Const.new(exp)
+          Const.new(exp)
 				elsif var = exp.to_s.match(/^@([^@]+)/)
-					InstanceVar.new(var[1].to_sym)
+          Member.new(var[1].to_sym)
 				else
 					Variable.new(exp)
 				end

@@ -4,11 +4,13 @@ module SLang
       attr_reader :type
       attr_accessor :name
       attr_accessor :cfunc
+      attr_accessor :ref
 
       def initialize(context, name, type)
         @name = name
         @type = type
         @cfunc = CFunction.new(context)
+        @ref = name
       end
 
       def define
@@ -31,6 +33,7 @@ module SLang
       def initialize(context, members, name)
         super context, name, nil
         @members = members
+        @ref = "#{name} *"
       end
 
       def type
@@ -44,17 +47,39 @@ module SLang
       def display_members
         members.map {|n, t| "#{t} #{n};"}.join ' '
       end
+
+      def ==(other)
+        other.class == self.class && name == other.name &&
+            members == other.members
+      end
+    end
+
+    class ObjectType < CStruct
+      attr_accessor :methods
+
+      def initialize(context, name)
+        super context, {}, name
+        @methods = {}
+      end
     end
 
     class CUnion < CStruct
       def type
         "union { #{display_members} }"
       end
+
+      def ref
+        name
+      end
     end
 
     class CEnum < CStruct
       def type
         "enum { #{display_members} }"
+      end
+
+      def ref
+        name
       end
 
       def display_members
@@ -74,6 +99,10 @@ module SLang
       def [](name)
         return context.void if name == :unknown
         types[name]
+      end
+
+      def []=(name, type)
+        types[name] = type
       end
 
       def define_types

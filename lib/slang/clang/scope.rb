@@ -3,10 +3,12 @@ module SLang
     class Scope
       attr_accessor :vars
       attr_accessor :func
+      attr_accessor :type
 
-      def initialize(func)
+      def initialize(func, type)
         @vars = {}
         @func = func
+        @type = type
       end
 
       def lookup(name)

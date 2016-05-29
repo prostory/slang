@@ -98,7 +98,14 @@ prog = [:do,
                             [:strcat, nil, [:self, :s]]]],
          [:fun, :dup, [], [:strdup, nil, [:self]]]
         ],
-        [:echo, [:<<, [:dup, "Hello"], [" World"]]]
+        [:class, :Greeter, nil,
+            [:fun, :set_name, [:name], [:set, :@name, :name]],
+            [:fun, :say_hello, [], [:echo, [:<<, [:dup, "hello, "], [:@name]]]]
+        ],
+        [:echo, [:<<, [:dup, "Hello"], [" World"]]],
+        [:set, :g, [:new, :Greeter]],
+        [:set_name, :g, ["Prostory"]],
+        [:say_hello, :g]
 ]
 
 main_prog = [:fun, :main, [], prog << [:ret, [:or, [:>, 1.5, [[:*, 1.2, [1.8]]]], [[:>, [:/, 5, [2.0]], [2]]]]], :Integer]

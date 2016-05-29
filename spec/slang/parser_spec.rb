@@ -22,6 +22,6 @@ describe Parser do
 	it_parse [:operator, :+, [:Integer, :Integer], :Integer], Operator.new(:+, [Parameter.new(:Integer), Parameter.new(:Integer)], :Integer)
 	it_parse [:set, :i, 0], Assign.new(Variable.new(:i), 0.int)
 	it_parse [:list, 1, 2, 3, 4], ArrayLiteral.new([1.int, 2.int, 3.int, 4.int])
-	it_parse [:set, :@i, 0], Assign.new(InstanceVar.new(:i), 0.int)
+	it_parse [:set, :@i, 0], Assign.new(Member.new(:i), 0.int)
 	it_parse [:new, :Integer, [1]], Call.new(:new, [1.int], Const.new(:Integer))
 end

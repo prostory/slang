@@ -71,6 +71,7 @@ prog = [:do,
          [:fun, :<=, [:n], [:<=, nil, [:self, :n]]],
          [:fun, :==, [:n], [:==, nil, [:self, :n]]],
          [:fun, :!=, [:n], [:!=, nil, [:self, :n]]],
+         [:fun, :to_f, [], [:cast, :Float, :self]]
         ],
         [:class, :Float, nil,
          [:fun, :+, [:n], [:+, nil, [:self, :n]]],
@@ -84,6 +85,7 @@ prog = [:do,
          [:fun, :<=, [:n], [:<=, nil, [:self, :n]]],
          [:fun, :==, [:n], [:==, nil, [:self, :n]]],
          [:fun, :!=, [:n], [:!=, nil, [:self, :n]]],
+         [:fun, :to_i, [], [:cast, :Integer, :self]]
         ],
         [:class, :Bool, nil,
          [:fun, :or, [:n], [:'||', nil, [:self, :n]]],
@@ -116,7 +118,10 @@ prog = [:do,
         [:set_id, :g, [1]],
         [:set_id, :h, [2]],
         [:set_id, :i, [3]],
-        [:get_id, :i]
+        [:get_id, :i],
+        [:set, :a, 5],
+        [:set, :b, [:to_f, :a]],
+        [:set, :c, [:to_i, :b]]
 ]
 
 main_prog = [:fun, :main, [], prog << [:ret, [:or, [:>, 1.5, [[:*, 1.2, [1.8]]]], [[:>, [:/, 5, [2.0]], [2]]]]], :Integer]

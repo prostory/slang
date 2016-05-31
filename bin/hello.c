@@ -8,9 +8,11 @@ typedef struct { String name; Integer id; } Greeter2;
 typedef struct { Integer id; } Greeter3;
 extern Integer Integer$$__add__(Integer self, Integer n);
 extern Float Integer$$__div__(Integer self, Float n);
+extern Float Integer$$to_f(Integer self);
 extern Float Float$$__mul__(Float self, Float n);
 extern Bool Float$$__gt__$Float(Float self, Float n);
 extern Bool Float$$__gt__$Integer(Float self, Integer n);
+extern Integer Float$$to_i(Float self);
 extern Integer String$$echo(String self);
 extern Integer String$$len(String self);
 extern String String$$__lsh__(String self, String s);
@@ -36,6 +38,10 @@ Float Integer$$__div__(Integer self, Float n)
 {
     return (self / n);
 }
+Float Integer$$to_f(Integer self)
+{
+    return (Float)self;
+}
 Float Float$$__mul__(Float self, Float n)
 {
     return (self * n);
@@ -47,6 +53,10 @@ Bool Float$$__gt__$Float(Float self, Float n)
 Bool Float$$__gt__$Integer(Float self, Integer n)
 {
     return (self > n);
+}
+Integer Float$$to_i(Float self)
+{
+    return (Integer)self;
 }
 Integer String$$echo(String self)
 {
@@ -113,5 +123,8 @@ Integer main(Void)
     Greeter3$$set_id$Integer(h, 2);
     Greeter3$$set_id$Integer(i, 3);
     Greeter3$$get_id(i);
+    Integer a = 5;
+    Float b = Integer$$to_f(a);
+    Integer c = Float$$to_i(b);
     return Bool$$or(Float$$__gt__$Float(1.5, Float$$__mul__(1.2, 1.8)), Float$$__gt__$Integer(Integer$$__div__(5, 2.0), 2));
 }

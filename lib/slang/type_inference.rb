@@ -247,5 +247,11 @@ module SLang
 
       false
     end
+
+    def visit_cast(node)
+      node.value.accept self
+      node.type = node.value.type = context.types[node.cast_type]
+      false
+    end
   end
 end

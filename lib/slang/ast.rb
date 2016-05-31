@@ -414,4 +414,27 @@ module SLang
 			self.class.new target.clone, value.clone
 		end
 	end
+
+	class Cast < ASTNode
+		attr_accessor :cast_type
+		attr_accessor :value
+
+		def initialize(type, value)
+			@cast_type = type
+			@value = value
+			@value.parent = self
+		end
+
+		def accept_children(visitor)
+			value.accept visitor
+		end
+
+		def ==(other)
+			other.class == self.class && other.cast_type == cast_type && other.value == value
+		end
+
+		def clone
+			self.class.new cast_type, value.clone
+		end
+	end
 end

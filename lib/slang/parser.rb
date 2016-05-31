@@ -47,6 +47,8 @@ module SLang
 				Assign.new(parse_var(exp[1]), parse_obj(exp[2]))
 			when :list
 				ArrayLiteral.new(parse_args(exp[1..-1]))
+			when :cast
+				Cast.new(exp[1], parse_obj(exp[2]))
 			else
 				Call.new exp[0], parse_args(exp[2]), parse_obj(exp[1])
 			end

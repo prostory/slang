@@ -91,8 +91,7 @@ module SLang
       end
 
       def add_function(fun)
-        class_def = fun.parent.parent
-        if class_def.is_a? ClassDef
+        if class_def = fun.receiver
           @ctype.types[class_def.name].cfunc << fun
         else
           @cfunc << fun
@@ -101,7 +100,7 @@ module SLang
       end
 
       def lookup_function(name, obj = nil)
-        obj ? obj.type.cfunc[name] : @cfunc[name]
+        obj ? obj.type.template.cfunc[name] : @cfunc[name]
       end
 
       def define_variable(var)

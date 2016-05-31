@@ -28,6 +28,7 @@ module SLang
       end
       instance.mangled = @mangled
       @instances[instance.params.map(&:type)] = instance
+      instance.owner.methods << instance if instance.owner
     end
 
     def [](arg_types)
@@ -98,7 +99,7 @@ module SLang
     def visit_call(node)
       if node.obj.is_a?(Const) && node.name == :new
         type = context.types[node.obj.name] or raise "uninitialized constant #{node.obj.name}"
-        node.type = type
+        node.type = type.clone
         return false
       end
 

@@ -1,4 +1,8 @@
 module SLang
+  class Function
+    attr_accessor :redefined
+  end
+
   module CLang
     class CFunction
       attr_accessor :context
@@ -33,7 +37,7 @@ module SLang
       end
 
       def declear_function(node)
-        node.instances.each {|_, fun| declear_function_instance fun} if node.instances
+        node.instances.each {|_, fun| declear_function_instance fun if !fun.redefined} if node.instances
       end
 
       def declear_function_instance(node)
@@ -43,7 +47,7 @@ module SLang
       end
 
       def define_function(node)
-        node.instances.each {|_, fun| define_function_instance fun} if node.instances
+        node.instances.each {|_, fun| define_function_instance fun if !fun.redefined} if node.instances
       end
 
       def define_function_instance(node)

@@ -36,13 +36,18 @@ module SLang
     end
 
     def mangled_name
+      if owner && params.first.type == owner
+        param_types = params[1..-1].map(&:type)
+      else
+        param_types = params.map(&:type)
+      end
       self.class.mangled_name(owner, simple_name) <<
-        self.class.mangled_params(params.map(&:type), mangled)
+        self.class.mangled_params(param_types, mangled)
     end
 
     def self.mangled_name(owner, name)
       if owner
-        "#{owner.name}$$#{name}"
+        "#{owner}$$#{name}"
       else
         "#{name}"
       end
@@ -50,7 +55,7 @@ module SLang
 
     def self.mangled_params(param_types, mangled)
       if param_types.any? && mangled
-        "$#{param_types.map(&:name).join '_'}"
+        "$#{param_types.join '_'}"
       else
         ''
       end
@@ -120,7 +125,7 @@ module SLang
         end
 
         if node.obj.is_a?(Const) && node.name == :new
-          stream << "calloc(sizeof(#{node.obj.name}), 1)"
+          stream << "calloc(sizeof(#{node.type.name}), 1)"
           return false
         end
 

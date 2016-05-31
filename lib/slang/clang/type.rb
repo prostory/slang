@@ -4,17 +4,25 @@ module SLang
       attr_reader :type
       attr_accessor :name
       attr_accessor :cfunc
-      attr_accessor :ref
+      attr_accessor :context
+      attr_accessor :template
+      attr_accessor :methods
 
       def initialize(context, name, type)
         @name = name
         @type = type
         @cfunc = CFunction.new(context)
-        @ref = name
+        @context = context
+        @template = self
+        @methods = []
       end
 
       def define
         "typedef #{type} #{name};"
+      end
+
+      def ref
+        name
       end
 
       def to_s
@@ -33,7 +41,10 @@ module SLang
       def initialize(context, members, name)
         super context, name, nil
         @members = members
-        @ref = "#{name} *"
+      end
+
+      def ref
+        "#{name} *"
       end
 
       def type
@@ -55,11 +66,47 @@ module SLang
     end
 
     class ObjectType < CStruct
-      attr_accessor :methods
+      attr_accessor :instances
 
       def initialize(context, name)
         super context, {}, name
-        @methods = {}
+      end
+
+      def define
+        if instances && instances.size > 1
+          list = {}
+          instances.map do |obj|
+            unless list[obj.members]
+              list[obj.members] = obj
+            else
+              list[obj.members].methods.each do |f1|
+                obj.methods.each do |f2|
+                  f2.params.first.type = f1.params.first.type
+                  f2.owner = f1.owner
+                  if f2.name == f1.name && f2.params.map(&:type) == f1.params.map(&:type)
+                    f2.redefined = true
+                  end
+                end
+              end
+            end
+            obj.name = "#{name}#{list.length}"
+            obj
+          end
+          @instances = list.values
+          return instances.map do |obj|
+            "typedef #{obj.type} #{obj.name};"
+          end.join "\n"
+        end
+
+        return super
+      end
+
+      def clone
+        obj = ObjectType.new context, name
+        obj.template = self
+        @instances ||= []
+        @instances << obj
+        obj
       end
     end
 

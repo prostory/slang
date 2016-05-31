@@ -96,7 +96,6 @@ module SLang
         else
           @cfunc << fun
         end
-
       end
 
       def lookup_function(name, obj = nil)

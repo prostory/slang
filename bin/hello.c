@@ -6,6 +6,8 @@ typedef enum { False, True } Bool;
 typedef struct { String id; } Greeter1;
 typedef struct { String name; Integer id; } Greeter2;
 typedef struct { Integer id; } Greeter3;
+typedef struct {  } A;
+typedef struct {  } B;
 extern Integer Integer$$__add__(Integer self, Integer n);
 extern Float Integer$$__div__(Integer self, Float n);
 extern Float Integer$$to_f(Integer self);
@@ -25,6 +27,10 @@ extern Integer Greeter2$$set_id$Integer(Greeter2 * self, Integer id);
 extern Integer Greeter3$$set_id$Integer(Greeter3 * self, Integer id);
 extern String Greeter1$$get_id(Greeter1 * self);
 extern Integer Greeter3$$get_id(Greeter3 * self);
+extern Integer A$$foo(A * self);
+extern Integer A$$bar(A * self);
+extern Integer B$$foo(B * self);
+extern Integer B$$bar(B * self);
 extern Integer puts(String);
 extern Integer strlen(String);
 extern String realloc(String, Integer);
@@ -108,6 +114,22 @@ Integer Greeter3$$get_id(Greeter3 * self)
 {
     return self->id;
 }
+Integer A$$foo(A * self)
+{
+    return String$$echo("A:foo");
+}
+Integer A$$bar(A * self)
+{
+    return String$$echo("A:bar");
+}
+Integer B$$foo(B * self)
+{
+    return String$$echo("A:foo");
+}
+Integer B$$bar(B * self)
+{
+    return String$$echo("B:bar");
+}
 Integer main(Void)
 {
     String$$echo(String$$__lsh__(String$$dup("Hello"), " World"));
@@ -126,5 +148,11 @@ Integer main(Void)
     Integer a = 5;
     Float b = Integer$$to_f(a);
     Integer c = Float$$to_i(b);
+    A * d = calloc(sizeof(A), 1);
+    B * e = calloc(sizeof(B), 1);
+    A$$foo(d);
+    B$$foo(e);
+    A$$bar(d);
+    B$$bar(e);
     return Bool$$or(Float$$__gt__$Float(1.5, Float$$__mul__(1.2, 1.8)), Float$$__gt__$Integer(Integer$$__div__(5, 2.0), 2));
 }

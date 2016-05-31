@@ -92,7 +92,17 @@ module SLang
     end
 
     def visit_class_def(node)
-      context.object_type node.name
+      superclass = context.types[node.superclass] or raise "uninitialized constant #{node.superclass}" if node.superclass
+      node.superclass = superclass
+      type = context.object_type node.name
+      if superclass
+        superclass.cfunc.functions.each do |name, fun|
+          type.cfunc.functions[name] = fun.clone
+        end
+        superclass.cfunc.externals.each do |name, fun|
+          type.cfunc.externals[name] = fun.clone
+        end
+      end
       true
     end
 

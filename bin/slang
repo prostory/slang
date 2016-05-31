@@ -107,12 +107,14 @@ prog = [:do,
             [:fun, :get_id, [], [:ret, :@id]]
         ],
         [:class, :A, nil,
-          [:fun, :foo, [], [:echo, "A:foo"]],
+          [:fun, :foo, [], [[:echo, "A:foo"], [:set, :@a, 1]]],
           [:fun, :bar, [], [:echo, "A:bar"]]
         ],
         [:class, :B, :A,
-          [:fun, :bar, [], [:echo, "B:bar"]]
+          [:fun, :foo, [], [:set, :@a, 2.3]],
+          [:fun, :bar, [], [[:echo, "B:bar"], [:ret, :@a]]]
         ],
+        [:class, :C, nil],
         [:echo, [:<<, [:dup, "Hello"], [" World"]]],
         [:set, :f, [:new, :Greeter]],
         [:set, :g, [:new, :Greeter]],
@@ -134,7 +136,8 @@ prog = [:do,
         [:foo, :d],
         [:foo, :e],
         [:bar, :d],
-        [:bar, :e]
+        [:bar, :e],
+        [:set, :f, [:new, :C]]
 ]
 
 main_prog = [:fun, :main, [], prog << [:ret, [:or, [:>, 1.5, [[:*, 1.2, [1.8]]]], [[:>, [:/, 5, [2.0]], [2]]]]], :Integer]

@@ -56,6 +56,7 @@ module SLang
       end
 
       def display_members
+        members[:unuse] = context.int if members.empty?
         members.map {|n, t| "#{t} #{n};"}.join ' '
       end
 
@@ -73,32 +74,36 @@ module SLang
       end
 
       def define
-        if instances && instances.size > 1
-          list = {}
-          instances.map do |obj|
-            unless list[obj.members]
-              list[obj.members] = obj
-            else
-              list[obj.members].methods.each do |f1|
-                obj.methods.each do |f2|
-                  f2.params.first.type = f1.params.first.type
-                  f2.owner = f1.owner
-                  if f2.name == f1.name && f2.params.map(&:type) == f1.params.map(&:type)
-                    f2.redefined = true
-                  end
+        unless instances
+          return super
+        end
+
+        unless instances.size > 1
+          return instances.map {|obj| obj.define}.join "\n"
+        end
+
+        list = {}
+        instances.map do |obj|
+          unless list[obj.members]
+            list[obj.members] = obj
+          else
+            list[obj.members].methods.each do |f1|
+              obj.methods.each do |f2|
+                f2.params.first.type = f1.params.first.type
+                f2.owner = f1.owner
+                if f2.name == f1.name && f2.params.map(&:type) == f1.params.map(&:type)
+                  f2.redefined = true
                 end
               end
             end
-            obj.name = "#{name}#{list.length}"
-            obj
           end
-          @instances = list.values
-          return instances.map do |obj|
-            "typedef #{obj.type} #{obj.name};"
-          end.join "\n"
+          obj.name = "#{name}#{list.length}"
+          obj
         end
-
-        return super
+        @instances = list.values
+        instances.map do |obj|
+          "typedef #{obj.type} #{obj.name};"
+        end.join "\n"
       end
 
       def clone

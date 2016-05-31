@@ -6,8 +6,9 @@ typedef enum { False, True } Bool;
 typedef struct { String id; } Greeter1;
 typedef struct { String name; Integer id; } Greeter2;
 typedef struct { Integer id; } Greeter3;
-typedef struct {  } A;
-typedef struct {  } B;
+typedef struct { Integer a; } A;
+typedef struct { Float a; } B;
+typedef struct { Integer unuse; } C;
 extern Integer Integer$$__add__(Integer self, Integer n);
 extern Float Integer$$__div__(Integer self, Float n);
 extern Float Integer$$to_f(Integer self);
@@ -29,8 +30,8 @@ extern String Greeter1$$get_id(Greeter1 * self);
 extern Integer Greeter3$$get_id(Greeter3 * self);
 extern Integer A$$foo(A * self);
 extern Integer A$$bar(A * self);
-extern Integer B$$foo(B * self);
-extern Integer B$$bar(B * self);
+extern Float B$$foo(B * self);
+extern Float B$$bar(B * self);
 extern Integer puts(String);
 extern Integer strlen(String);
 extern String realloc(String, Integer);
@@ -116,19 +117,21 @@ Integer Greeter3$$get_id(Greeter3 * self)
 }
 Integer A$$foo(A * self)
 {
-    return String$$echo("A:foo");
+    String$$echo("A:foo");
+    return self->a = 1;
 }
 Integer A$$bar(A * self)
 {
     return String$$echo("A:bar");
 }
-Integer B$$foo(B * self)
+Float B$$foo(B * self)
 {
-    return String$$echo("A:foo");
+    return self->a = 2.3;
 }
-Integer B$$bar(B * self)
+Float B$$bar(B * self)
 {
-    return String$$echo("B:bar");
+    String$$echo("B:bar");
+    return self->a;
 }
 Integer main(Void)
 {
@@ -154,5 +157,6 @@ Integer main(Void)
     B$$foo(e);
     A$$bar(d);
     B$$bar(e);
+    f = calloc(sizeof(C), 1);
     return Bool$$or(Float$$__gt__$Float(1.5, Float$$__mul__(1.2, 1.8)), Float$$__gt__$Integer(Integer$$__div__(5, 2.0), 2));
 }

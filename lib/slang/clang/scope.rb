@@ -11,16 +11,20 @@ module SLang
         @type = type
       end
 
-      def lookup(name)
-        @vars[name] or raise "Bug: variable #{name} is not defined!"
-      end
-
-      def [](name)
+      def lookup_variable(name)
         @vars[name]
       end
 
+      def lookup_member(name)
+        @type.members[name]
+      end
+
       def <<(var)
-        @vars[var.name] = var.type
+        if var.is_a? Member
+          @type.members[var.name] = var
+        else
+          @vars[var.name] = var
+        end
       end
     end
   end

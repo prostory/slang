@@ -4,6 +4,7 @@ require_relative 'clang/context'
 module SLang
   class ASTNode
     attr_accessor :type
+    attr_accessor :optional
   end
 
   class Call
@@ -12,6 +13,19 @@ module SLang
 
   class Variable
     attr_accessor :defined
+    attr_accessor :instances
+
+    def <<(instance)
+      @instances ||= []
+      @instances << instance
+    end
+
+    def optional=(is_optional)
+      unless optional == is_optional
+        @optional = is_optional
+        @instances.each {|instance| instance.optional = is_optional} if @instances
+      end
+    end
   end
 
   class Function
@@ -76,8 +90,11 @@ module SLang
     end
 
     def visit_variable(node)
-      node.type = context.lookup_variable node.name
+      var = context.lookup_variable(node.name) or raise "Bug: variable #{node.name} is not defined!"
+      node.type = var.type
+      node.optional = var.optional
       node.defined = true
+      var << node
       false
     end
 
@@ -87,7 +104,9 @@ module SLang
     end
 
     def visit_member(node)
-      node.type = context.scope.type.members[node.name]
+      var = context.lookup_member(node.name) or raise "Bug: instance variable #{node.name} is not defined!"
+      node.type = var.type
+      node.optional = var.optional
       false
     end
 
@@ -122,7 +141,7 @@ module SLang
       types.unshift node.obj.type if node.obj
 
       unless untyped_fun = context.lookup_function(node.name, node.obj)
-        error = "undefined function '#{node.name}' (#{types.join ', '})"
+        error = "undefined function '#{node.name}' (#{types.map(&:despect).join ', '})"
         error << " for #{node.obj.type.name}" if node.obj
         raise error
       end
@@ -132,7 +151,7 @@ module SLang
       end
 
       if untyped_fun.instance_of?(External) && types != untyped_fun.params.map(&:type)
-        error = "undefined function '#{node.name}' (#{types.join ', '})"
+        error = "undefined function '#{node.name}' (#{types.map(&:despect).join ', '})"
         error << " for #{node.obj.type.name}" if node.obj
         raise error
       end
@@ -140,7 +159,7 @@ module SLang
       typed_fun = untyped_fun[types]
 
       if untyped_fun.is_a?(Operator) && typed_fun == nil
-        error = "undefined operator '#{node.name}' (#{types.join ', '})"
+        error = "undefined operator '#{node.name}' (#{types.map(&:despect).join ', '})"
         error << " for #{node.obj.type.name}" if node.obj
         raise error
       end
@@ -161,10 +180,9 @@ module SLang
       typed_fun.owner = node.obj.type if node.obj
       typed_fun.body.type = context.void
 
-      context.new_scope(untyped_fun, node.obj.type) do
+      context.new_scope(untyped_fun, node.obj ? node.obj.type : nil) do
         if node.obj
-          self_var = Variable.new(:self)
-          self_var.type = node.obj.type
+          self_var = Parameter.new(node.obj.type, :self)
           context.define_variable self_var
         end
 
@@ -248,12 +266,25 @@ module SLang
       node.value.accept self
       node.type = node.target.type = node.value.type
 
-      if node.target.is_a?(Member)
-        context.scope.type.members[node.target.name] = node.type
+      if node.target.is_a? Member
+        old_var = context.lookup_member(node.target.name)
       else
-        node.target.defined = context.scope[node.target.name]
-        context.define_variable node.target
+        old_var = context.lookup_variable(node.target.name)
       end
+
+      if old_var
+        unless old_var.type.base_type == node.type.base_type
+          unless old_var.type == context.types[:UnionType]
+            context.union_type(old_var.type)
+          end
+          context.union_type(node.value.type)
+
+          old_var.optional = true
+          node.target.optional = true
+        end
+        node.target.defined = true unless node.target.is_a? Member
+      end
+      context.define_variable node.target
 
       false
     end

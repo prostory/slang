@@ -16,7 +16,9 @@ module SLang
         base_type(:int, :Integer)
         base_type(:double, :Float)
         base_type('char *', :String)
+        base_type('void *', :Pointer)
         enum([:False, :True], :Bool)
+        union_type
       end
 
       def void
@@ -39,6 +41,10 @@ module SLang
         types[:String]
       end
 
+      def pointer
+        types[:Pointer]
+      end
+
       def base_type(type, name)
         @ctype.base(type, name)
       end
@@ -57,6 +63,13 @@ module SLang
 
       def object_type(name)
         types[name] ||= ObjectType.new(self, name)
+      end
+
+      def union_type(type = nil)
+        types[:UnionType] ||= UnionType.new(self)
+        return types[:UnionType] unless type
+        types[:UnionType] << type
+        types[:UnionType]
       end
 
       def merge(t1, t2)
@@ -107,7 +120,11 @@ module SLang
       end
 
       def lookup_variable(name)
-        scope.lookup name
+        scope.lookup_variable name
+      end
+
+      def lookup_member(name)
+        scope.lookup_member name
       end
 
       def new_scope(obj, type)

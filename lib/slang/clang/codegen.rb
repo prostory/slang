@@ -144,13 +144,21 @@ module SLang
       end
 
       def visit_variable(node)
-        stream << "#{node.type.ref} " if !node.defined
-        stream << "#{node.name}"
+        if node.optional
+          unless node.defined
+            stream << "#{context.union_type} #{node.name};\n"
+            indent
+          end
+          stream << "#{node.name}.#{context.union_type.members[node.type]}"
+        else
+          stream << "#{node.type.base_type} " unless node.defined
+          stream << "#{node.name}"
+        end
         false
       end
 
       def visit_parameter(node)
-        stream << "#{node.type}"
+        stream << "#{node.type.ref}"
         stream << " #{node.name}" if node.name
         false
       end
@@ -162,6 +170,7 @@ module SLang
 
       def visit_member(node)
         stream << "self->#{node.name}"
+        stream << ".#{context.union_type.members[node.type]}" if node.optional
         false
       end
 

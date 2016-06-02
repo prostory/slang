@@ -7,6 +7,7 @@ module SLang
       attr_accessor :context
       attr_accessor :template
       attr_accessor :methods
+      attr_accessor :base_type
 
       def initialize(context, name, type)
         @name = name
@@ -15,6 +16,7 @@ module SLang
         @context = context
         @template = self
         @methods = []
+        @base_type = self
       end
 
       def define
@@ -22,11 +24,15 @@ module SLang
       end
 
       def ref
-        name
+        base_type
       end
 
       def to_s
         name.to_s
+      end
+
+      def despect
+        to_s
       end
 
       def ==(other)
@@ -57,7 +63,11 @@ module SLang
 
       def display_members
         members[:unuse] = context.int if members.empty?
-        members.map {|n, t| "#{t} #{n};"}.join ' '
+        members.map {|n, t| "#{t.optional ? context.union_type : t.type.ref} #{n};"}.join ' '
+      end
+
+      def despect
+        "#{name}<#{members.map {|n, t| "#{n}:#{t.type}"}.join ', '}>"
       end
 
       def ==(other)
@@ -71,6 +81,7 @@ module SLang
 
       def initialize(context, name)
         super context, {}, name
+        @base_type = context.pointer
       end
 
       def define
@@ -121,7 +132,46 @@ module SLang
       end
 
       def ref
-        name
+        base_type
+      end
+
+      def ==(other)
+        other.class == self.class && name == other.name
+      end
+    end
+
+    class UnionType < CUnion
+      def initialize(context)
+        super context, {}, :UnionType
+      end
+
+      def <<(type)
+        members[type] = "U#{type}" unless members[type]
+      end
+
+      def add_types(types)
+        types.each {|type| self << type}
+      end
+
+      def display_members
+        members.map {|t, n| "#{t.base_type} #{n};"}.join ' '
+      end
+
+      def despect
+        "#{name}<#{members.keys.join ', '}>"
+      end
+
+      def has_type?(type)
+        members.has_key? type
+      end
+
+      def include?(types)
+        return has_type? type unless types.is_a? Array
+        types.any? {|type| !members.has_key?(type)}
+      end
+
+      def eql?(other)
+        (self == other) || (include? other)
       end
     end
 
@@ -131,11 +181,15 @@ module SLang
       end
 
       def ref
-        name
+        base_type
       end
 
       def display_members
         members.join ', '
+      end
+
+      def despect
+        "#{name}<#{members.join ', '}>"
       end
     end
 
@@ -185,14 +239,9 @@ module SLang
       end
 
       def union(members, name = nil)
-        types = members
-        if members.is_a? Array
-          types = {}
-          members.each_with_index { |mem, i| types["t#{i}"] = mem }
-        end
-        key = name.nil? ? types : name
+        key = name.nil? ? members : name
         return @types[key] if @types.has_key? key
-        type = CUnion.new(context, types, name)
+        type = CUnion.new(context, members, name)
         @types[key] = type
         type
       end

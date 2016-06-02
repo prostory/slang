@@ -5,11 +5,7 @@ require_relative '../lib/slang'
 include SLang
 
 prog = [:do,
-        [:external, :puts, [:String], :Integer],
-        [:external, :strlen, [:String], :Integer],
-        [:external, :realloc, [:String, :Integer], :String],
-        [:external, :strcat, [:String, :String], :String],
-        [:external, :strdup, [:String], :String],
+
 
         [:class, :Integer, nil,
          [:operator, :+, [:Integer], :Integer],
@@ -77,12 +73,15 @@ prog = [:do,
          [:fun, :not, [:n], [:!, :self, [:n]]],
         ],
         [:class, :String, nil,
-         [:fun, :echo, [], [:puts, nil, [:self]]],
-         [:fun, :len, [], [:strlen, nil, [:self]]],
+         [:external, :echo, :puts, [], :Integer],
+         [:external, :len, :strlen, [], :Integer],
+         [:external, :dup, :strdup, [], :String],
+         [:external, :grow, :realloc, [:Integer], :String],
+         [:external, :cat, :strcat, [:String], :String],
          [:fun, :<<, [:s], [[:set, :len, [:+, [:+, [:len, :self], [[:len, :s]]], [1]]],
-                            [:set, :self, [:realloc, nil, [:self, :len]]],
-                            [:strcat, nil, [:self, :s]]]],
-         [:fun, :dup, [], [:strdup, nil, [:self]]]
+                            [:set, :self, [:grow, :self, [:len]]],
+                            [:cat, :self, [:s]]]]
+
         ],
         [:class, :Greeter, nil,
             [:fun, :set_name, [:name], [:set, :@name, :name]],

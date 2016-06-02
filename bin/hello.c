@@ -14,10 +14,12 @@ typedef struct { Float a; } B;
 typedef struct { Float a; } C;
 extern Float Integer$$to_f(Integer self);
 extern Integer Float$$to_i(Float self);
-extern Integer String$$echo(String self);
-extern Integer String$$len(String self);
+extern Integer puts(String);
+extern Integer strlen(String);
+extern String strdup(String);
+extern String realloc(String, Integer);
+extern String strcat(String, String);
 extern String String$$__lsh__(String self, String s);
-extern String String$$dup(String self);
 extern String Greeter2$$set_name(Greeter2 * self, String name);
 extern Integer Greeter2$$say_hello(Greeter2 * self);
 extern String Greeter1$$set_id$String(Greeter1 * self, String id);
@@ -34,11 +36,6 @@ extern Float B$$foo(B * self);
 extern Float B$$bar(B * self);
 extern Float C$$foo(C * self);
 extern Float C$$bar(C * self);
-extern Integer puts(String);
-extern Integer strlen(String);
-extern String realloc(String, Integer);
-extern String strcat(String, String);
-extern String strdup(String);
 Float Integer$$to_f(Integer self)
 {
     return (Float)self;
@@ -47,23 +44,11 @@ Integer Float$$to_i(Float self)
 {
     return (Integer)self;
 }
-Integer String$$echo(String self)
-{
-    return puts(self);
-}
-Integer String$$len(String self)
-{
-    return strlen(self);
-}
 String String$$__lsh__(String self, String s)
 {
-    Integer len = ((String$$len(self) + String$$len(s)) + 1);
+    Float len = ((strlen(self) + strlen(s)) + 1);
     self = realloc(self, len);
     return strcat(self, s);
-}
-String String$$dup(String self)
-{
-    return strdup(self);
 }
 String Greeter2$$set_name(Greeter2 * self, String name)
 {
@@ -71,7 +56,7 @@ String Greeter2$$set_name(Greeter2 * self, String name)
 }
 Integer Greeter2$$say_hello(Greeter2 * self)
 {
-    return String$$echo(String$$__lsh__(String$$dup("hello, "), self->name));
+    return puts(String$$__lsh__(strdup("hello, "), self->name));
 }
 String Greeter1$$set_id$String(Greeter1 * self, String id)
 {
@@ -107,12 +92,12 @@ Float Greeter4$$get_id$$Float(Greeter4 * self)
 }
 Integer A$$foo(A * self)
 {
-    String$$echo("A:foo");
+    puts("A:foo");
     return self->a = 1;
 }
 Integer A$$bar(A * self)
 {
-    return String$$echo("A:bar");
+    return puts("A:bar");
 }
 Float B$$foo(B * self)
 {
@@ -120,7 +105,7 @@ Float B$$foo(B * self)
 }
 Float B$$bar(B * self)
 {
-    String$$echo("B:bar");
+    puts("B:bar");
     return self->a;
 }
 Float C$$foo(C * self)
@@ -129,12 +114,12 @@ Float C$$foo(C * self)
 }
 Float C$$bar(C * self)
 {
-    String$$echo("B:bar");
+    puts("B:bar");
     return self->a;
 }
 Integer main(Void)
 {
-    String$$echo(String$$__lsh__(String$$dup("Hello"), " World"));
+    puts(String$$__lsh__(strdup("Hello"), " World"));
     Pointer f = calloc(sizeof(Greeter1), 1);
     Pointer g = calloc(sizeof(Greeter2), 1);
     Pointer h = calloc(sizeof(Greeter3), 1);

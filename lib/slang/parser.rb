@@ -36,13 +36,15 @@ module SLang
 			when :ret
 				Return.new(parse_args(exp[1..-1]))
 			when :external
-				External.new(exp[1], parse_params(exp[2]), exp[3], target)
+				return External.new(exp[1], exp[2], parse_params(exp[3]), exp[4], target) if exp[2].is_a? Symbol
+				return External.new(exp[1], exp[1], parse_params(exp[2]), exp[3], target) if exp[2].is_a? Array
 			when :class
 				class_def = ClassDef.new(exp[1], exp[2])
 				parse_methods(class_def, exp[3..-1])
 				class_def
 			when :operator
-				Operator.new(exp[1], parse_params(exp[2]), exp[3], target)
+				return Operator.new(exp[1], exp[2], parse_params(exp[3]), exp[4], target) if exp[2].is_a? Symbol
+				return Operator.new(exp[1], exp[1], parse_params(exp[2]), exp[3], target) if exp[2].is_a? Array
 			when :set
 				Assign.new(parse_var(exp[1]), parse_obj(exp[2]))
 			when :list

@@ -292,12 +292,19 @@ module SLang
 	end
 
 	class External < Function
-		def initialize(name, params = [], return_type = :unknown, receiver = nil)
+		attr_accessor :output_name
+
+		def initialize(name, output_name, params = [], return_type = :unknown, receiver = nil)
 			super name, params, [], return_type, receiver
+			@output_name = output_name || name
+		end
+
+		def ==(other)
+			super && other.output_name == output_name
 		end
 
 		def clone
-			external = self.class.new name, params.map(&:clone), return_type, receiver
+			external = self.class.new name, output_name, params.map(&:clone), return_type, receiver
 			external.body = body
 			external
 		end

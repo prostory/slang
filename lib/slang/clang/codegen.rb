@@ -67,7 +67,7 @@ module SLang
 
   class External
     def mangled_name
-      name
+      output_name
     end
   end
 

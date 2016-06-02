@@ -165,22 +165,11 @@ module SLang
         raise "wrong number of arguments for '#{node.name}' (#{node.args.length} for #{untyped_fun.params.length})"
       end
 
-      if untyped_fun.instance_of?(External) && types != untyped_fun.params.map(&:type)
-        error = "undefined function '#{node.name}' (#{types.map(&:despect).join ', '})"
-        error << " for #{node.obj.type.name}" if node.obj
-        raise error
-      end
-
       typed_fun = untyped_fun[types]
 
-      if untyped_fun.is_a?(Operator) && typed_fun == nil
-        error = "undefined operator '#{node.name}' (#{types.map(&:despect).join ', '})"
-        error << " for #{node.obj.type.name}" if node.obj
-        raise error
-      end
-
-      if untyped_fun.instance_of?(External) && typed_fun == nil
+      if untyped_fun.is_a?(External) && typed_fun == nil
         typed_fun = untyped_fun.clone
+        typed_fun.params.unshift Parameter.new(context.types[typed_fun.receiver.name]) if typed_fun.receiver
         typed_fun.body.type = context.types[typed_fun.return_type]
         untyped_fun << typed_fun
       end
@@ -261,15 +250,9 @@ module SLang
       true
     end
 
-    def end_visit_operator(node)
-      node.body.type = context.types[node.return_type]
-      op = context.lookup_function node.name, node.receiver ? node.receiver.name : nil
-      op ||= context.add_function node
-      new_op = node.clone
-      if new_op.receiver
-        new_op.params.unshift Parameter.new(context.types[node.receiver.name.to_sym])
-      end
-      op << new_op
+    def visit_operator(node)
+      context.add_function node
+      true
     end
 
     def end_visit_if(node)

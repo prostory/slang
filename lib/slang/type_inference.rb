@@ -32,6 +32,7 @@ module SLang
     attr_accessor :owner
     attr_accessor :mangled
     attr_accessor :instances
+    attr_accessor :mangled_return_type
 
     def <<(instance)
       @instances ||= {}
@@ -41,8 +42,21 @@ module SLang
         end
       end
       instance.mangled = @mangled
-      @instances[instance.params.map(&:type)] = instance
+      fun = @instances[self.class.signature(instance)]
+      if fun && fun.body.type != instance.body.type
+        fun.instances ||= {}
+        fun.instances[fun.body.type] = fun unless fun.instances[fun.body.type]
+        fun.instances[instance.body.type] = instance
+        fun.mangled_return_type = true
+        instance.mangled_return_type = true
+      else
+        @instances[self.class.signature(instance)] = instance
+      end
       instance.owner.methods << instance if instance.owner
+    end
+
+    def self.signature(fun)
+      fun.params.map(&:type)
     end
 
     def [](arg_types)
@@ -90,7 +104,7 @@ module SLang
     end
 
     def visit_variable(node)
-      var = context.lookup_variable(node.name) or raise "Bug: variable #{node.name} is not defined!"
+      var = context.lookup_variable(node.name) or raise "Bug: variable #{node.name} is not defined! #{node.parent.source_code}"
       node.type = var.type
       node.optional = var.optional
       node.defined = true
@@ -107,6 +121,7 @@ module SLang
       var = context.lookup_member(node.name) or raise "Bug: instance variable #{node.name} is not defined!"
       node.type = var.type
       node.optional = var.optional
+      var << node
       false
     end
 
@@ -170,50 +185,61 @@ module SLang
         untyped_fun << typed_fun
       end
 
-      if typed_fun
+      if typed_fun.is_a? External
         node.target_fun = typed_fun
         node.type = typed_fun.body.type
         return
       end
 
-      typed_fun ||= untyped_fun.clone
-      typed_fun.owner = node.obj.type if node.obj
-      typed_fun.body.type = context.void
+      new_fun = typed_function(untyped_fun, node)
 
-      context.new_scope(untyped_fun, node.obj ? node.obj.type : nil) do
-        if node.obj
-          self_var = Parameter.new(node.obj.type, :self)
+      if typed_fun && new_fun.body.type == typed_fun.body.type
+        node.target_fun = typed_fun
+        node.type = typed_fun.body.type
+      else
+        untyped_fun << new_fun
+
+        node.target_fun = new_fun
+        node.type = new_fun.body.type
+      end
+
+      false
+    end
+
+    def typed_function(function, call)
+      instance = function.clone
+      instance.owner = call.obj.type if call.obj
+      instance.body.type = context.void
+
+      context.new_scope(function, call.obj ? call.obj.type : nil) do
+        if call.obj
+          self_var = Parameter.new(call.obj.type, :self)
           context.define_variable self_var
         end
 
-        untyped_fun.params.each_with_index do |_, i|
-          typed_fun.params[i].type = node.args[i].type
-          context.define_variable typed_fun.params[i]
+        function.params.each_with_index do |_, i|
+          instance.params[i].type = call.args[i].type
+          context.define_variable instance.params[i]
         end
 
-        typed_fun.params.unshift self_var if self_var
+        instance.params.unshift self_var if self_var
 
-        untyped_fun << typed_fun
-        typed_fun.body.accept self
+        instance.body.accept self
 
-        unless typed_fun.return_type == :unknown
-          typed_fun.body.type = context.types[typed_fun.return_type]
+        unless instance.return_type == :unknown
+          instance.body.type = context.types[instance.return_type]
         end
 
-        unless typed_fun.body.type == context.void
-          unless typed_fun.body.last.is_a? Return
-            ret = Return.new([typed_fun.body.last])
+        unless instance.body.type == context.void
+          unless instance.body.last.nil? || instance.body.last.is_a?(Return)
+            ret = Return.new([instance.body.last])
             ret.accept self
-            typed_fun.body.children.pop
-            typed_fun.body << ret
+            instance.body.children.pop
+            instance.body << ret
           end
         end
       end
-
-      node.target_fun = typed_fun
-      node.type = typed_fun.body.type
-
-      false
+      instance
     end
 
     def visit_function(node)

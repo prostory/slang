@@ -41,8 +41,9 @@ module SLang
       else
         param_types = params.map(&:type)
       end
+      return_type = body.type if mangled_return_type
       self.class.mangled_name(owner, simple_name) <<
-        self.class.mangled_params(param_types, mangled)
+        self.class.mangled_params(param_types, mangled, return_type)
     end
 
     def self.mangled_name(owner, name)
@@ -53,9 +54,11 @@ module SLang
       end
     end
 
-    def self.mangled_params(param_types, mangled)
-      if param_types.any? && mangled
-        "$#{param_types.join '_'}"
+    def self.mangled_params(param_types, mangled, return_type = nil)
+      if (param_types.any? && mangled) || return_type
+        s = "$#{param_types.join '_'}"
+        s << "$#{return_type}" if return_type
+        s
       else
         ''
       end

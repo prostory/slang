@@ -32,7 +32,8 @@ extern Integer Greeter3$$set_id$Integer(Greeter3 * self, Integer id);
 extern Integer Greeter4$$set_id$Integer(Greeter4 * self, Integer id);
 extern Float Greeter4$$set_id$Float(Greeter4 * self, Float id);
 extern String Greeter1$$get_id(Greeter1 * self);
-extern Float Greeter4$$get_id(Greeter4 * self);
+extern Integer Greeter4$$get_id$$Integer(Greeter4 * self);
+extern Float Greeter4$$get_id$$Float(Greeter4 * self);
 extern Integer A$$foo(A * self);
 extern Integer A$$bar(A * self);
 extern Float B$$foo(B * self);
@@ -126,7 +127,11 @@ String Greeter1$$get_id(Greeter1 * self)
 {
     return self->id;
 }
-Float Greeter4$$get_id(Greeter4 * self)
+Integer Greeter4$$get_id$$Integer(Greeter4 * self)
+{
+    return self->id.UInteger;
+}
+Float Greeter4$$get_id$$Float(Greeter4 * self)
 {
     return self->id.UFloat;
 }
@@ -171,11 +176,15 @@ Integer main(Void)
     Greeter2$$set_id$Integer(g, 1);
     Greeter3$$set_id$Integer(h, 2);
     Greeter4$$set_id$Integer(i, 3);
+    Greeter4$$get_id$$Integer(i);
     Greeter4$$set_id$Float(i, 3.3);
-    Greeter4$$get_id(i);
-    Integer a = 5;
-    Float b = Integer$$to_f(a);
-    Integer c = Float$$to_i(b);
+    Greeter4$$get_id$$Float(i);
+    UnionType a;
+    a.UFloat = 5.5;
+    UnionType b;
+    b.UInteger = Float$$to_i(a.UFloat);
+    a.UInteger = 5;
+    b.UFloat = Integer$$to_f(a.UInteger);
     Pointer d = calloc(sizeof(A), 1);
     Pointer e = calloc(sizeof(B), 1);
     A$$foo(d);

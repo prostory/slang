@@ -97,7 +97,9 @@ module SLang
 		end
 
 		def clone
-			self.class.new children.map(&:clone)
+			expresstions = self.class.new children.map(&:clone)
+			expresstions.source_code = source_code
+			expresstions
 		end
 	end
 
@@ -189,23 +191,10 @@ module SLang
     end
 	end
 
-	class Const < ASTNode
-		attr_accessor :name
-
-		def initialize(name)
-			@name = name
-		end
-
-		def ==(other)
-			other.class == self.class && other.name == name
-		end
-
-		def clone
-			self.class.new name
-		end
+	class Member < Variable
 	end
 
-	class Member < ASTNode
+	class Const < ASTNode
 		attr_accessor :name
 
 		def initialize(name)

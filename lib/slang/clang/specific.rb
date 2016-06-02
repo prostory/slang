@@ -20,6 +20,9 @@ module SLang
       symbols[:!=] = '__ne__'
       symbols[:<<] = '__lsh__'
       symbols[:>>] = '__rsh__'
+      symbols[:&] = '__band__'
+      symbols[:|] = '__bor__'
+      symbols[:^] = '__xor__'
 
       def self.convert(s)
         symbols[s.to_sym] || s

@@ -17,6 +17,11 @@ prog = [:do,
          [:operator, :*, [:Integer], :Integer],
          [:operator, :/, [:Integer], :Integer],
          [:operator, :%, [:Integer], :Integer],
+         [:operator, :<<, [:Integer], :Integer],
+         [:operator, :>>, [:Integer], :Integer],
+         [:operator, :&, [:Integer], :Integer],
+         [:operator, :|, [:Integer], :Integer],
+         [:operator, :^, [:Integer], :Integer],
          [:operator, :>, [:Integer], :Bool],
          [:operator, :<, [:Integer], :Bool],
          [:operator, :>=, [:Integer], :Bool],
@@ -34,7 +39,8 @@ prog = [:do,
          [:operator, :<=, [:Float], :Bool],
          [:operator, :==, [:Float], :Bool],
          [:operator, :!=, [:Float], :Bool],
-         [:fun, :to_f, [], [:cast, :Float, :self]]
+         [:fun, :to_f, [], [:cast, :Float, :self]],
+         [:fun, :to_i, [], [:ret, :self]]
         ],
         [:class, :Float, nil,
          [:operator, :+, [:Integer], :Float],
@@ -59,7 +65,8 @@ prog = [:do,
          [:operator, :<=, [:Float], :Bool],
          [:operator, :==, [:Float], :Bool],
          [:operator, :!=, [:Float], :Bool],
-         [:fun, :to_i, [], [:cast, :Integer, :self]]
+         [:fun, :to_i, [], [:cast, :Integer, :self]],
+         [:fun, :to_f, [], [:ret, :self]]
         ],
         [:class, :Bool, nil,
          [:operator, :'&&', [:Bool], :Bool],
@@ -122,6 +129,6 @@ prog = [:do,
         [:bar, :f]
 ]
 
-main_prog = [:fun, :main, [], prog << [:ret, [:or, [:>, 1.5, [[:*, 1.2, [1.8]]]], [[:>, [:/, 5, [2.0]], [2]]]]], :Integer]
+main_prog = [:fun, :main, [], prog << [:ret, [:&, 5, [[:<<, 1, [2]]]]], :Integer]
 
 puts CLang::Context.new.gen_code(Parser.parse(main_prog))

@@ -18,7 +18,6 @@ extern Integer String$$echo(String self);
 extern Integer String$$len(String self);
 extern String String$$__lsh__(String self, String s);
 extern String String$$dup(String self);
-extern Bool Bool$$or(Bool self, Bool n);
 extern String Greeter2$$set_name(Greeter2 * self, String name);
 extern Integer Greeter2$$say_hello(Greeter2 * self);
 extern String Greeter1$$set_id$String(Greeter1 * self, String id);
@@ -65,10 +64,6 @@ String String$$__lsh__(String self, String s)
 String String$$dup(String self)
 {
     return strdup(self);
-}
-Bool Bool$$or(Bool self, Bool n)
-{
-    return (self || n);
 }
 String Greeter2$$set_name(Greeter2 * self, String name)
 {
@@ -169,5 +164,5 @@ Integer main(Void)
     f = calloc(sizeof(C), 1);
     C$$foo(f);
     C$$bar(f);
-    return Bool$$or((1.5 > (1.2 * 1.8)), ((5 / 2.0) > 2));
+    return (5 & (1 << 2));
 }

@@ -109,10 +109,11 @@ module SLang
         else
           @cfunc << fun
         end
+        fun
       end
 
-      def lookup_function(name, obj = nil)
-        obj ? obj.type.template.cfunc[name] : @cfunc[name]
+      def lookup_function(name, class_name = nil)
+        class_name ? @ctype.types[class_name.to_sym].cfunc[name] : @cfunc[name]
       end
 
       def define_variable(var)

@@ -12,12 +12,7 @@ typedef struct { UnionType id; } Greeter4;
 typedef struct { Integer a; } A;
 typedef struct { Float a; } B;
 typedef struct { Float a; } C;
-extern Integer Integer$$__add__(Integer self, Integer n);
-extern Float Integer$$__div__(Integer self, Float n);
 extern Float Integer$$to_f(Integer self);
-extern Float Float$$__mul__(Float self, Float n);
-extern Bool Float$$__gt__$Float(Float self, Float n);
-extern Bool Float$$__gt__$Integer(Float self, Integer n);
 extern Integer Float$$to_i(Float self);
 extern Integer String$$echo(String self);
 extern Integer String$$len(String self);
@@ -45,29 +40,9 @@ extern Integer strlen(String);
 extern String realloc(String, Integer);
 extern String strcat(String, String);
 extern String strdup(String);
-Integer Integer$$__add__(Integer self, Integer n)
-{
-    return (self + n);
-}
-Float Integer$$__div__(Integer self, Float n)
-{
-    return (self / n);
-}
 Float Integer$$to_f(Integer self)
 {
     return (Float)self;
-}
-Float Float$$__mul__(Float self, Float n)
-{
-    return (self * n);
-}
-Bool Float$$__gt__$Float(Float self, Float n)
-{
-    return (self > n);
-}
-Bool Float$$__gt__$Integer(Float self, Integer n)
-{
-    return (self > n);
 }
 Integer Float$$to_i(Float self)
 {
@@ -83,7 +58,7 @@ Integer String$$len(String self)
 }
 String String$$__lsh__(String self, String s)
 {
-    Integer len = Integer$$__add__(Integer$$__add__(String$$len(self), String$$len(s)), 1);
+    Integer len = ((String$$len(self) + String$$len(s)) + 1);
     self = realloc(self, len);
     return strcat(self, s);
 }
@@ -194,5 +169,5 @@ Integer main(Void)
     f = calloc(sizeof(C), 1);
     C$$foo(f);
     C$$bar(f);
-    return Bool$$or(Float$$__gt__$Float(1.5, Float$$__mul__(1.2, 1.8)), Float$$__gt__$Integer(Integer$$__div__(5, 2.0), 2));
+    return Bool$$or((1.5 > (1.2 * 1.8)), ((5 / 2.0) > 2));
 }

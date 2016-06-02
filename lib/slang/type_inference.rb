@@ -155,8 +155,8 @@ module SLang
 
       types.unshift node.obj.type if node.obj
 
-      unless untyped_fun = context.lookup_function(node.name, node.obj)
-        error = "undefined function '#{node.name}' (#{types.map(&:despect).join ', '})"
+      unless untyped_fun = context.lookup_function(node.name, node.obj ? node.obj.type.name : nil)
+        error = "undefined function '#{node.name}' (#{types.map(&:despect).join ', '}), #{node.source_code}"
         error << " for #{node.obj.type.name}" if node.obj
         raise error
       end
@@ -263,13 +263,13 @@ module SLang
 
     def end_visit_operator(node)
       node.body.type = context.types[node.return_type]
-      op = context.lookup_function node.name
-      if op
-        op << node
-      else
-        context.add_function node
-        node << node.clone
+      op = context.lookup_function node.name, node.receiver ? node.receiver.name : nil
+      op ||= context.add_function node
+      new_op = node.clone
+      if new_op.receiver
+        new_op.params.unshift Parameter.new(context.types[node.receiver.name.to_sym])
       end
+      op << new_op
     end
 
     def end_visit_if(node)

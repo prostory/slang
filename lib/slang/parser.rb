@@ -26,9 +26,9 @@ module SLang
 			when :call
 				if exp[1].is_a? Array
 					func = parse_expression(exp[1])
-					return Expressions.new([func, Call.new(func.name, parse_args(exp[3]), parse_obj(exp[2]))])
+					return Expressions.new([func, Call.new(func.name, parse_args(exp[3], target), parse_obj(exp[2], target))])
 				end
-				Call.new(exp[1], parse_args(exp[3]), parse_obj(exp[2]))
+				Call.new(exp[1], parse_args(exp[3], target), parse_obj(exp[2], target))
 			when :if
 				If.new(parse_expression(exp[1]), parse_expression(exp[2]), parse_expression(exp[3]))
 			when :while
@@ -46,13 +46,13 @@ module SLang
 				return Operator.new(exp[1], exp[2], parse_params(exp[3]), exp[4], target) if exp[2].is_a? Symbol
 				return Operator.new(exp[1], exp[1], parse_params(exp[2]), exp[3], target) if exp[2].is_a? Array
 			when :set
-				Assign.new(parse_var(exp[1]), parse_obj(exp[2]))
+				Assign.new(parse_var(exp[1], target), parse_obj(exp[2], target))
 			when :list
-				ArrayLiteral.new(parse_args(exp[1..-1]))
+				ArrayLiteral.new(parse_args(exp[1..-1], target))
 			when :cast
-				Cast.new(exp[1], parse_obj(exp[2]))
+				Cast.new(exp[1], parse_obj(exp[2], target))
 			else
-				Call.new exp[0], parse_args(exp[2]), parse_obj(exp[1])
+				Call.new exp[0], parse_args(exp[2], target), parse_obj(exp[1], target)
 			end
 			obj.source_code = exp
 			obj
@@ -67,11 +67,13 @@ module SLang
 			return vars.map {|name, type| Variable.new(name, type)} if vars.is_a? Hash
 		end
 
-		def self.parse_var(exp)
+		def self.parse_var(exp, target)
 			case exp
 			when Symbol
 				if exp.to_s.match /^[A-Z]/
           Const.new(exp)
+				elsif var = exp.to_s.match(/^@@([^@]+)/)
+					ClassVar.new(var[1].to_sym, target)
 				elsif var = exp.to_s.match(/^@([^@]+)/)
           Member.new(var[1].to_sym)
 				else
@@ -85,14 +87,14 @@ module SLang
 			return params.map {|name, type| Parameter.new(type, name)} if params.is_a? Hash
 		end
 
-		def self.parse_args(args)
+		def self.parse_args(args, target = nil)
 			return [] if args.nil?
 			args.map do|arg|
-				parse_obj arg
+				parse_obj arg, target
 			end
 		end
 
-		def self.parse_obj(obj)
+		def self.parse_obj(obj, target = nil)
 			case obj
 			when Array
 				parse_expression(obj)
@@ -103,7 +105,7 @@ module SLang
 			when TrueClass, FalseClass
 				BoolLiteral.new(obj)
 			when Symbol
-				parse_var(obj)
+				parse_var(obj, target)
 			end
 		end
 

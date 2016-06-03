@@ -194,6 +194,23 @@ module SLang
 	class Member < Variable
 	end
 
+	class ClassVar < Variable
+		attr_accessor :target
+
+		def initialize(name, target, type = :unknown)
+			super name, type
+			@target = target
+		end
+
+		def ==(other)
+			super && other.target == this.target
+		end
+
+		def clone
+			self.class.new name, target, type
+		end
+	end
+
 	class Const < ASTNode
 		attr_accessor :name
 

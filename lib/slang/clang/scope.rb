@@ -19,9 +19,17 @@ module SLang
         @type.members[name]
       end
 
+      def lookup_class_var(name)
+        puts "#{@type.class_type.name}, #{name}"
+        @type.class_type.members[name]
+      end
+
       def <<(var)
-        if var.is_a? Member
+        case var
+        when Member
           @type.members[var.name] = var
+        when ClassVar
+          @type.class_type.members[var.name] = var
         else
           @vars[var.name] = var
         end

@@ -20,7 +20,7 @@ module SLang
       end
 
       def define
-        "typedef #{type} #{name};"
+        "typedef #{type} #{name};\n"
       end
 
       def ref
@@ -62,12 +62,11 @@ module SLang
       end
 
       def display_members
-        members[:unuse] = context.int if members.empty?
-        members.map {|n, t| "#{t.optional ? context.union_type : t.type.ref} #{n};"}.join ' '
+        members.map {|n, t| "#{t.ref} #{n};"}.join ' '
       end
 
       def despect
-        "#{name}<#{members.map {|n, t| "#{n}:#{t.type}"}.join ', '}>"
+        "#{name}<#{members.map {|n, t| "#{n}:#{t}"}.join ', '}>"
       end
 
       def ==(other)
@@ -76,12 +75,29 @@ module SLang
       end
     end
 
+    class ClassType < CStruct
+      def initialize(context, name)
+        super context, {}, "#{name}$class".to_sym
+      end
+
+      def define
+        members.empty? ? "" : "static #{type} #{name};\n"
+      end
+
+      def display_members
+        members.map {|name, var| "#{var.optional ? context.union_type : var.type.ref} #{name};"}.join ' '
+      end
+    end
+
     class ObjectType < CStruct
       attr_accessor :instances
+      attr_accessor :class_type
 
       def initialize(context, name)
         super context, {}, name
         @base_type = context.pointer
+        @class_type = ClassType.new(context, name)
+        context.types[@class_type.name] ||= @class_type
       end
 
       def define
@@ -113,13 +129,22 @@ module SLang
         end
         @instances = list.values
         instances.map do |obj|
-          "typedef #{obj.type} #{obj.name};"
-        end.join "\n"
+          "typedef #{obj.type} #{obj.name};\n"
+        end.join ''
+      end
+
+      def display_members
+        members.map {|name, var| "#{var.optional ? context.union_type : var.type.ref} #{name};"}.join ' '
+      end
+
+      def despect
+        "#{name}<#{members.map {|name, var| "#{name}:#{var.type}"}.join ', '}>"
       end
 
       def clone
         obj = ObjectType.new context, name
         obj.template = self
+        obj.class_type = class_type
         @instances ||= []
         @instances << obj
         obj
@@ -212,7 +237,7 @@ module SLang
       end
 
       def define_types
-        types.values.each { |type| stream << "#{type.define}\n" }
+        types.values.each { |type| stream << "#{type.define}" }
       end
 
       def declear_functions

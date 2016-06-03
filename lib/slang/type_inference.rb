@@ -125,6 +125,14 @@ module SLang
       false
     end
 
+    def visit_class_var(node)
+      var = context.lookup_class_var(node.name) or raise "Bug: class variable #{node.name} is not defined!"
+      node.type = var.type
+      node.optional = var.optional
+      var << node
+      false
+    end
+
     def visit_class_def(node)
       superclass = context.types[node.superclass] or raise "uninitialized constant #{node.superclass}" if node.superclass
       node.superclass = superclass
@@ -136,8 +144,15 @@ module SLang
         superclass.cfunc.externals.each do |name, fun|
           type.cfunc.externals[name] = fun.clone
         end
+        superclass.class_type.members do |name, var|
+          puts "#{name}, #{var}"
+          type.class_type.members[name] = var
+        end
       end
-      true
+      context.new_scope(nil, type) do
+        node.accept_children self
+      end
+      false
     end
 
     def visit_call(node)
@@ -275,8 +290,11 @@ module SLang
       node.value.accept self
       node.type = node.target.type = node.value.type
 
-      if node.target.is_a? Member
+      case node.target
+      when Member
         old_var = context.lookup_member(node.target.name)
+      when ClassVar
+        old_var = context.lookup_class_var(node.target.name)
       else
         old_var = context.lookup_variable(node.target.name)
       end
@@ -291,7 +309,9 @@ module SLang
           old_var.optional = true
           node.target.optional = true
         end
-        node.target.defined = true unless node.target.is_a? Member
+        unless node.target.is_a?(Member) || node.target.is_a?(ClassVar)
+          node.target.defined = true
+        end
       end
       context.define_variable node.target
 

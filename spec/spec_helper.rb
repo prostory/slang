@@ -14,6 +14,12 @@ class Fixnum
 	end
 end
 
+class Float
+	def float
+		NumberLiteral.new(self)
+	end
+end
+
 class String
 	def string
 		StringLiteral.new(self)

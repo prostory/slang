@@ -177,6 +177,11 @@ module SLang
         false
       end
 
+      def visit_class_var(node)
+        stream << "#{node.target.name}.#{node.name}"
+        false
+      end
+
       def visit_function(node)
         false
       end

@@ -8,6 +8,7 @@ module SLang
       attr_accessor :template
       attr_accessor :methods
       attr_accessor :base_type
+      attr_accessor :super_type
 
       def initialize(context, name, type)
         @name = name
@@ -37,7 +38,7 @@ module SLang
 
       def ==(other)
         other.class == self.class && other.name == name &&
-          other.type.to_s == type.to_s
+          other.type.to_s == type.to_s && other.super_type == super_type
       end
     end
 
@@ -71,7 +72,7 @@ module SLang
 
       def ==(other)
         other.class == self.class && name == other.name &&
-            members == other.members
+            members == other.members && other.super_type == super_type
       end
     end
 

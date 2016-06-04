@@ -129,8 +129,9 @@ module SLang
       end
 
       def lookup_class_var(name)
-        scope.lookup_class_var name
+        scope.lookup_class_var(name)
       end
+
 
       def new_scope(obj, type)
         @scopes.push(Scope.new obj, type)

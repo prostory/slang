@@ -9,10 +9,12 @@ typedef struct { String id; } Greeter1;
 typedef struct { String name; Integer id; } Greeter2;
 typedef struct { Integer id; } Greeter3;
 typedef struct { UnionType id; } Greeter4;
+static struct { Integer a; } A$class;
 typedef struct { Integer a; } A;
 static struct { Float a; } B$class;
 typedef struct { Float a; } B;
-typedef struct { Float a; } C;
+static struct { String a; } C$class;
+typedef struct {  } C;
 extern Float Integer$$to_f(Integer self);
 extern Integer Float$$to_i(Float self);
 extern Integer puts(String);
@@ -35,7 +37,9 @@ extern Integer A$$foo(A * self);
 extern Integer A$$bar(A * self);
 extern Float B$$foo(B * self);
 extern Float B$$bar(B * self);
-extern Float C$$foo(C * self);
+extern Float C$$foo$$Float(C * self);
+extern String C$$foo$$String(C * self);
+extern String C$$bar(C * self);
 Float Integer$$to_f(Integer self)
 {
     return (Float)self;
@@ -97,7 +101,8 @@ Integer A$$foo(A * self)
 }
 Integer A$$bar(A * self)
 {
-    return puts("A:bar");
+    puts("A:bar");
+    return A$class.a;
 }
 Float B$$foo(B * self)
 {
@@ -108,12 +113,21 @@ Float B$$bar(B * self)
     puts("B:bar");
     return B$class.a;
 }
-Float C$$foo(C * self)
+Float C$$foo$$Float(C * self)
 {
-    return self->a = 2.3;
+    return B$class.a;
+}
+String C$$foo$$String(C * self)
+{
+    return C$class.a;
+}
+String C$$bar(C * self)
+{
+    return C$class.a = "hello";
 }
 Integer main(Void)
 {
+    A$class.a = 2;
     B$class.a = 2.3;
     puts(String$$__lsh__(strdup("Hello"), " World"));
     Pointer f = calloc(sizeof(Greeter1), 1);
@@ -143,6 +157,8 @@ Integer main(Void)
     A$$bar(d);
     B$$bar(e);
     f = calloc(sizeof(C), 1);
-    C$$foo(f);
+    C$$foo$$Float(f);
+    C$$bar(f);
+    C$$foo$$String(f);
     return (5 & (1 << 2));
 }

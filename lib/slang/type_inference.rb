@@ -104,7 +104,7 @@ module SLang
     end
 
     def visit_variable(node)
-      var = context.lookup_variable(node.name) or raise "Bug: variable #{node.name} is not defined! #{node.parent.source_code}"
+      var = context.lookup_variable(node.name) or raise "Bug: variable '#{node.name}' is not defined! #{node.parent.source_code}"
       node.type = var.type
       node.optional = var.optional
       node.defined = true
@@ -118,7 +118,7 @@ module SLang
     end
 
     def visit_member(node)
-      var = context.lookup_member(node.name) or raise "Bug: instance variable #{node.name} is not defined!"
+      var = context.lookup_member(node.name) or raise "Bug: instance variable '#{node.name}' is not defined!"
       node.type = var.type
       node.optional = var.optional
       var << node
@@ -126,7 +126,8 @@ module SLang
     end
 
     def visit_class_var(node)
-      var = context.lookup_class_var(node.name) or raise "Bug: class variable #{node.name} is not defined!"
+      var = context.lookup_class_var(node.name) or raise "Bug: class variable '#{node.name}' is not defined!"
+      node.target = var.target
       node.type = var.type
       node.optional = var.optional
       var << node
@@ -134,9 +135,10 @@ module SLang
     end
 
     def visit_class_def(node)
-      superclass = context.types[node.superclass] or raise "uninitialized constant #{node.superclass}" if node.superclass
+      superclass = context.types[node.superclass] or raise "uninitialized constant '#{node.superclass}'" if node.superclass
       node.superclass = superclass
       type = context.object_type node.name
+      type.super_type = superclass
       if superclass
         superclass.cfunc.functions.each do |name, fun|
           type.cfunc.functions[name] = fun.clone
@@ -300,13 +302,14 @@ module SLang
 
       if old_var
         unless old_var.type.base_type == node.type.base_type
-          unless old_var.type == context.types[:UnionType]
-            context.union_type(old_var.type)
+          if !old_var.is_a?(ClassVar) || old_var.target == node.target.target
+            unless old_var.type == context.types[:UnionType]
+              context.union_type(old_var.type)
+            end
+            context.union_type(node.value.type)
+            old_var.optional = true
+            node.target.optional = true
           end
-          context.union_type(node.value.type)
-
-          old_var.optional = true
-          node.target.optional = true
         end
         unless node.target.is_a?(Member) || node.target.is_a?(ClassVar)
           node.target.defined = true

@@ -20,7 +20,12 @@ module SLang
       end
 
       def lookup_class_var(name)
-        @type.class_type.members[name]
+        type = @type
+        while type
+          class_var = type.class_type.members[name]
+          return class_var if class_var
+          type = type.template.super_type
+        end
       end
 
       def <<(var)

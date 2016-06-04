@@ -1,35 +1,21 @@
 module SLang
   class ASTNode
-    def terminator
-      ""
+    def has_code?
+      true
     end
   end
 
-  class Call
-    def terminator
-      ";"
-    end
-  end
-
-  class Variable
-    def terminator
-      ";"
-    end
-  end
-
-  class Return
-    def terminator
-      ";"
-    end
-  end
-
-  class Assign
-    def terminator
-      ";"
+  class ClassDef
+    def has_code?
+      false
     end
   end
 
   class Function
+    def has_code?
+      false
+    end
+
     def simple_name
       return @simple_name if @simple_name
       @simple_name = CLang::Specific.convert(name)
@@ -97,17 +83,14 @@ module SLang
       end
 
       def visit_class_def(node)
-        false
+        true
       end
 
       def visit_expressions(node)
         node.children.each do |exp|
-          unless exp.is_a?(Function) || exp.is_a?(ClassDef)
-            indent
+            indent if exp.has_code?
             exp.accept self
-            stream << exp.terminator
-            stream << "\n"
-          end
+            stream << ";\n" if exp.has_code?
         end
         false
       end
@@ -178,7 +161,8 @@ module SLang
       end
 
       def visit_class_var(node)
-        stream << "#{node.target.name}.#{node.name}"
+        stream << "#{context.types[node.target.name].class_type}.#{node.name}"
+        stream << ".#{context.union_type.members[node.type]}" if node.optional
         false
       end
 

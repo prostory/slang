@@ -20,7 +20,6 @@ module SLang
       end
 
       def lookup_class_var(name)
-        puts "#{@type.class_type.name}, #{name}"
         @type.class_type.members[name]
       end
 

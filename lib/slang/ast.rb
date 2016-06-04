@@ -197,13 +197,13 @@ module SLang
 	class ClassVar < Variable
 		attr_accessor :target
 
-		def initialize(name, target, type = :unknown)
+		def initialize(name, target = nil, type = :unknown)
 			super name, type
 			@target = target
 		end
 
 		def ==(other)
-			super && other.target == this.target
+			super && other.target == target
 		end
 
 		def clone
@@ -290,19 +290,19 @@ module SLang
 	class Lambda < Function
 		@@sequence = 0
 
-		def initialize(params = [], body = [], return_type = :unknown, is_clone = false)
+		def initialize(params = [], body = [], return_type = :unknown, is_clone = false, receiver = nil)
 			name = :"lambda__#{@@sequence}"
-			super name, params, body, return_type
+			super name, params, body, return_type, receiver
 			@@sequence += 1 unless is_clone
 		end
 
 		def ==(other)
 			other.class == self.class && other.params == params && other.body == body &&
-				other.return_type == return_type
+				other.return_type == return_type && other.receiver == receiver
 		end
 
 		def clone
-			lambda = self.class.new params, body, return_type, true
+			lambda = self.class.new params, body, return_type, true, receiver
 			lambda.name = name
 			lambda
 		end

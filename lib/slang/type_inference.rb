@@ -145,7 +145,6 @@ module SLang
           type.cfunc.externals[name] = fun.clone
         end
         superclass.class_type.members do |name, var|
-          puts "#{name}, #{var}"
           type.class_type.members[name] = var
         end
       end

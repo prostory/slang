@@ -165,11 +165,15 @@ module SLang
 
       if node.obj
         node.obj.accept self
+
+        if node.obj.is_a? Const
+          node.obj.type = context.types[node.obj.name].class_type or raise "uninitialized constant #{node.obj.name}"
+        end
       end
 
       types = node.args.each {|arg| arg.accept self}.map(&:type)
 
-      types.unshift node.obj.type if node.obj
+      types.unshift node.obj.type unless node.obj.is_a? Const
 
       unless untyped_fun = context.lookup_function(node.name, node.obj ? node.obj.type.name : nil)
         error = "undefined function '#{node.name}' (#{types.map(&:despect).join ', '}), #{node.source_code}"
@@ -217,7 +221,7 @@ module SLang
       instance.body.type = context.void
 
       context.new_scope(function, call.obj ? call.obj.type : nil) do
-        if call.obj
+        unless call.obj.is_a? Const
           self_var = Parameter.new(call.obj.type, :self)
           context.define_variable self_var
         end
@@ -264,6 +268,11 @@ module SLang
     def visit_external(node)
       context.add_function node
       true
+    end
+
+    def visit_class_fun(node)
+      context.add_function node
+      false
     end
 
     def visit_operator(node)

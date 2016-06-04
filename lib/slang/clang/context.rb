@@ -105,7 +105,11 @@ module SLang
 
       def add_function(fun)
         if class_def = fun.receiver
-          @ctype.types[class_def.name].cfunc << fun
+          if fun.is_a? ClassFun
+            @ctype.types[class_def.name].class_type.cfunc << fun
+          else
+            @ctype.types[class_def.name].cfunc << fun
+          end
         else
           @cfunc << fun
         end

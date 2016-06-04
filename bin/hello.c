@@ -9,12 +9,12 @@ typedef struct { String id; } Greeter1;
 typedef struct { String name; Integer id; } Greeter2;
 typedef struct { Integer id; } Greeter3;
 typedef struct { UnionType id; } Greeter4;
-static struct { Integer a; } A$class;
 typedef struct { Integer a; } A;
-static struct { Float a; } B$class;
+static struct { Integer a; } A$class;
 typedef struct { Float a; } B;
-static struct { String a; } C$class;
+static struct { Float a; } B$class;
 typedef struct {  } C;
+static struct { String a; } C$class;
 extern Float Integer$$to_f(Integer self);
 extern Integer Float$$to_i(Float self);
 extern Integer puts(String);
@@ -40,6 +40,7 @@ extern Float B$$bar(B * self);
 extern Float C$$foo$$Float(C * self);
 extern String C$$foo$$String(C * self);
 extern String C$$bar(C * self);
+extern Integer C$class$$hello(Void);
 Float Integer$$to_f(Integer self)
 {
     return (Float)self;
@@ -125,6 +126,10 @@ String C$$bar(C * self)
 {
     return C$class.a = "hello";
 }
+Integer C$class$$hello(Void)
+{
+    return puts(C$class.a);
+}
 Integer main(Void)
 {
     A$class.a = 2;
@@ -160,5 +165,6 @@ Integer main(Void)
     C$$foo$$Float(f);
     C$$bar(f);
     C$$foo$$String(f);
+    C$class$$hello();
     return (5 & (1 << 2));
 }

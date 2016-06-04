@@ -76,20 +76,6 @@ module SLang
       end
     end
 
-    class ClassType < CStruct
-      def initialize(context, name)
-        super context, {}, "#{name}$class".to_sym
-      end
-
-      def define
-        members.empty? ? "" : "static #{type} #{name};\n"
-      end
-
-      def display_members
-        members.map {|name, var| "#{var.optional ? context.union_type : var.type.ref} #{name};"}.join ' '
-      end
-    end
-
     class ObjectType < CStruct
       attr_accessor :instances
       attr_accessor :class_type
@@ -97,8 +83,13 @@ module SLang
       def initialize(context, name)
         super context, {}, name
         @base_type = context.pointer
-        @class_type = ClassType.new(context, name)
-        context.types[@class_type.name] ||= @class_type
+
+      end
+
+      def class_type
+        return @class_type if @class_type
+        @class_type = ClassType.new(context, @name)
+        context.types[@class_type.name] = @class_type
       end
 
       def define
@@ -149,6 +140,21 @@ module SLang
         @instances ||= []
         @instances << obj
         obj
+      end
+    end
+
+    class ClassType < ObjectType
+      def initialize(context, name)
+        super context, "#{name}$class".to_sym
+        @class_type = self
+      end
+
+      def define
+        members.empty? ? "" : "static #{type} #{name};\n"
+      end
+
+      def display_members
+        members.map {|name, var| "#{var.optional ? context.union_type : var.type.ref} #{name};"}.join ' '
       end
     end
 

@@ -95,7 +95,8 @@ module SLang
               ],
               [:class, :C, :B,
                   [:fun, :foo, [], [:ret, :@@a]],
-                  [:fun, :bar, [], [:set, :@@a, "hello"]]
+                  [:fun, :bar, [], [:set, :@@a, "hello"]],
+                  [:static, :hello, [], [:echo, :@@a]]
               ],
               [:echo, [:<<, [:dup, "Hello"], [" World"]]],
               [:set, :f, [:new, :Greeter]],
@@ -125,7 +126,8 @@ module SLang
               [:set, :f, [:new, :C]],
               [:foo, :f],
               [:bar, :f],
-              [:foo, :f]
+              [:foo, :f],
+              [:hello, :C]
       ]
       main_prog = [:fun, :main, [], prog << [:ret, [:&, 5, [[:<<, 1, [2]]]]], :Integer]
 

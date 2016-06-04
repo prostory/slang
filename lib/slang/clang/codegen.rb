@@ -22,7 +22,7 @@ module SLang
     end
 
     def mangled_name
-      if owner && params.first.type == owner
+      if owner && params.first && params.first.type == owner
         param_types = params[1..-1].map(&:type)
       else
         param_types = params.map(&:type)
@@ -118,7 +118,7 @@ module SLang
         stream << node.target_fun.mangled_name.to_s
 
         stream << '('
-        if node.obj
+        unless node.obj.is_a? Const
           node.obj.accept self
         end
         node.args.each_with_index do |arg, i|
@@ -179,6 +179,10 @@ module SLang
       end
 
       def visit_operator(node)
+        false
+      end
+
+      def visit_class_fun(node)
         false
       end
 

@@ -328,7 +328,10 @@ module SLang
 	end
 
 	class Operator < External
-	end
+  end
+
+  class ClassFun < Function
+  end
 
 	class If < ASTNode
 		attr_accessor :cond

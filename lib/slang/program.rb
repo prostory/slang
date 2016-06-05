@@ -105,7 +105,9 @@ module SLang
               [:b, :B],
               [:set_id, :b, [2.3]],
               [:get_id, :b],
-              [:echo, [:name, :b]]
+              [:echo, [:name, :b]],
+              [:echo, [:type, :b]],
+              [:echo, [:type, [:get_id, :b]]]
       ]
       main_prog = [:fun, :main, [], prog << [:ret, [:&, 5, [[:<<, 1, [2]]]]], :Integer]
 

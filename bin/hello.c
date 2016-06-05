@@ -85,5 +85,7 @@ Integer main(Void)
     B$$set_id(b, 2.3);
     B$$get_id(b);
     puts(B$$name(b));
+    puts("B");
+    puts("Float");
     return (5 & (1 << 2));
 }

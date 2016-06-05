@@ -110,13 +110,20 @@ module SLang
           return false
         end
 
-        if node.obj && node.obj.type.is_a?(CLang::ClassType)
-          case node.name
-          when :sizeof
-            stream << "sizeof(#{node.obj.type.object_type})"
+        if node.obj
+          if node.name == :type
+            stream << '"'
+            stream << "#{node.obj.type.object_type}"
+            stream << '"'
             return false
-          when :type
-            return false
+          end
+
+          if node.obj.type.is_a?(CLang::ClassType)
+            case node.name
+            when :sizeof
+              stream << "sizeof(#{node.obj.type.object_type})"
+              return false
+            end
           end
         end
 

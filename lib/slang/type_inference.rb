@@ -153,13 +153,15 @@ module SLang
           node.obj.type = context.types[node.obj.name].class_type or raise "uninitialized constant #{node.obj.name}"
         end
 
+        if node.name == :type
+          node.type = context.string
+          return false
+        end
+
         if node.obj.type.is_a?(CLang::ClassType)
           case node.name
           when :sizeof
             node.type = context.int
-            return false
-          when :type
-            node.type = node.obj.type.object_type
             return false
           end
         end
@@ -327,7 +329,7 @@ module SLang
     def visit_cast(node)
       node.target.accept self
       node.value.accept self
-      node.type = node.value.type = node.target.type
+      node.type = node.value.type = node.target.obj.type.object_type
       false
     end
   end

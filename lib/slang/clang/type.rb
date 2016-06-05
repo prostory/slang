@@ -9,6 +9,7 @@ module SLang
       attr_accessor :methods
       attr_accessor :base_type
       attr_accessor :super_type
+      attr_accessor :object_type
 
       def initialize(context, name, type)
         @name = name
@@ -18,6 +19,7 @@ module SLang
         @template = self
         @methods = []
         @base_type = self
+        @object_type = self
       end
 
       def define

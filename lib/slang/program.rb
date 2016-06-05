@@ -2,9 +2,10 @@ module SLang
   class Program
     def self.run
       prog = [:do,
+              [:external, :calloc, [:Integer, :Integer], :Pointer],
               [:class, :Object, nil,
-                  [:static, :__alloc__, [], [:ret, 1]],
-                  [:static, :create, [], [:__alloc__]],
+                  [:static, :__alloc__, [], [:cast, [:type], [:calloc, nil, [[:sizeof], 1]]]],
+                  [:static, :new, [], [[:set, :obj, [:__alloc__]], [:__init__, :obj], [:ret, :obj]]],
                   [:fun, :__init__, [], []]
               ],
               [:class, :Integer, nil,
@@ -82,13 +83,16 @@ module SLang
                                   [:set, :self, [:grow, :self, [:len]]],
                                   [:cat, :self, [:s]]]]
               ],
-              [:class, :A, nil,
+              [:class, :A, :Object,
                 [:fun, :a, [], [:echo, "hello"]],
                   [:static, :b, [], [:echo, "static hello"]],
                   [:fun, :set_id, [:n], [:set, :@a, :n]],
                   [:fun, :get_id, [], [:ret, :@a]]
               ],
-              [:class, :B, :A],
+              [:class, :B, :A,
+                  [:fun, :__init__, [], [:set, :@name, "Xiao Peng"]],
+                  [:fun, :name, [], [:ret, :@name]]
+              ],
               [:set, :b, [:new, :B]],
               [:a, :b],
               [:b, :A],
@@ -101,7 +105,7 @@ module SLang
               [:b, :B],
               [:set_id, :b, [2.3]],
               [:get_id, :b],
-              [:create, :Object]
+              [:echo, [:name, :b]]
       ]
       main_prog = [:fun, :main, [], prog << [:ret, [:&, 5, [[:<<, 1, [2]]]]], :Integer]
 

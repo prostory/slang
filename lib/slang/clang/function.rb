@@ -5,57 +5,60 @@ module SLang
   end
 
   class FunctionTemplate
-    attr_accessor :name
-
     def initialize
-      @instances = []
+      @functions = []
     end
 
     def <<(fun)
-      @name ||= fun.name
-      @instances << fun
+      @functions << fun
     end
 
-    def instance
-      @instances.last
+    def empty?
+      @functions.empty?
     end
 
-    def instances
-      @instances.each_with_index do |fun, idx|
+    def function
+      @functions.last
+    end
+
+    def functions
+      @functions.each_with_index do |fun, idx|
         fun.sequence = idx if idx > 0
       end
-      @instances
+      @functions
     end
   end
 
   module CLang
     class CFunction
       attr_accessor :context
-      attr_accessor :functions
+      attr_accessor :templates
 
       def initialize(context)
         @context = context
-        @functions = {}
+        @templates = {}
       end
 
       def <<(fun)
-        template = functions[fun.name] || FunctionTemplate.new
+        template = templates[fun.name] || FunctionTemplate.new
         template << fun
-        functions[fun.name] = template
+        templates[fun.name] = template
       end
 
       def [](name)
-        functions[name]
+        templates[name]
       end
 
       def declear_functions
-        functions.values.each do |template|
-          template.instances.each {|fun| declear_function fun unless fun.name == :main || fun.is_a?(Operator)}
+        templates.values.each do |template|
+          template.functions.each {|fun| declear_function fun unless fun.name == :main || fun.is_a?(Operator)}
         end
       end
 
       def define_functions
-        functions.values.each { |template| template.instances.each {|fun| define_function fun unless fun.is_a? External} }
+        templates.values.each do |template|
+          template.functions.each {|fun| define_function fun unless fun.is_a? External}
+        end
       end
 
       def declear_function(node)
@@ -75,7 +78,7 @@ module SLang
       end
 
       def declear_function_instance(node)
-        stream << "extern #{node.body.type} #{node.mangled_name}("
+        stream << "extern #{node.body.type.ref} #{node.mangled_name}("
         define_paramters(node)
         stream << ");\n"
       end
@@ -97,7 +100,7 @@ module SLang
       end
 
       def define_function_instance(node)
-        stream << "#{node.body.type} #{node.mangled_name}("
+        stream << "#{node.body.type.ref} #{node.mangled_name}("
         define_paramters(node)
         stream << ")\n{\n"
         with_indent do

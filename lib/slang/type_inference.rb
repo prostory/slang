@@ -144,12 +144,6 @@ module SLang
     end
 
     def visit_call(node)
-      if node.obj.is_a?(Const) && node.name == :new
-        type = context.types[node.obj.name] or raise "uninitialized constant #{node.obj.name}"
-        node.type = type.clone
-        return false
-      end
-
       node.obj ||= Variable.new(:self, context.scope.type) if context.scope
 
       if node.obj
@@ -158,17 +152,29 @@ module SLang
         if node.obj.is_a? Const
           node.obj.type = context.types[node.obj.name].class_type or raise "uninitialized constant #{node.obj.name}"
         end
+
+        if node.obj.type.is_a?(CLang::ClassType)
+          case node.name
+          when :sizeof
+            node.type = context.int
+            return false
+          when :type
+            node.type = node.obj.type.object_type
+            return false
+          end
+        end
       end
 
       types = node.args.each {|arg| arg.accept self}.map(&:type)
-
-      types.unshift node.obj.type if node.obj
 
       unless untyped_fun = context.lookup_function(node.name, node.obj)
         error = "undefined function '#{node.name}' (#{types.map(&:despect).join ', '}), #{node.source_code}"
         error << " for #{node.obj.type.name}" if node.obj
         raise error
       end
+
+      types.unshift node.obj.type if node.obj && untyped_fun.receiver
+      node.obj = nil if untyped_fun.receiver.nil?
 
       if node.args.length != untyped_fun.params.length
         raise "wrong number of arguments for '#{node.name}' (#{node.args.length} for #{untyped_fun.params.length})"
@@ -319,8 +325,9 @@ module SLang
     end
 
     def visit_cast(node)
+      node.target.accept self
       node.value.accept self
-      node.type = node.value.type = context.types[node.cast_type]
+      node.type = node.value.type = node.target.type
       false
     end
   end

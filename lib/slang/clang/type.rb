@@ -89,13 +89,12 @@ module SLang
       def class_type
         return @class_type if @class_type
         @class_type = ClassType.new(context, @name, super_type && super_type.class_type)
+        @class_type.object_type = template
         context.types[@class_type.name] = @class_type
       end
 
       def define
-        unless instances
-          return super
-        end
+        return super unless instances
 
         unless instances.size > 1
           return instances.map {|obj| obj.define}.join "\n"
@@ -145,6 +144,7 @@ module SLang
 
     class ClassType < ObjectType
       attr_accessor :class_name
+      attr_accessor :object_type
 
       def initialize(context, name, super_type)
         super context, "#{name}$Class".to_sym, super_type
@@ -182,6 +182,10 @@ module SLang
 
       def <<(type)
         members[type] = "U#{type}" unless members[type]
+      end
+
+      def define
+        members.empty? ? "" : super
       end
 
       def add_types(types)

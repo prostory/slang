@@ -110,15 +110,20 @@ module SLang
           return false
         end
 
-        if node.obj.is_a?(Const) && node.name == :new
-          stream << "calloc(sizeof(#{node.type.name}), 1)"
-          return false
+        if node.obj && node.obj.type.is_a?(CLang::ClassType)
+          case node.name
+          when :sizeof
+            stream << "sizeof(#{node.obj.type.object_type})"
+            return false
+          when :type
+            return false
+          end
         end
 
         stream << node.target_fun.mangled_name.to_s
 
         stream << '('
-        node.obj.accept self
+        node.obj.accept self if node.obj
         node.args.each_with_index do |arg, i|
           stream << ', ' if i > 0 || node.obj
           arg.accept self
@@ -228,7 +233,7 @@ module SLang
       end
 
       def visit_cast(node)
-        stream << "(#{node.type})"
+        stream << "(#{node.type.ref})"
         node.value.accept self
       end
 

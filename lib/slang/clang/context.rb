@@ -120,12 +120,12 @@ module SLang
         if obj
           type = obj.type
           while type
-            fun = type.cfunc[name]
-            return fun.instance if fun
+            template = type.cfunc[name]
+            return template.function if template
             type = type.template.super_type
           end
         end
-        @cfunc[name] && @cfunc[name].instance
+        @cfunc[name] && @cfunc[name].function
       end
 
       def define_variable(var)

@@ -2,6 +2,11 @@ module SLang
   class Program
     def self.run
       prog = [:do,
+              [:class, :Object, nil,
+                  [:static, :__alloc__, [], [:ret, 1]],
+                  [:static, :create, [], [:__alloc__]],
+                  [:fun, :__init__, [], []]
+              ],
               [:class, :Integer, nil,
                [:operator, :+, [:Integer], :Integer],
                [:operator, :-, [:Integer], :Integer],
@@ -89,13 +94,14 @@ module SLang
               [:b, :A],
               [:class, :A, nil,
                 [:fun, :a, [], [:echo, "world"]],
-                  [:static, :b, [], [:echo, "static world"]]
+                  [:static, :b, [], [[:echo, "static world"], [:set, :@@a, 5]]]
               ],
               [:a, :b],
               [:b, :A],
               [:b, :B],
               [:set_id, :b, [2.3]],
-              [:get_id, :b]
+              [:get_id, :b],
+              [:create, :Object]
       ]
       main_prog = [:fun, :main, [], prog << [:ret, [:&, 5, [[:<<, 1, [2]]]]], :Integer]
 

@@ -118,9 +118,7 @@ module SLang
         stream << node.target_fun.mangled_name.to_s
 
         stream << '('
-        unless node.obj.is_a? Const
-          node.obj.accept self
-        end
+        node.obj.accept self
         node.args.each_with_index do |arg, i|
           stream << ', ' if i > 0 || node.obj
           arg.accept self
@@ -150,7 +148,7 @@ module SLang
       end
 
       def visit_const(node)
-        stream << node.name.to_s
+        stream << "&#{context.types[node.name].class_type.class_name}"
         false
       end
 
@@ -161,9 +159,7 @@ module SLang
       end
 
       def visit_class_var(node)
-        stream << "#{context.types[node.target.name].class_type}.#{node.name}"
-        stream << ".#{context.union_type.members[node.type]}" if node.optional
-        false
+        visit_member(node)
       end
 
       def visit_function(node)

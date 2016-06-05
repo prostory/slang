@@ -144,14 +144,16 @@ module SLang
     end
 
     class ClassType < ObjectType
+      attr_accessor :class_name
 
       def initialize(context, name, super_type)
-        super context, "#{name}$class".to_sym, super_type
+        super context, "#{name}$Class".to_sym, super_type
         @class_type = self
+        @class_name = "#{name}$class"
       end
 
       def define
-        members.empty? ? "" : "static #{type} #{name};\n"
+        "typedef #{type} #{name};\nstatic #{name} #{class_name};\n"
       end
 
       def display_members

@@ -150,6 +150,8 @@ module SLang
         return false
       end
 
+      node.obj ||= Variable.new(:self, context.scope.type) if context.scope
+
       if node.obj
         node.obj.accept self
 
@@ -160,7 +162,7 @@ module SLang
 
       types = node.args.each {|arg| arg.accept self}.map(&:type)
 
-      types.unshift node.obj.type unless node.obj.is_a? Const
+      types.unshift node.obj.type if node.obj
 
       unless untyped_fun = context.lookup_function(node.name, node.obj)
         error = "undefined function '#{node.name}' (#{types.map(&:despect).join ', '}), #{node.source_code}"
@@ -208,7 +210,7 @@ module SLang
       instance.body.type = context.void
 
       context.new_scope(function, call.obj && call.obj.type) do
-        unless call.obj.is_a? Const
+        if call.obj
           self_var = Parameter.new(call.obj.type, :self)
           context.define_variable self_var
         end

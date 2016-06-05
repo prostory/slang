@@ -124,9 +124,8 @@ module SLang
             return fun.instance if fun
             type = type.template.super_type
           end
-        else
-          @cfunc[name].instance
         end
+        @cfunc[name] && @cfunc[name].instance
       end
 
       def define_variable(var)

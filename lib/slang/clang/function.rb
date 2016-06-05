@@ -1,47 +1,73 @@
 module SLang
   class Function
     attr_accessor :redefined
+    attr_accessor :sequence
+  end
+
+  class FunctionTemplate
+    attr_accessor :name
+
+    def initialize
+      @instances = []
+    end
+
+    def <<(fun)
+      @name ||= fun.name
+      @instances << fun
+    end
+
+    def instance
+      @instances.last
+    end
+
+    def instances
+      @instances.each_with_index do |fun, idx|
+        fun.sequence = idx if idx > 0
+      end
+      @instances
+    end
   end
 
   module CLang
     class CFunction
       attr_accessor :context
       attr_accessor :functions
-      attr_accessor :externals
 
       def initialize(context)
         @context = context
         @functions = {}
-        @externals = {}
       end
 
       def <<(fun)
-        if fun.is_a? External
-          externals[fun.name] = fun
-        else
-          functions[fun.name] = fun
-        end
+        template = functions[fun.name] || FunctionTemplate.new
+        template << fun
+        functions[fun.name] = template
       end
 
       def [](name)
-        functions[name] || externals[name]
+        functions[name]
       end
 
       def declear_functions
-        externals.values.each { |fun| declear_function fun unless fun.is_a? Operator}
-        functions.values.each { |fun| declear_function fun unless fun.name == :main }
+        functions.values.each do |template|
+          template.instances.each {|fun| declear_function fun unless fun.name == :main || fun.is_a?(Operator)}
+        end
       end
 
       def define_functions
-        functions.values.each { |fun| define_function fun }
+        functions.values.each { |template| template.instances.each {|fun| define_function fun unless fun.is_a? External} }
       end
 
       def declear_function(node)
         node.instances.values.each do |fun|
           if !fun.redefined
             if fun.instances
-              fun.instances.values.each {|instance| declear_function_instance instance}
+              fun.instances.values.each do |instance|
+                instance.sequence = node.sequence
+                declear_function_instance instance
+              end
             else
+              fun.sequence = node.sequence
               declear_function_instance fun
             end
           end
@@ -58,8 +84,12 @@ module SLang
         node.instances.each do |_, fun|
           if !fun.redefined
             if fun.instances
-              fun.instances.values.each {|instance| define_function_instance instance}
+              fun.instances.values.each do |instance|
+                instance.sequence = node.sequence
+                define_function_instance instance
+              end
             else
+              fun.sequence = node.sequence
               define_function_instance fun
             end
           end

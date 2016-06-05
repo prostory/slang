@@ -80,15 +80,15 @@ module SLang
       attr_accessor :instances
       attr_accessor :class_type
 
-      def initialize(context, name)
+      def initialize(context, name, super_type)
         super context, {}, name
         @base_type = context.pointer
-
+        @super_type = super_type
       end
 
       def class_type
         return @class_type if @class_type
-        @class_type = ClassType.new(context, @name)
+        @class_type = ClassType.new(context, @name, super_type && super_type.class_type)
         context.types[@class_type.name] = @class_type
       end
 
@@ -134,7 +134,7 @@ module SLang
       end
 
       def clone
-        obj = ObjectType.new context, name
+        obj = ObjectType.new context, name, super_type
         obj.template = self
         obj.class_type = class_type
         @instances ||= []
@@ -144,8 +144,9 @@ module SLang
     end
 
     class ClassType < ObjectType
-      def initialize(context, name)
-        super context, "#{name}$class".to_sym
+
+      def initialize(context, name, super_type)
+        super context, "#{name}$class".to_sym, super_type
         @class_type = self
       end
 

@@ -61,8 +61,8 @@ module SLang
         @ctype.enum members, name
       end
 
-      def object_type(name)
-        types[name] ||= ObjectType.new(self, name)
+      def object_type(name, super_type = nil)
+        types[name] ||= ObjectType.new(self, name, super_type)
       end
 
       def union_type(type = nil)
@@ -116,8 +116,17 @@ module SLang
         fun
       end
 
-      def lookup_function(name, class_name = nil)
-        class_name ? @ctype.types[class_name.to_sym].cfunc[name] : @cfunc[name]
+      def lookup_function(name, obj = nil)
+        if obj
+          type = obj.type
+          while type
+            fun = type.cfunc[name]
+            return fun.instance if fun
+            type = type.template.super_type
+          end
+        else
+          @cfunc[name].instance
+        end
       end
 
       def define_variable(var)

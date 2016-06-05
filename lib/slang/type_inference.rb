@@ -104,7 +104,7 @@ module SLang
     end
 
     def visit_variable(node)
-      var = context.lookup_variable(node.name) or raise "Bug: variable '#{node.name}' is not defined! #{node.parent.source_code}"
+      var = context.lookup_variable(node.name) or raise "Bug: variable '#{node.name}' is not defined!"
       node.type = var.type
       node.optional = var.optional
       node.defined = true
@@ -136,20 +136,7 @@ module SLang
 
     def visit_class_def(node)
       superclass = context.types[node.superclass] or raise "uninitialized constant '#{node.superclass}'" if node.superclass
-      node.superclass = superclass
-      type = context.object_type node.name
-      type.super_type = superclass
-      if superclass
-        superclass.cfunc.functions.each do |name, fun|
-          type.cfunc.functions[name] = fun.clone
-        end
-        superclass.cfunc.externals.each do |name, fun|
-          type.cfunc.externals[name] = fun.clone
-        end
-        superclass.class_type.members do |name, var|
-          type.class_type.members[name] = var
-        end
-      end
+      type = context.object_type node.name, superclass
       context.new_scope(nil, type) do
         node.accept_children self
       end
@@ -175,7 +162,7 @@ module SLang
 
       types.unshift node.obj.type unless node.obj.is_a? Const
 
-      unless untyped_fun = context.lookup_function(node.name, node.obj ? node.obj.type.name : nil)
+      unless untyped_fun = context.lookup_function(node.name, node.obj)
         error = "undefined function '#{node.name}' (#{types.map(&:despect).join ', '}), #{node.source_code}"
         error << " for #{node.obj.type.name}" if node.obj
         raise error
@@ -220,7 +207,7 @@ module SLang
       instance.owner = call.obj.type if call.obj
       instance.body.type = context.void
 
-      context.new_scope(function, call.obj ? call.obj.type : nil) do
+      context.new_scope(function, call.obj && call.obj.type) do
         unless call.obj.is_a? Const
           self_var = Parameter.new(call.obj.type, :self)
           context.define_variable self_var

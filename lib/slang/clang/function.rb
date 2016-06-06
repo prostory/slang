@@ -6,23 +6,27 @@ module SLang
 
   class FunctionTemplate
     def initialize
-      @functions = []
+      @functions = {}
     end
 
     def <<(fun)
-      @functions << fun
+      if fun.params.last && fun.params.last.type == :VarList
+        @functions[:varlist] = fun
+      else
+        @functions[fun.params.size] = fun
+      end
     end
 
     def empty?
       @functions.empty?
     end
 
-    def function
-      @functions.last
+    def function(arg_size = 0)
+      @functions[arg_size] || @functions[:varlist]
     end
 
     def functions
-      @functions.each_with_index do |fun, idx|
+      @functions.values.each_with_index do |fun, idx|
         fun.sequence = idx if idx > 0
       end
       @functions
@@ -51,13 +55,13 @@ module SLang
 
       def declear_functions
         templates.values.each do |template|
-          template.functions.each {|fun| declear_function fun unless fun.name == :main || fun.is_a?(Operator)}
+          template.functions.values.each {|fun| declear_function fun unless fun.name == :main || fun.is_a?(Operator)}
         end
       end
 
       def define_functions
         templates.values.each do |template|
-          template.functions.each {|fun| define_function fun unless fun.is_a? External}
+          template.functions.values.each {|fun| define_function fun unless fun.is_a? External}
         end
       end
 
@@ -114,7 +118,11 @@ module SLang
         if node.params.length > 0
           node.params.each_with_index do |param, i|
             stream << ', ' if i > 0
-            param.accept visitor
+            if node.is_a?(External) && param.var_list?
+              stream << '...'
+            else
+              param.accept visitor
+            end
           end
         else
           stream << context.void.to_s

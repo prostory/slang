@@ -9,6 +9,10 @@ module SLang
 
   class Call
     attr_accessor :target_fun
+
+    def has_var_list?
+      args.any? && args.last.is_a?(Variable) && args.last.var_list?
+    end
   end
 
   class Variable
@@ -25,6 +29,10 @@ module SLang
         @optional = is_optional
         @instances.each {|instance| instance.optional = is_optional} if @instances
       end
+    end
+
+    def var_list?
+      type && (type == :VarList || (type.is_a?(CLang::BaseType) && type.name == :VarList))
     end
   end
 
@@ -61,6 +69,10 @@ module SLang
 
     def [](arg_types)
       @instances && @instances[arg_types]
+    end
+
+    def has_var_list?
+      params.any? && params.last.var_list?
     end
   end
 
@@ -112,7 +124,7 @@ module SLang
     end
 
     def visit_parameter(node)
-      node.type = context.types[node.type]
+      node.type = node.var_list? ? context.varlist : context.types[node.type]
       false
     end
 
@@ -168,16 +180,7 @@ module SLang
 
       types = node.args.each {|arg| arg.accept self}.map(&:type)
 
-      unless untyped_fun = context.lookup_function(node.name, node.obj)
-        error = "undefined function '#{node.name}' (#{types.map(&:despect).join ', '}), #{node.source_code}"
-        error << " for #{node.obj.type.name}" if node.obj
-        raise error
-      end
-
-      types.unshift node.obj.type if node.obj && untyped_fun.receiver
-      node.obj = nil if untyped_fun.receiver.nil?
-
-      if types.last == context.varlist
+      if node.has_var_list?
         node.args.pop
         types.last.vars.each do |var|
           var.defined = true
@@ -186,11 +189,14 @@ module SLang
         end
       end
 
-      unless node.args.length == untyped_fun.params.length
-        if !(untyped_fun.params.last && untyped_fun.params.last.type == :VarList)
-          raise "wrong number of arguments for '#{node.name}' (#{node.args.length} for #{untyped_fun.params.length})"
-        end
+      unless untyped_fun = context.lookup_function(node.name, node.obj, node.args.size)
+        error = "undefined function '#{node.name}' (#{types.map(&:despect).join ', '}), #{node.source_code}"
+        error << " for #{node.obj.type.name}" if node.obj
+        raise error
       end
+
+      types.unshift node.obj.type if node.obj && untyped_fun.receiver
+      node.obj = nil if untyped_fun.receiver.nil?
 
       typed_fun = untyped_fun[types]
 
@@ -234,7 +240,7 @@ module SLang
 
         instance.params.each {|param| param.accept self}
 
-        varlist = instance.params.pop if instance.params.any? && instance.params.last.type == context.varlist
+        varlist = instance.params.pop if instance.has_var_list?
 
         call.args.each_with_index do |_, i|
           if i >= instance.params.length

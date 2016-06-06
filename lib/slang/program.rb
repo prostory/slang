@@ -79,6 +79,7 @@ module SLang
                [:external, :dup, :strdup, [], :String],
                [:external, :grow, :realloc, [:Integer], :String],
                [:external, :cat, :strcat, [:String], :String],
+                  [:external, :printf, [:VarList], :Integer],
                [:fun, :<<, [:s], [[:set, :len, [:+, [:+, [:len, :self], [[:len, :s]]], [1]]],
                                   [:set, :self, [:grow, :self, [:len]]],
                                   [:cat, :self, [:s]]]]
@@ -91,9 +92,10 @@ module SLang
               ],
               [:class, :B, :A,
                   [:fun, :__init__, [:name], [:set, :@name, :name]],
+                  [:fun, :__init__, [:name, :id], [[:set, :@name, :name], [:set, :@id, :id]]],
                   [:fun, :name, [], [:ret, :@name]]
               ],
-              [:set, :b, [:new, :B, ["Xiao Peng"]]],
+              [:set, :b, [:new, :B, ["Xiao Peng", 1]]],
               [:a, :b],
               [:b, :A],
               [:class, :A, nil,
@@ -107,7 +109,8 @@ module SLang
               [:get_id, :b],
               [:echo, [:name, :b]],
               [:echo, [:type, :b]],
-              [:echo, [:type, [:get_id, :b]]]
+              [:echo, [:type, [:get_id, :b]]],
+              [:printf, 'hello, goto %f\n', [[:get_id, :b]]]
       ]
       main_prog = [:fun, :main, [], prog << [:ret, [:&, 5, [[:<<, 1, [2]]]]], :Integer]
 

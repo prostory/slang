@@ -19,8 +19,6 @@ module SLang
         base_type('void *', :Pointer)
         enum([:False, :True], :Bool)
         union_type
-
-        types[:VarList] ||= VarList.new(self)
       end
 
       def void
@@ -48,7 +46,7 @@ module SLang
       end
 
       def varlist
-        types[:VarList]
+        VarList.new(self)
       end
 
       def base_type(type, name)
@@ -122,16 +120,16 @@ module SLang
         fun
       end
 
-      def lookup_function(name, obj = nil)
+      def lookup_function(name, obj = nil, arg_size = 0)
         if obj
           type = obj.type
           while type
             template = type.cfunc[name]
-            return template.function if template
+            return template.function(arg_size) if template
             type = type.template.super_type
           end
         end
-        @cfunc[name] && @cfunc[name].function
+        @cfunc[name] && @cfunc[name].function(arg_size)
       end
 
       def define_variable(var)

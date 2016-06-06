@@ -234,6 +234,67 @@ module SLang
       end
     end
 
+
+    class VarList < BaseType
+      include Enumerable
+
+      attr_accessor :list
+
+      def initialize(context)
+        super context, :VarList, :Pointer
+        @list = []
+      end
+
+      def ref
+        s = ''
+        @list.each_with_index do |t, i|
+          s << "#{t.ref} var#{i}"
+          s << ', ' if i < @list.length-1
+        end
+        s
+      end
+
+      def vars
+        vars = []
+        @list.each_with_index do |t, i|
+          vars << Variable.new("var#{i}", t)
+        end
+        vars
+      end
+
+      def size
+        @list.size
+      end
+
+      def empty?
+        @list.empty?
+      end
+
+      def each(&block)
+        @list.each(&block)
+      end
+
+      def [](index)
+        @list[index]
+      end
+
+      def []=(index, type)
+        @list[index] = type
+      end
+
+      def <<(type)
+        @list << type
+      end
+
+      def to_s
+        @list.join ', '
+      end
+
+      def ==(other)
+        other.class == self.class && other.list == list
+      end
+    end
+
     class CType
       attr_accessor :context
       attr_accessor :types

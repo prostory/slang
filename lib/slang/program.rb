@@ -5,7 +5,7 @@ module SLang
               [:external, :calloc, [:Integer, :Integer], :Pointer],
               [:class, :Object, nil,
                   [:static, :__alloc__, [], [:cast, [:type], [:calloc, nil, [[:sizeof], 1]]]],
-                  [:static, :new, [], [[:set, :obj, [:__alloc__]], [:__init__, :obj], [:ret, :obj]]],
+                  [:static, :new, {args: :VarList}, [[:set, :obj, [:__alloc__]], [:__init__, :obj, [:args]], [:ret, :obj]]],
                   [:fun, :__init__, [], []]
               ],
               [:class, :Integer, nil,
@@ -90,10 +90,10 @@ module SLang
                   [:fun, :get_id, [], [:ret, :@a]]
               ],
               [:class, :B, :A,
-                  [:fun, :__init__, [], [:set, :@name, "Xiao Peng"]],
+                  [:fun, :__init__, [:name], [:set, :@name, :name]],
                   [:fun, :name, [], [:ret, :@name]]
               ],
-              [:set, :b, [:new, :B]],
+              [:set, :b, [:new, :B, ["Xiao Peng"]]],
               [:a, :b],
               [:b, :A],
               [:class, :A, nil,

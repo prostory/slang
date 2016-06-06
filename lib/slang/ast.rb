@@ -169,7 +169,7 @@ module SLang
 
 		def initialize(name, type = :unknown)
 			@name = name
-			@type = type
+			@type = type || :unknown
 		end
 
 		def ==(other)
@@ -182,13 +182,6 @@ module SLang
 	end
 
 	class Parameter < Variable
-    def initialize(type, name = nil)
-      super name, type
-    end
-
-    def clone
-      self.class.new type, name
-    end
 	end
 
 	class Member < Variable
@@ -283,7 +276,9 @@ module SLang
 		end
 
 		def clone
-			self.class.new name, params.map(&:clone), body.clone, return_type, receiver
+			function = self.class.new name, params.map(&:clone), body.clone, return_type, receiver
+			function.source_code = source_code
+			function
 		end
 	end
 

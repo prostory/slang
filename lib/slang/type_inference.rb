@@ -77,7 +77,6 @@ module SLang
       else
         node.type = node.last.type
       end
-
     end
 
     def end_visit_do(node)
@@ -178,20 +177,30 @@ module SLang
       types.unshift node.obj.type if node.obj && untyped_fun.receiver
       node.obj = nil if untyped_fun.receiver.nil?
 
-      if node.args.length != untyped_fun.params.length
-        raise "wrong number of arguments for '#{node.name}' (#{node.args.length} for #{untyped_fun.params.length})"
+      if types.last == context.varlist
+        node.args.pop
+        types.last.vars.each do |var|
+          var.defined = true
+          node.args << var
+          types << var.type
+        end
+      end
+
+      unless node.args.length == untyped_fun.params.length
+        if !(untyped_fun.params.last && untyped_fun.params.last.type == :VarList)
+          raise "wrong number of arguments for '#{node.name}' (#{node.args.length} for #{untyped_fun.params.length})"
+        end
       end
 
       typed_fun = untyped_fun[types]
 
-      if untyped_fun.is_a?(External) && typed_fun == nil
-        typed_fun = untyped_fun.clone
-        typed_fun.params.unshift Parameter.new(context.types[typed_fun.receiver.name]) if typed_fun.receiver
-        typed_fun.body.type = context.types[typed_fun.return_type]
-        untyped_fun << typed_fun
-      end
-
-      if typed_fun.is_a? External
+      if untyped_fun.is_a?(External)
+        unless typed_fun
+          typed_fun = untyped_fun.clone
+          typed_fun.params.unshift Parameter.new(nil, context.types[typed_fun.receiver.name]) if typed_fun.receiver
+          typed_fun.body.type = context.types[typed_fun.return_type]
+          untyped_fun << typed_fun
+        end
         node.target_fun = typed_fun
         node.type = typed_fun.body.type
         return
@@ -219,13 +228,28 @@ module SLang
 
       context.new_scope(function, call.obj && call.obj.type) do
         if call.obj
-          self_var = Parameter.new(call.obj.type, :self)
+          self_var = Parameter.new(:self, call.obj.type)
           context.define_variable self_var
         end
 
-        function.params.each_with_index do |_, i|
-          instance.params[i].type = call.args[i].type
-          context.define_variable instance.params[i]
+        instance.params.each {|param| param.accept self}
+
+        varlist = instance.params.pop if instance.params.any? && instance.params.last.type == context.varlist
+
+        call.args.each_with_index do |_, i|
+          if i >= instance.params.length
+            if varlist
+              varlist.type << call.args[i].type
+            end
+          else
+            instance.params[i].type = call.args[i].type
+            context.define_variable instance.params[i]
+          end
+        end
+
+        if varlist
+          instance.params.push varlist unless varlist.type.empty?
+          context.define_variable varlist
         end
 
         instance.params.unshift self_var if self_var

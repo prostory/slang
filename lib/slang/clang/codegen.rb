@@ -154,6 +154,11 @@ module SLang
       end
 
       def visit_parameter(node)
+        if node.type == context.varlist
+          stream << "#{node.type.ref}"
+          return false
+        end
+
         stream << "#{node.type.ref}"
         stream << " #{node.name}" if node.name
         false

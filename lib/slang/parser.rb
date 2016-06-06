@@ -20,9 +20,9 @@ module SLang
 			when :do
 				Do.new parse_expression(exp[1..-1])
 			when :fun
-				Function.new exp[1], parse_vars(exp[2]), parse_expression(exp[3]), exp[4], @target
+				Function.new exp[1], parse_params(exp[2]), parse_expression(exp[3]), exp[4], @target
 			when :lambda
-				Lambda.new parse_vars(exp[1]), parse_expression(exp[2]), exp[4], @target
+				Lambda.new parse_params(exp[1]), parse_expression(exp[2]), exp[4], @target
 			when :call
 				if exp[1].is_a? Array
 					func = parse_expression(exp[1])
@@ -50,7 +50,7 @@ module SLang
 			when :cast
 				Cast.new(parse_obj(exp[1]), parse_obj(exp[2]))
       when :static
-        ClassFun.new(exp[1], parse_vars(exp[2]), parse_expression(exp[3]), exp[4], @target)
+        ClassFun.new(exp[1], parse_params(exp[2]), parse_expression(exp[3]), exp[4], @target)
 			else
 				Call.new exp[0], parse_args(exp[2]), parse_obj(exp[1])
 			end
@@ -60,11 +60,6 @@ module SLang
 
 		def parse_children(children)
 			children.map {|child| parse_expression(child)} if children
-		end
-
-		def parse_vars(vars)
-			return vars.map {|var| Variable.new(var)} if vars.is_a? Array
-			return vars.map {|name, type| Variable.new(name, type)} if vars.is_a? Hash
 		end
 
 		def parse_var(exp)
@@ -83,8 +78,14 @@ module SLang
 		end
 
 		def parse_params(params)
-			return params.map {|type| Parameter.new(type)} if params.is_a? Array
-			return params.map {|name, type| Parameter.new(type, name)} if params.is_a? Hash
+			return params.map do |exp|
+				if exp.to_s.match /^[A-Z]/
+					Parameter.new(nil, exp)
+				else
+					Parameter.new(exp, nil)
+				end
+			end if params.is_a? Array
+			return params.map {|name, type| Parameter.new(name, type)} if params.is_a? Hash
 		end
 
 		def parse_args(args)

@@ -19,6 +19,8 @@ module SLang
         base_type('void *', :Pointer)
         enum([:False, :True], :Bool)
         union_type
+
+        types[:VarList] ||= VarList.new(self)
       end
 
       def void
@@ -43,6 +45,10 @@ module SLang
 
       def pointer
         types[:Pointer]
+      end
+
+      def varlist
+        types[:VarList]
       end
 
       def base_type(type, name)

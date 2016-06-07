@@ -2,7 +2,7 @@ require 'ffi'
 
 module TCC
   extend FFI::Library
-  ffi_lib 'tcc'
+  ffi_lib ['tcc', '../vendor/tcc/libtcc.dll']
   TCC_OUTPUT_MEMORY = 0
   TCC_OUTPUT_EXE = 1
   TCC_OUTPUT_DLL = 2

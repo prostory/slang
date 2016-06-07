@@ -1,111 +1,58 @@
 module SLang
   class Function
     attr_accessor :redefined
-    attr_accessor :sequence
-  end
-
-  class FunctionTemplate
-    def initialize
-      @functions = []
-    end
-
-    def <<(fun)
-      @functions << fun
-    end
-
-    def empty?
-      @functions.empty?
-    end
-
-    def lookup(arg_size)
-      result = nil
-      @functions.each do |fun|
-        result = fun if fun.params.size == arg_size || fun.has_var_list?
-      end
-      result
-    end
-
-    def functions
-      @functions.each_with_index do |fun, idx|
-        fun.sequence = idx if idx > 0
-      end
-      @functions
-    end
   end
 
   module CLang
     class CFunction
       attr_accessor :context
-      attr_accessor :templates
+      attr_accessor :prototypes
 
       def initialize(context)
         @context = context
-        @templates = {}
+        @prototypes = {}
       end
 
       def <<(fun)
-        template = templates[fun.name] || FunctionTemplate.new
-        template << fun
-        templates[fun.name] = template
+        prototype = prototypes[fun.name] || FunctionPrototype.new
+        prototype << fun
+        fun.prototype = prototype
+        prototypes[fun.name] = prototype
       end
 
       def [](name)
-        templates[name]
+        prototypes[name]
       end
 
-      def declear_functions
-        templates.values.each do |template|
-          template.functions.each {|fun| declear_function fun unless fun.name == :main || fun.is_a?(Operator)}
+      def declare_functions
+        prototypes.values.each do |pt|
+          pt.instances.each {|fun| declare_function fun unless fun.name == :main || fun.is_a?(Operator)}
         end
       end
 
       def define_functions
-        templates.values.each do |template|
-          template.functions.each {|fun| define_function fun unless fun.is_a? External}
+        prototypes.values.each do |pt|
+          pt.instances.each {|fun| define_function fun unless fun.is_a? External}
         end
       end
 
-      def declear_function(node)
-        node.instances.values.each do |fun|
-          if !fun.redefined
-            if fun.instances
-              fun.instances.values.each do |instance|
-                instance.sequence = node.sequence
-                declear_function_instance instance
-              end
-            else
-              fun.sequence = node.sequence
-              declear_function_instance fun
-            end
-          end
-        end if node.instances
+      def declare_function(fun)
+        declare_function_instance fun unless fun.redefined
       end
 
-      def declear_function_instance(node)
+      def declare_function_instance(node)
         stream << "extern #{node.body.type.ref} #{node.mangled_name}("
-        define_paramters(node)
+        define_parameters(node)
         stream << ");\n"
       end
 
-      def define_function(node)
-        node.instances.each do |_, fun|
-          if !fun.redefined
-            if fun.instances
-              fun.instances.values.each do |instance|
-                instance.sequence = node.sequence
-                define_function_instance instance
-              end
-            else
-              fun.sequence = node.sequence
-              define_function_instance fun
-            end
-          end
-        end if node.instances
+      def define_function(fun)
+        define_function_instance fun unless fun.redefined
       end
 
       def define_function_instance(node)
         stream << "#{node.body.type.ref} #{node.mangled_name}("
-        define_paramters(node)
+        define_parameters(node)
         stream << ")\n{\n"
         with_indent do
           node.body.accept visitor
@@ -114,7 +61,7 @@ module SLang
         stream << "}\n"
       end
 
-      def define_paramters(node)
+      def define_parameters(node)
         if node.params.length > 0
           node.params.each_with_index do |param, i|
             stream << ', ' if i > 0

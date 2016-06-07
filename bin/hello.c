@@ -32,7 +32,7 @@ extern Float B_get_id(B * self);
 extern Integer A_Class_b(A_Class * self);
 extern Integer A_Class_b1(A_Class * self);
 extern Integer B_Class_b1(B_Class * self);
-extern Integer B___init__1(B * self, String name, Integer id);
+extern Integer B___init__(B * self, String name, Integer id);
 extern String B_name(B * self);
 extern Pointer calloc(Integer, Integer);
 String String___lsh__(String self, String s)
@@ -48,7 +48,7 @@ B * B_Class___alloc__(B_Class * self, Integer size)
 B * B_Class_new(B_Class * self, String var0, Integer var1)
 {
     Pointer obj = B_Class___alloc__(self, sizeof(B));
-    B___init__1(obj, var0, var1);
+    B___init__(obj, var0, var1);
     return obj;
 }
 String String_Class_new(String_Class * self, String const_str)
@@ -85,7 +85,7 @@ Integer B_Class_b1(B_Class * self)
     puts(String_Class_new(&String_class, "static world"));
     return self->a = 5;
 }
-Integer B___init__1(B * self, String name, Integer id)
+Integer B___init__(B * self, String name, Integer id)
 {
     self->name = name;
     return self->id = id;

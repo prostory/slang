@@ -133,6 +133,7 @@ module SLang
       output code
       state = TCC::State.new
       state.set_error_func(method(:error_func))
+      state.add_library_path '../vendor/tcc/lib'
       state.compile(code)
       state.run
     end
@@ -153,7 +154,7 @@ module SLang
 		end
 
 		def output(code)
-			File.open(output_file, "w") { |io| io.puts code }
+			File.open(output_file, "w") { |io| io.puts code } if output_file
 		end
 
 		def output_file

@@ -253,6 +253,7 @@ module SLang
 		attr_accessor :body
 		attr_accessor :return_type
 		attr_accessor :receiver
+		attr_accessor :sequence
 
 		def initialize(name, params = [], body = [], return_type = :unknown, receiver = nil)
 			@name = name
@@ -263,6 +264,7 @@ module SLang
 			@return_type = return_type || :unknown
 			@receiver = receiver
 			@receiver.parent = self if receiver
+			@sequence = 0
 		end
 
 		def accept_children(visitor)
@@ -277,6 +279,7 @@ module SLang
 
 		def clone
 			function = self.class.new name, params.map(&:clone), body.clone, return_type, receiver
+			function.sequence = sequence
 			function.source_code = source_code
 			function
 		end

@@ -98,8 +98,8 @@ module SLang
 
         @ctype.define_types
 
-        @ctype.declear_functions
-        @cfunc.declear_functions
+        @ctype.declare_functions
+        @cfunc.declare_functions
 
         @ctype.define_functions
         @cfunc.define_functions

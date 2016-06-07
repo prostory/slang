@@ -69,7 +69,7 @@ module TCC
       TCC.tcc_add_symbol self, name, value
     end
 
-    def output_file(file)
+    def output_file=(file)
       TCC.tcc_output_file self, file
     end
 

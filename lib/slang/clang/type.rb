@@ -295,7 +295,7 @@ module SLang
       end
 
       def to_s
-        @list.join ', '
+        @list.join '_'
       end
 
       def ==(other)
@@ -325,8 +325,8 @@ module SLang
         types.values.each { |type| stream << "#{type.define}" }
       end
 
-      def declear_functions
-        types.values.each { |type| type.cfunc.declear_functions }
+      def declare_functions
+        types.values.each { |type| type.cfunc.declare_functions }
       end
 
       def define_functions

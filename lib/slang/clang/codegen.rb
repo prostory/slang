@@ -28,15 +28,16 @@ module SLang
         param_types = params.map(&:type)
       end
       return_type = body.type if mangled_return_type
-      self.class.mangled_name(owner, simple_name, sequence) <<
-        self.class.mangled_params(param_types, mangled, return_type)
+      name = self.class.mangled_name(owner, simple_name)
+      name << "#{sequence}" if sequence > 0
+      name << self.class.mangled_params(param_types, mangled, return_type)
     end
 
-    def self.mangled_name(owner, name, sequence)
+    def self.mangled_name(owner, name)
       if owner
-        "#{owner}_#{name}#{sequence}"
+        "#{owner}_#{name}"
       else
-        "#{name}#{sequence}"
+        "#{name}"
       end
     end
 

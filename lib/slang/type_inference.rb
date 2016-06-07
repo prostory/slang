@@ -38,15 +38,16 @@ module SLang
 
   class Function
     attr_accessor :owner
-    attr_accessor :mangled
     attr_accessor :instances
+    attr_accessor :mangled
     attr_accessor :mangled_return_type
+    attr_accessor :prototype
 
     def <<(instance)
       @instances ||= {}
       unless mangled
-        if @mangled = @instances.size > 0
-          @instances.each_value {|instance| instance.mangled = @mangled}
+        if @mangled = prototype.instances.size > 0
+          prototype.instances.each {|instance| instance.mangled = @mangled}
         end
       end
       instance.mangled = @mangled
@@ -61,6 +62,7 @@ module SLang
         @instances[self.class.signature(instance)] = instance
       end
       instance.owner.methods << instance if instance.owner
+      prototype.add_instance instance
     end
 
     def self.signature(fun)

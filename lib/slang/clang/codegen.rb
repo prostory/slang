@@ -34,7 +34,7 @@ module SLang
 
     def self.mangled_name(owner, name, sequence)
       if owner
-        "#{owner}$$#{name}#{sequence}"
+        "#{owner}_#{name}#{sequence}"
       else
         "#{name}#{sequence}"
       end
@@ -42,8 +42,8 @@ module SLang
 
     def self.mangled_params(param_types, mangled, return_type = nil)
       if (param_types.any? && mangled) || return_type
-        s = "$#{param_types.join '_'}"
-        s << "$#{return_type}" if return_type
+        s = "_#{param_types.join '_'}"
+        s << "_#{return_type}" if return_type
         s
       else
         ''

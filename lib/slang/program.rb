@@ -1,6 +1,8 @@
+require_relative '../tcc/tcc'
+
 module SLang
   class Program
-    def self.run
+    def to_clang
       prog = [:do,
               [:external, :calloc, [:Integer, :Integer], :Pointer],
               [:class, :Object, nil,
@@ -115,6 +117,18 @@ module SLang
       main_prog = [:fun, :main, [], prog << [:ret, [:&, 5, [[:<<, 1, [2]]]]], :Integer]
 
       CLang::Context.new.gen_code(Parser.parse(main_prog))
+    end
+
+    def error_func(opaque, msg)
+      raise msg
+    end
+
+    def run
+      code = to_clang
+      state = TCC::State.new
+      state.set_error_func(method(:error_func))
+      state.compile(code)
+      state.run
     end
   end
 end

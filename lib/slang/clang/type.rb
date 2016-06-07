@@ -65,6 +65,9 @@ module SLang
       end
 
       def display_members
+        if members.empty?
+          return "#{context.int.ref} unused;"
+        end
         members.map {|n, t| "#{t.ref} #{n};"}.join ' '
       end
 
@@ -127,6 +130,9 @@ module SLang
       end
 
       def display_members
+        if members.empty?
+          return "#{context.int.ref} unused;"
+        end
         members.map {|name, var| "#{var.optional ? context.union_type : var.type.ref} #{name};"}.join ' '
       end
 
@@ -149,9 +155,9 @@ module SLang
       attr_accessor :object_type
 
       def initialize(context, name, super_type)
-        super context, "#{name}$Class".to_sym, super_type
+        super context, "#{name}_Class".to_sym, super_type
         @class_type = self
-        @class_name = "#{name}$class"
+        @class_name = "#{name}_class"
       end
 
       def define
@@ -159,6 +165,9 @@ module SLang
       end
 
       def display_members
+        if members.empty?
+          return "#{context.int.ref} unused;"
+        end
         members.map {|name, var| "#{var.optional ? context.union_type : var.type.ref} #{name};"}.join ' '
       end
     end

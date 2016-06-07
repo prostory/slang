@@ -125,11 +125,12 @@ module SLang
           type = obj.type
           while type
             template = type.cfunc[name]
-            return template.function(arg_size) if template
+            return template.lookup(arg_size) if template
             type = type.template.super_type
           end
         end
-        @cfunc[name] && @cfunc[name].function(arg_size)
+        template = @cfunc[name]
+        return template.lookup(arg_size) if template
       end
 
       def define_variable(var)

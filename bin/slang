@@ -4,4 +4,4 @@ require_relative '../lib/slang'
 
 include SLang
 
-puts Program.run
+puts Program.new.run

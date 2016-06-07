@@ -100,7 +100,7 @@ module SLang
 			when Array
 				parse_expression(obj)
 			when String
-				StringLiteral.new(obj)
+				new_string(obj)
 			when Fixnum, Float
 				NumberLiteral.new(obj)
 			when TrueClass, FalseClass
@@ -120,5 +120,9 @@ module SLang
     def parse_class_body(children)
       children.map {|child| @target << parse_expression(child)} if children
     end
+
+		def new_string(str)
+			Call.new(:new, [StringLiteral.new(str)], Const.new(:String))
+		end
 	end
 end

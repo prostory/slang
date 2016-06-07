@@ -7,6 +7,8 @@ typedef enum { False, True } Bool;
 typedef struct { Integer unused; } Object;
 typedef struct { Integer unused; } Object_Class;
 static Object_Class Object_class;
+typedef struct { Integer unused; } String_Class;
+static String_Class String_class;
 typedef struct { Integer unused; } A;
 typedef struct { Integer a; } A_Class;
 static A_Class A_class;
@@ -14,9 +16,15 @@ typedef struct { String name; Integer id; Float a; } B;
 typedef struct { Integer a; } B_Class;
 static B_Class B_class;
 extern Integer puts(String);
+extern Integer strlen(String);
+extern String strdup(String);
+extern String realloc(String, Integer);
+extern String strcat(String, String);
 extern Integer printf(String, ...);
-extern B * B_Class___alloc__(B_Class * self);
+extern String String___lsh__(String self, String s);
+extern B * B_Class___alloc__(B_Class * self, Integer size);
 extern B * B_Class_new(B_Class * self, String var0, Integer var1);
+extern String String_Class_new(String_Class * self, String const_str);
 extern Integer B_a(B * self);
 extern Integer B_a1(B * self);
 extern Float B_set_id(B * self, Float n);
@@ -27,23 +35,33 @@ extern Integer B_Class_b1(B_Class * self);
 extern Integer B___init__1(B * self, String name, Integer id);
 extern String B_name(B * self);
 extern Pointer calloc(Integer, Integer);
-B * B_Class___alloc__(B_Class * self)
+String String___lsh__(String self, String s)
 {
-    return (B *)calloc(sizeof(B), 1);
+    Float len = ((strlen(self) + strlen(s)) + 1);
+    self = realloc(self, len);
+    return strcat(self, s);
+}
+B * B_Class___alloc__(B_Class * self, Integer size)
+{
+    return (B *)calloc(size, 1);
 }
 B * B_Class_new(B_Class * self, String var0, Integer var1)
 {
-    Pointer obj = B_Class___alloc__(self);
+    Pointer obj = B_Class___alloc__(self, sizeof(B));
     B___init__1(obj, var0, var1);
     return obj;
 }
+String String_Class_new(String_Class * self, String const_str)
+{
+    return strdup(const_str);
+}
 Integer B_a(B * self)
 {
-    return puts("hello");
+    return puts(String_Class_new(&String_class, "hello"));
 }
 Integer B_a1(B * self)
 {
-    return puts("world");
+    return puts(String_Class_new(&String_class, "world"));
 }
 Float B_set_id(B * self, Float n)
 {
@@ -55,16 +73,16 @@ Float B_get_id(B * self)
 }
 Integer A_Class_b(A_Class * self)
 {
-    return puts("static hello");
+    return puts(String_Class_new(&String_class, "static hello"));
 }
 Integer A_Class_b1(A_Class * self)
 {
-    puts("static world");
+    puts(String_Class_new(&String_class, "static world"));
     return self->a = 5;
 }
 Integer B_Class_b1(B_Class * self)
 {
-    puts("static world");
+    puts(String_Class_new(&String_class, "static world"));
     return self->a = 5;
 }
 Integer B___init__1(B * self, String name, Integer id)
@@ -78,7 +96,7 @@ String B_name(B * self)
 }
 Integer main(Void)
 {
-    Pointer b = B_Class_new(&B_class, "Xiao Peng", 1);
+    Pointer b = B_Class_new(&B_class, String___lsh__(String_Class_new(&String_class, "Xiao"), String_Class_new(&String_class, " Peng")), 1);
     B_a(b);
     A_Class_b(&A_class);
     B_a1(b);
@@ -89,7 +107,6 @@ Integer main(Void)
     puts(B_name(b));
     puts("B");
     puts("Float");
-    printf("hello, goto %f\n", B_get_id(b));
+    printf(String_Class_new(&String_class, "hello, goto %f\n"), B_get_id(b));
     return (5 & (1 << 2));
 }
-

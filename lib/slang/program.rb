@@ -2,12 +2,16 @@ require_relative '../tcc/tcc'
 
 module SLang
   class Program
+    def initialize
+			parse_opt
+		end
+
     def to_clang
       prog = [:do,
               [:external, :calloc, [:Integer, :Integer], :Pointer],
               [:class, :Object, nil,
-                  [:static, :__alloc__, [], [:cast, [:type], [:calloc, nil, [[:sizeof], 1]]]],
-                  [:static, :new, {args: :VarList}, [[:set, :obj, [:__alloc__]], [:__init__, :obj, [:args]], [:ret, :obj]]],
+                  [:static, :__alloc__, [:size], [:cast, [:type], [:calloc, nil, [:size, 1]]]],
+                  [:static, :new, {args: :VarList}, [[:set, :obj, [:__alloc__, :self, [[:sizeof]]]], [:__init__, :obj, [:args]], [:ret, :obj]]],
                   [:fun, :__init__, [], []]
               ],
               [:class, :Integer, nil,
@@ -76,6 +80,7 @@ module SLang
                [:fun, :not, [:n], [:!, :self, [:n]]],
               ],
               [:class, :String, nil,
+                [:static, :new, [:const_str], [:dup, :const_str]],
                [:external, :echo, :puts, [], :Integer],
                [:external, :len, :strlen, [], :Integer],
                [:external, :dup, :strdup, [], :String],
@@ -84,7 +89,7 @@ module SLang
                   [:external, :printf, [:VarList], :Integer],
                [:fun, :<<, [:s], [[:set, :len, [:+, [:+, [:len, :self], [[:len, :s]]], [1]]],
                                   [:set, :self, [:grow, :self, [:len]]],
-                                  [:cat, :self, [:s]]]]
+                                  [:cat, :self, [:s]]]],
               ],
               [:class, :A, :Object,
                 [:fun, :a, [], [:echo, "hello"]],
@@ -97,7 +102,7 @@ module SLang
                   [:fun, :__init__, [:name, :id], [[:set, :@name, :name], [:set, :@id, :id]]],
                   [:fun, :name, [], [:ret, :@name]]
               ],
-              [:set, :b, [:new, :B, ["Xiao Peng", 1]]],
+              [:set, :b, [:new, :B, [[:<<, "Xiao", [" Peng"]], 1]]],
               [:a, :b],
               [:b, :A],
               [:class, :A, nil,
@@ -125,10 +130,34 @@ module SLang
 
     def run
       code = to_clang
+      output code
       state = TCC::State.new
       state.set_error_func(method(:error_func))
       state.compile(code)
       state.run
     end
+
+		def parse_opt
+			require 'optparse'
+
+			@options = {}
+			OptionParser.new do |opts|
+				opts.on('-o ', 'Output filename') do |output|
+					@options[:output_filename] = output
+				end
+			end.parse!
+
+			if output_file.nil? && ARGV.length > 0
+				@options[:output_filename] = File.basename(ARGV[0], File.extname(ARGV[0]))
+			end
+		end
+
+		def output(code)
+			File.open(output_file, "w") { |io| io.puts code }
+		end
+
+		def output_file
+			@options[:output_filename]
+		end
   end
 end

@@ -22,6 +22,13 @@ module SLang
         @object_type = self
       end
 
+      def class_type
+        return @class_type if @class_type
+        @class_type = ClassType.new(context, @name, super_type && super_type.class_type)
+        @class_type.object_type = template
+        context.types[@class_type.name] = @class_type
+      end
+
       def define
         "typedef #{type} #{name};\n"
       end
@@ -83,19 +90,11 @@ module SLang
 
     class ObjectType < CStruct
       attr_accessor :instances
-      attr_accessor :class_type
 
       def initialize(context, name, super_type)
         super context, {}, name
         @base_type = context.pointer
         @super_type = super_type
-      end
-
-      def class_type
-        return @class_type if @class_type
-        @class_type = ClassType.new(context, @name, super_type && super_type.class_type)
-        @class_type.object_type = template
-        context.types[@class_type.name] = @class_type
       end
 
       def define

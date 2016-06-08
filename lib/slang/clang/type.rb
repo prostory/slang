@@ -1,155 +1,58 @@
 module SLang
   module CLang
-    class BaseType
-      attr_reader :type
+    class CBaseType
       attr_accessor :name
-      attr_accessor :cfunc
-      attr_accessor :context
-      attr_accessor :template
-      attr_accessor :methods
-      attr_accessor :base_type
-      attr_accessor :super_type
-      attr_accessor :object_type
+      attr_accessor :type
+      attr_accessor :reference_type
 
-      def initialize(context, name, type)
+      def initialize(name, type, reference_type = nil)
         @name = name
         @type = type
-        @cfunc = CFunction.new(context)
-        @context = context
-        @template = self
-        @methods = []
-        @base_type = self
-        @object_type = self
-      end
-
-      def class_type
-        return @class_type if @class_type
-        @class_type = ClassType.new(context, @name, super_type && super_type.class_type)
-        @class_type.object_type = template
-        context.types[@class_type.name] = @class_type
+        @reference_type = reference_type || type
       end
 
       def define
-        "typedef #{type} #{name};\n"
+        raise "Base type #{type.name} can't has any members<#{type.display_members}>." unless members.empty?
+        "typedef #{name} #{type.name};\n"
       end
 
-      def ref
-        base_type
+      def reference
+        type.name
       end
 
       def to_s
-        name.to_s
-      end
-
-      def despect
-        to_s
-      end
-
-      def ==(other)
-        other.class == self.class && other.name == name &&
-          other.type.to_s == type.to_s && other.super_type == super_type
+        name
       end
     end
 
-    class CStruct < BaseType
-      attr_accessor :members
-
-      def initialize(context, members, name)
-        super context, name, nil
-        @members = members
+    class CObjectType < CBaseType
+      def initialize(type, reference_type)
+        @type = type
+        @reference_type = reference_type
       end
 
-      def ref
-        "#{name} *"
-      end
-
-      def type
+      def name
         "struct { #{display_members} }"
       end
 
-      def define
-        name.nil? ? "" : super
-      end
-
       def display_members
-        if members.empty?
-          return "#{context.int.ref} unused;"
+        if type.members.empty?
+          return "#{context.int.reference_type} unused;"
         end
-        members.map {|n, t| "#{t.ref} #{n};"}.join ' '
-      end
 
-      def despect
-        "#{name}<#{members.map {|n, t| "#{n}:#{t}"}.join ', '}>"
-      end
-
-      def ==(other)
-        other.class == self.class && name == other.name &&
-            members == other.members && other.super_type == super_type
-      end
-    end
-
-    class ObjectType < CStruct
-      attr_accessor :instances
-
-      def initialize(context, name, super_type)
-        super context, {}, name
-        @base_type = context.pointer
-        @super_type = super_type
+        type.display_members
       end
 
       def define
-        return super unless instances
-
-        unless instances.size > 1
-          return instances.map {|obj| obj.define}.join "\n"
-        end
-
-        list = {}
-        instances.map do |obj|
-          unless list[obj.members]
-            list[obj.members] = obj
-          else
-            list[obj.members].methods.each do |f1|
-              obj.methods.each do |f2|
-                f2.params.first.type = f1.params.first.type
-                f2.owner = f1.owner
-                if f2.name == f1.name && f2.params.map(&:type) == f1.params.map(&:type)
-                  f2.redefined = true
-                end
-              end
-            end
-          end
-          obj.name = "#{name}#{list.length}"
-          obj
-        end
-        @instances = list.values
-        instances.map do |obj|
-          "typedef #{obj.type} #{obj.name};\n"
-        end.join ''
+        "typedef #{name} #{type.name};\n"
       end
 
-      def display_members
-        if members.empty?
-          return "#{context.int.ref} unused;"
-        end
-        members.map {|name, var| "#{var.optional ? context.union_type : var.type.ref} #{name};"}.join ' '
-      end
-
-      def despect
-        "#{name}<#{members.map {|name, var| "#{name}:#{var.type}"}.join ', '}>"
-      end
-
-      def clone
-        obj = ObjectType.new context, name, super_type
-        obj.template = self
-        obj.class_type = class_type
-        @instances ||= []
-        @instances << obj
-        obj
+      def reference
+        "#{type.name} *"
       end
     end
 
-    class ClassType < ObjectType
+    class CClassType < CObjectType
       attr_accessor :class_name
       attr_accessor :object_type
 
@@ -170,6 +73,69 @@ module SLang
         members.map {|name, var| "#{var.optional ? context.union_type : var.type.ref} #{name};"}.join ' '
       end
     end
+
+    # class ObjectType < CStruct
+    #   attr_accessor :instances
+    #
+    #   def initialize(context, name, super_type)
+    #     super context, {}, name
+    #     @base_type = context.pointer
+    #     @super_type = super_type
+    #   end
+    #
+    #   def define
+    #     return super unless instances
+    #
+    #     unless instances.size > 1
+    #       return instances.map {|obj| obj.define}.join "\n"
+    #     end
+    #
+    #     list = {}
+    #     instances.map do |obj|
+    #       unless list[obj.members]
+    #         list[obj.members] = obj
+    #       else
+    #         list[obj.members].methods.each do |f1|
+    #           obj.methods.each do |f2|
+    #             f2.params.first.type = f1.params.first.type
+    #             f2.owner = f1.owner
+    #             if f2.name == f1.name && f2.params.map(&:type) == f1.params.map(&:type)
+    #               f2.redefined = true
+    #             end
+    #           end
+    #         end
+    #       end
+    #       obj.name = "#{name}#{list.length}"
+    #       obj
+    #     end
+    #     @instances = list.values
+    #     instances.map do |obj|
+    #       "typedef #{obj.type} #{obj.name};\n"
+    #     end.join ''
+    #   end
+    #
+    #   def display_members
+    #     if members.empty?
+    #       return "#{context.int.ref} unused;"
+    #     end
+    #     members.map {|name, var| "#{var.optional ? context.union_type : var.type.ref} #{name};"}.join ' '
+    #   end
+    #
+    #   def despect
+    #     "#{name}<#{members.map {|name, var| "#{name}:#{var.type}"}.join ', '}>"
+    #   end
+    #
+    #   def clone
+    #     obj = ObjectType.new context, name, super_type
+    #     obj.template = self
+    #     obj.class_type = class_type
+    #     @instances ||= []
+    #     @instances << obj
+    #     obj
+    #   end
+    # end
+
+
 
     class CUnion < CStruct
       def type

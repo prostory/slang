@@ -30,22 +30,34 @@ module SLang
     end
   end
 
-  class FunctionTemplate
+  class Template
+    include Enumerable
+
     def initialize
-      @functions = []
+      @instances = []
     end
 
-    def <<(fun)
-      fun.sequence = @functions.length
-      @functions << fun
+    def <<(instance)
+      instance.sequence = @instances.length
+      @instances << instance
+    end
+
+    def each(&block)
+      children.each(&block)
     end
 
     def empty?
-      @functions.empty?
+      @instances.empty?
     end
 
     def latest
-      @functions.last
+      @instances.last
     end
+  end
+
+  class FunctionTemplate < Template
+  end
+
+  class ObjectTypeTemplate < Template
   end
 end

@@ -26,7 +26,7 @@ module SLang
       def gen_code(node)
         type_inference node
 
-        codegen.define_types
+        codegen.declare_type_functions
         @cfunc.declare_functions
         codegen.define_type_functions
         @cfunc.define_functions

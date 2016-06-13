@@ -250,7 +250,7 @@ module SLang
         node.value.accept self
       end
 
-      def define_types
+      def declare_type_functions
         Type.types.each_value do |type|
           stream << "#{type.define}"
           stream << "#{type.class_type.define}"
@@ -281,21 +281,13 @@ module SLang
         end
       end
 
-      def declare_function(fun)
-        declare_function_instance fun unless fun.redefined
-      end
-
-      def declare_function_instance(node)
+      def declare_function(node)
         stream << "extern #{node.body.type.reference} #{node.mangled_name}("
         define_parameters(node)
         stream << ");\n"
       end
 
-      def define_function(fun)
-        define_function_instance fun unless fun.redefined
-      end
-
-      def define_function_instance(node)
+      def define_function(node)
         stream << "#{node.body.type.reference} #{node.mangled_name}("
         define_parameters(node)
         stream << ")\n{\n"

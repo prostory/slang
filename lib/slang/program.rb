@@ -10,7 +10,7 @@ module SLang
       prog = [:do,
               [:external, :calloc, [:Integer, :Integer], :Pointer],
               [:class, :Object, nil,
-                  [:static, :__alloc__, [:size], [:cast, [:type], [:calloc, nil, [:size, 1]]]],
+                  [:static, :__alloc__, [:size], [:calloc, nil, [:size, 1]]],
                   [:static, :new, {args: :VarList}, [[:set, :obj, [:__alloc__, :self, [[:sizeof]]]], [:__init__, :obj, [:args]], [:ret, :obj]]],
                   [:fun, :__init__, [], []]
               ],

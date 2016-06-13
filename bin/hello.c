@@ -1,15 +1,25 @@
-typedef void Void;
 typedef int Integer;
+typedef struct { Integer unused; } Integer_Class;
+static Integer_Class Integer_class;
 typedef double Float;
+typedef struct { Integer unused; } Float_Class;
+static Float_Class Float_class;
 typedef char * String;
-typedef void * Pointer;
-typedef enum { False, True } Bool;
-typedef struct { Integer unused; } Object;
-typedef struct { Integer unused; } Object_Class;
-static Object_Class Object_class;
 typedef struct { Integer unused; } String_Class;
 static String_Class String_class;
-typedef struct { Integer unused; } A;
+typedef void * Pointer;
+typedef struct { Integer unused; } Pointer_Class;
+static Pointer_Class Pointer_class;
+typedef enum { False = 0, True = 1, } Bool;
+typedef struct { Integer unused; } Bool_Class;
+static Bool_Class Bool_class;
+typedef void Void;
+typedef struct { Integer unused; } Void_Class;
+static Void_Class Void_class;
+typedef struct { Integer unused; } UnionType_Class;
+static UnionType_Class UnionType_class;
+typedef struct { Integer unused; } Object_Class;
+static Object_Class Object_class;
 typedef struct { Integer a; } A_Class;
 static A_Class A_class;
 typedef struct { String name; Integer id; Float a; } B;
@@ -22,9 +32,10 @@ extern String realloc(String, Integer);
 extern String strcat(String, String);
 extern Integer printf(String, ...);
 extern String String___lsh__(String self, String s);
+extern String String_Class_new(String_Class * self, String const_str);
+extern Integer B___init__(B * self, String name, Integer id);
 extern B * B_Class___alloc__(B_Class * self, Integer size);
 extern B * B_Class_new(B_Class * self, String var0, Integer var1);
-extern String String_Class_new(String_Class * self, String const_str);
 extern Integer B_a(B * self);
 extern Integer B_a1(B * self);
 extern Float B_set_id(B * self, Float n);
@@ -32,7 +43,6 @@ extern Float B_get_id(B * self);
 extern Integer A_Class_b(A_Class * self);
 extern Integer A_Class_b1(A_Class * self);
 extern Integer B_Class_b1(B_Class * self);
-extern Integer B___init__(B * self, String name, Integer id);
 extern String B_name(B * self);
 extern Pointer calloc(Integer, Integer);
 String String___lsh__(String self, String s)
@@ -41,19 +51,24 @@ String String___lsh__(String self, String s)
     self = realloc(self, len);
     return strcat(self, s);
 }
+String String_Class_new(String_Class * self, String const_str)
+{
+    return strdup(const_str);
+}
+Integer B___init__(B * self, String name, Integer id)
+{
+    self->name = name;
+    return self->id = id;
+}
 B * B_Class___alloc__(B_Class * self, Integer size)
 {
-    return (B *)calloc(size, 1);
+    return calloc(size, 1);
 }
 B * B_Class_new(B_Class * self, String var0, Integer var1)
 {
     Pointer obj = B_Class___alloc__(self, sizeof(B));
     B___init__(obj, var0, var1);
     return obj;
-}
-String String_Class_new(String_Class * self, String const_str)
-{
-    return strdup(const_str);
 }
 Integer B_a(B * self)
 {
@@ -84,11 +99,6 @@ Integer B_Class_b1(B_Class * self)
 {
     puts(String_Class_new(&String_class, "static world"));
     return self->a = 5;
-}
-Integer B___init__(B * self, String name, Integer id)
-{
-    self->name = name;
-    return self->id = id;
 }
 String B_name(B * self)
 {

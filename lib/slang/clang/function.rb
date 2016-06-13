@@ -41,7 +41,7 @@ module SLang
       end
 
       def declare_function_instance(node)
-        stream << "extern #{node.body.type.ref} #{node.mangled_name}("
+        stream << "extern #{node.body.type.reference} #{node.mangled_name}("
         define_parameters(node)
         stream << ");\n"
       end
@@ -51,7 +51,7 @@ module SLang
       end
 
       def define_function_instance(node)
-        stream << "#{node.body.type.ref} #{node.mangled_name}("
+        stream << "#{node.body.type.reference} #{node.mangled_name}("
         define_parameters(node)
         stream << ")\n{\n"
         with_indent do
@@ -72,7 +72,7 @@ module SLang
             end
           end
         else
-          stream << context.void.to_s
+          stream << Type.void.to_s
         end
       end
 

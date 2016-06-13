@@ -16,24 +16,13 @@ module SLang
       end
 
       def lookup_member(name)
-        @type.members[name]
-      end
-
-      def lookup_class_var(name)
-        type = @type
-        while type
-          class_var = type.class_type.members[name]
-          return class_var if class_var
-          type = type.template.super_type
-        end
+        @type[name]
       end
 
       def <<(var)
         case var
-        when Member
-          @type.members[var.name] = var
-        when ClassVar
-          @type.class_type.members[var.name] = var
+        when Member, ClassVar
+          @type << var
         else
           @vars[var.name] = var
         end

@@ -43,11 +43,15 @@ module SLang
     end
 
     def each(&block)
-      children.each(&block)
+      @instances.each(&block)
     end
 
     def empty?
       @instances.empty?
+    end
+
+    def size
+      @instances.size
     end
 
     def latest

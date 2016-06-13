@@ -6,82 +6,12 @@ module SLang
       attr_accessor :codegen
 
       def initialize
-        @ctype = CType.new(self)
         @cfunc = CFunction.new(self)
         @scopes = [Scope.new(main, nil)]
         @type = TypeVisitor.new(self)
         @codegen = CodeGenVisitor.new(self)
 
-        base_type(:void, :Void)
-        base_type(:int, :Integer)
-        base_type(:double, :Float)
-        base_type('char *', :String)
-        base_type('void *', :Pointer)
-        enum([:False, :True], :Bool)
-        union_type
-      end
-
-      def void
-        types[:Void]
-      end
-
-      def int
-        types[:Integer]
-      end
-
-      def float
-        types[:Float]
-      end
-
-      def bool
-        types[:Bool]
-      end
-
-      def string
-        types[:String]
-      end
-
-      def pointer
-        types[:Pointer]
-      end
-
-      def varlist
-        VarList.new(self)
-      end
-
-      def base_type(type, name)
-        @ctype.base(type, name)
-      end
-
-      def struct(members, name = nil)
-        @ctype.struct members, name
-      end
-
-      def union(members, name = nil)
-        @ctype.union members, name
-      end
-
-      def enum(members, name = nil)
-        @ctype.enum members, name
-      end
-
-      def object_type(name, super_type = nil)
-        types[name] ||= ObjectType.new(self, name, super_type)
-      end
-
-      def union_type(type = nil)
-        types[:UnionType] ||= UnionType.new(self)
-        return types[:UnionType] unless type
-        types[:UnionType] << type
-        types[:UnionType]
-      end
-
-      def merge(t1, t2)
-        @ctype.merge t1, t2
-      end
-
-      def types
-        @ctype.types
+        Type.init_base_types
       end
 
       def main
@@ -96,12 +26,9 @@ module SLang
       def gen_code(node)
         type_inference node
 
-        @ctype.define_types
-
-        @ctype.declare_functions
+        codegen.define_types
         @cfunc.declare_functions
-
-        @ctype.define_functions
+        codegen.define_type_functions
         @cfunc.define_functions
 
         codegen.to_s
@@ -109,11 +36,7 @@ module SLang
 
       def add_function(fun)
         if class_def = fun.receiver
-          if fun.is_a? ClassFun
-            @ctype.types[class_def.name].class_type.cfunc << fun
-          else
-            @ctype.types[class_def.name].cfunc << fun
-          end
+          Type.types[class_def.name].add_function fun
         else
           @cfunc << fun
         end
@@ -121,13 +44,9 @@ module SLang
       end
 
       def lookup_function(name, obj = nil, arg_size = 0)
-        if obj
-          type = obj.type
-          while type
-            template = type.cfunc[name]
-            return template.lookup(arg_size) if template
-            type = type.template.super_type
-          end
+        if obj && obj.type
+          fun = obj.type.lookup_function(name, arg_size)
+          return fun if fun
         end
         template = @cfunc[name]
         return template.lookup(arg_size) if template
@@ -144,11 +63,6 @@ module SLang
       def lookup_member(name)
         scope.lookup_member name
       end
-
-      def lookup_class_var(name)
-        scope.lookup_class_var(name)
-      end
-
 
       def new_scope(obj, type)
         @scopes.push(Scope.new obj, type)

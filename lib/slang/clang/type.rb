@@ -1,347 +1,206 @@
 module SLang
-  module CLang
-    class CBaseType
-      attr_accessor :name
-      attr_accessor :type
-      attr_accessor :reference_type
+  class BaseType
+    def define
+      target_type.nil? ? '' : "typedef #{target_type} #{name};\n"
+    end
+  end
 
-      def initialize(name, type, reference_type = nil)
-        @name = name
-        @type = type
-        @reference_type = reference_type || type
-      end
-
-      def define
-        raise "Base type #{type.name} can't has any members<#{type.display_members}>." unless members.empty?
-        "typedef #{name} #{type.name};\n"
-      end
-
-      def reference
-        type.name
-      end
-
-      def to_s
-        name
-      end
+  class CBaseType < BaseType
+    def initialize(name, target_type = nil)
+      super name
+      @target_type = target_type
     end
 
-    class CObjectType < CBaseType
-      def initialize(type, reference_type)
-        @type = type
-        @reference_type = reference_type
-      end
-
-      def name
-        "struct { #{display_members} }"
-      end
-
-      def display_members
-        if type.members.empty?
-          return "#{context.int.reference_type} unused;"
-        end
-
-        type.display_members
-      end
-
-      def define
-        "typedef #{name} #{type.name};\n"
-      end
-
-      def reference
-        "#{type.name} *"
-      end
+    def target_type
+      @target_type
     end
 
-    class CClassType < CObjectType
-      attr_accessor :class_name
-      attr_accessor :object_type
-
-      def initialize(context, name, super_type)
-        super context, "#{name}_Class".to_sym, super_type
-        @class_type = self
-        @class_name = "#{name}_class"
-      end
-
-      def define
-        "typedef #{type} #{name};\nstatic #{name} #{class_name};\n"
-      end
-
-      def display_members
-        if members.empty?
-          return "#{context.int.ref} unused;"
-        end
-        members.map {|name, var| "#{var.optional ? context.union_type : var.type.ref} #{name};"}.join ' '
-      end
+    def reference
+      name.to_s
     end
 
-    # class ObjectType < CStruct
-    #   attr_accessor :instances
-    #
-    #   def initialize(context, name, super_type)
-    #     super context, {}, name
-    #     @base_type = context.pointer
-    #     @super_type = super_type
-    #   end
-    #
-    #   def define
-    #     return super unless instances
-    #
-    #     unless instances.size > 1
-    #       return instances.map {|obj| obj.define}.join "\n"
-    #     end
-    #
-    #     list = {}
-    #     instances.map do |obj|
-    #       unless list[obj.members]
-    #         list[obj.members] = obj
-    #       else
-    #         list[obj.members].methods.each do |f1|
-    #           obj.methods.each do |f2|
-    #             f2.params.first.type = f1.params.first.type
-    #             f2.owner = f1.owner
-    #             if f2.name == f1.name && f2.params.map(&:type) == f1.params.map(&:type)
-    #               f2.redefined = true
-    #             end
-    #           end
-    #         end
-    #       end
-    #       obj.name = "#{name}#{list.length}"
-    #       obj
-    #     end
-    #     @instances = list.values
-    #     instances.map do |obj|
-    #       "typedef #{obj.type} #{obj.name};\n"
-    #     end.join ''
-    #   end
-    #
-    #   def display_members
-    #     if members.empty?
-    #       return "#{context.int.ref} unused;"
-    #     end
-    #     members.map {|name, var| "#{var.optional ? context.union_type : var.type.ref} #{name};"}.join ' '
-    #   end
-    #
-    #   def despect
-    #     "#{name}<#{members.map {|name, var| "#{name}:#{var.type}"}.join ', '}>"
-    #   end
-    #
-    #   def clone
-    #     obj = ObjectType.new context, name, super_type
-    #     obj.template = self
-    #     obj.class_type = class_type
-    #     @instances ||= []
-    #     @instances << obj
-    #     obj
-    #   end
-    # end
-
-
-
-    class CUnion < CStruct
-      def type
-        "union { #{display_members} }"
-      end
-
-      def ref
-        base_type
-      end
-
-      def ==(other)
-        other.class == self.class && name == other.name
-      end
+    def base_type
+      self
     end
 
-    class UnionType < CUnion
-      def initialize(context)
-        super context, {}, :UnionType
-      end
+    def clone
+      self.clone name, target_type
+    end
+  end
 
-      def <<(type)
-        members[type] = "U#{type}" unless members[type]
-      end
-
-      def define
-        members.empty? ? "" : super
-      end
-
-      def add_types(types)
-        types.each {|type| self << type}
-      end
-
-      def display_members
-        members.map {|t, n| "#{t.base_type} #{n};"}.join ' '
-      end
-
-      def despect
-        "#{name}<#{members.keys.join ', '}>"
-      end
-
-      def has_type?(type)
-        members.has_key? type
-      end
-
-      def include?(types)
-        return has_type? type unless types.is_a? Array
-        types.any? {|type| !members.has_key?(type)}
-      end
-
-      def eql?(other)
-        (self == other) || (include? other)
-      end
+  class ObjectType < BaseType
+    def target_type
+      "struct { #{display_members} }"
     end
 
-    class CEnum < CStruct
-      def type
-        "enum { #{display_members} }"
-      end
-
-      def ref
-        base_type
-      end
-
-      def display_members
-        members.join ', '
-      end
-
-      def despect
-        "#{name}<#{members.join ', '}>"
-      end
+    def define
+      template.map do |obj|
+        "typedef #{obj.target_type} #{obj.name};\n"
+      end.join ''
     end
 
-
-    class VarList < BaseType
-      include Enumerable
-
-      attr_accessor :list
-
-      def initialize(context)
-        super context, :VarList, :Pointer
-        @list = []
+    def display_members
+      if members.empty?
+        return "#{Type.int.reference} unused;"
       end
 
-      def ref
-        s = ''
-        @list.each_with_index do |t, i|
-          s << "#{t.ref} var#{i}"
-          s << ', ' if i < @list.length-1
-        end
-        s
-      end
-
-      def vars
-        vars = []
-        @list.each_with_index do |t, i|
-          vars << Variable.new("var#{i}", t)
-        end
-        vars
-      end
-
-      def size
-        @list.size
-      end
-
-      def empty?
-        @list.empty?
-      end
-
-      def each(&block)
-        @list.each(&block)
-      end
-
-      def [](index)
-        @list[index]
-      end
-
-      def []=(index, type)
-        @list[index] = type
-      end
-
-      def <<(type)
-        @list << type
-      end
-
-      def to_s
-        @list.join '_'
-      end
-
-      def ==(other)
-        other.class == self.class && other.list == list
-      end
+      "#{members.map{|n, v| "#{v.optional ? Type.union_type : v.type.reference} #{n};"}.join ' '}"
     end
 
-    class CType
-      attr_accessor :context
-      attr_accessor :types
+    def seq
+      sequence > 0 ? sequence.to_s : ''
+    end
 
-      def initialize(context)
-        @context = context
-        @types = {}
-      end
+    def name
+      "#{@name}#{seq}"
+    end
 
-      def [](name)
-        return context.void if name == :unknown
-        types[name]
-      end
+    def reference
+      "#{name} *"
+    end
 
-      def []=(name, type)
-        types[name] = type
-      end
+    def base_type
+      Type.pointer
+    end
+  end
 
-      def define_types
-        types.values.each { |type| stream << "#{type.define}" }
-      end
+  class ClassType < ObjectType
+    def name
+      "#{@name}_Class".to_sym
+    end
 
-      def declare_functions
-        types.values.each { |type| type.cfunc.declare_functions }
-      end
+    def instance_name
+      "#{@name}_class".to_sym
+    end
 
-      def define_functions
-        types.values.each { |type| type.cfunc.define_functions }
-      end
+    def define
+      "typedef #{target_type} #{name};\nstatic #{name} #{instance_name};\n"
+    end
+  end
 
-      def base(ctype, name)
-        @types[name] if @types.has_key? name
-        type = BaseType.new(context, name, ctype)
-        @types[name] = type
-        type
-      end
+  class UnionType < BaseType
+    def target_type
+      "union { #{display_members} }"
+    end
 
-      def struct(members, name = nil)
-        key = name.nil? ? members : name
-        return @types[key] if @types.has_key? key
-        type = CStruct.new(context, members, name)
-        @types[key] = type
-        type
-      end
+    def define
+      members.empty? ? '' : super
+    end
 
-      def union(members, name = nil)
-        key = name.nil? ? members : name
-        return @types[key] if @types.has_key? key
-        type = CUnion.new(context, members, name)
-        @types[key] = type
-        type
-      end
+    def display_members
+      members.map {|t| "#{t.base_type} #{member(t)};"}.join ' '
+    end
 
-      def enum(members, name = nil)
-        key = name.nil? ? members : name
-        return @types[key] if @types.has_key? key
-        type = CEnum.new(context, members, name)
-        @types[key] = type
-        key
-      end
+    def member(t)
+      "u#{t.base_type}"
+    end
+  end
 
-      def merge(t1, t2)
-        if t1 == t2
-          t1
-        else
-          union [t1, t2].flatten.uniq
-        end
-      end
+  class EnumType < BaseType
+    def target_type
+      "enum { #{display_members} }"
+    end
 
-      private
-      def stream
-        context.codegen.stream
+    def display_members
+      members.map {|name, value| "#{name} = #{value},"}.join ' '
+    end
+  end
+
+  class VarList < BaseType
+    def reference
+      s = ''
+      members.each_with_index do |t, i|
+        s << "#{t.reference} var#{i}"
+        s << ', ' if i < members.length-1
       end
+      s
+    end
+
+    def vars
+      vars = []
+      members.each_with_index do |t, i|
+        vars << Variable.new("var#{i}", t)
+      end
+      vars
+    end
+
+    def to_s
+      members.join '_'
+    end
+  end
+
+  class Type
+    def self.init_base_types
+      base(:int, :Integer)
+      base(:double, :Float)
+      base('char *', :String)
+      base('void *', :Pointer)
+      enum({False: 0, True: 1}, :Bool)
+      base(:void, :Void)
+      union_type
+    end
+
+    def self.base(ctype, name)
+      types[name] if types.has_key? name
+      type = CBaseType.new(name, ctype)
+      types[name] = type
+      type
+    end
+
+    def self.struct(members, name)
+      type = types[name] || ObjectType.new(name)
+      members.each_key { |member| type << member }
+      types[name] = type
+      type
+    end
+
+    def self.union(members)
+      type = types[:UnionType] || UnionType.new(:UnionType)
+      members.each { |member| type << member }
+      types[:UnionType] = type
+      type
+    end
+
+    def self.union_type(type = nil)
+      types[:UnionType] ||= UnionType.new(:UnionType)
+      return types[:UnionType] unless type
+      types[:UnionType] << type
+      types[:UnionType]
+    end
+
+    def self.enum(members, name)
+      type = types[name] || EnumType.new(name)
+      members.each { |name, value| type.push(name, value) }
+      types[name] = type
+      type
+    end
+
+    def self.varlist
+      VarList.new
+    end
+
+    def self.void
+      types[:Void]
+    end
+
+    def self.int
+      types[:Integer]
+    end
+
+    def self.float
+      types[:Float]
+    end
+
+    def self.bool
+      types[:Bool]
+    end
+
+    def self.string
+      types[:String]
+    end
+
+    def self.pointer
+      types[:Pointer]
     end
   end
 end

@@ -425,7 +425,9 @@ module SLang
 		end
 
 		def clone
-			self.class.new target.clone, value.clone
+			assign = self.class.new target.clone, value.clone
+			assign.source_code = source_code
+			assign
 		end
 	end
 

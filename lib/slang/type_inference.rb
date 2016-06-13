@@ -32,7 +32,7 @@ module SLang
     end
 
     def var_list?
-      type && (type == :VarList || (type.is_a?(CLang::BaseType) && type.name == :VarList))
+      type && (type == :VarList || (type.is_a?(BaseType) && type.name == :VarList))
     end
   end
 
@@ -61,7 +61,6 @@ module SLang
       else
         @instances[self.class.signature(instance)] = instance
       end
-      instance.owner.methods << instance if instance.owner
       prototype.add_instance instance
     end
 
@@ -87,7 +86,7 @@ module SLang
 
     def end_visit_expressions(node)
       if node.empty?
-        node.type = context.void
+        node.type = Type.void
       else
         node.type = node.last.type
       end
@@ -100,19 +99,19 @@ module SLang
     def visit_number_literal(node)
       case node.value
       when Fixnum
-        node.type = context.int
+        node.type = Type.int
       when Float
-        node.type = context.float
+        node.type = Type.float
       end
       false
     end
 
     def visit_bool_literal(node)
-      node.type = context.bool
+      node.type = Type.bool
     end
 
     def visit_string_literal(node)
-      node.type = context.string
+      node.type = Type.string
       false
     end
 
@@ -126,7 +125,7 @@ module SLang
     end
 
     def visit_parameter(node)
-      node.type = node.var_list? ? context.varlist : context.types[node.type]
+      node.type = node.var_list? ? Type.varlist : Type.types[node.type]
       false
     end
 
@@ -139,7 +138,7 @@ module SLang
     end
 
     def visit_class_var(node)
-      var = context.lookup_class_var(node.name) or raise "Bug: class variable '#{node.name}' is not defined!"
+      var = context.lookup_member(node.name) or raise "Bug: class variable '#{node.name}' is not defined!"
       node.target = var.target
       node.type = var.type
       node.optional = var.optional
@@ -148,8 +147,8 @@ module SLang
     end
 
     def visit_class_def(node)
-      superclass = context.types[node.superclass] or raise "uninitialized constant '#{node.superclass}'" if node.superclass
-      type = context.object_type node.name, superclass
+      superclass = Type.types[node.superclass] or raise "uninitialized constant '#{node.superclass}'" if node.superclass
+      type = Type.object node.name, superclass
       context.new_scope(nil, type) do
         node.accept_children self
       end
@@ -163,18 +162,18 @@ module SLang
         node.obj.accept self
 
         if node.obj.is_a? Const
-          node.obj.type = context.types[node.obj.name].class_type or raise "uninitialized constant #{node.obj.name}"
+          node.obj.type = Type.types[node.obj.name].class_type or raise "uninitialized constant #{node.obj.name}"
         end
 
         if node.name == :type
-          node.type = context.string
+          node.type = Type.string
           return false
         end
 
-        if node.obj.type.is_a?(CLang::ClassType)
+        if node.obj.type.is_a?(ClassType)
           case node.name
           when :sizeof
-            node.type = context.int
+            node.type = Type.int
             return false
           end
         end
@@ -192,7 +191,7 @@ module SLang
       end
 
       unless untyped_fun = context.lookup_function(node.name, node.obj, node.args.size)
-        error = "undefined function '#{node.name}' (#{types.map(&:despect).join ', '}), #{node.source_code}"
+        error = "undefined function '#{node.name}' (#{types.map(&:to_s).join ', '}), #{node.source_code}"
         error << " for #{node.obj.type.name}" if node.obj
         raise error
       end
@@ -205,8 +204,8 @@ module SLang
       if untyped_fun.is_a?(External)
         unless typed_fun
           typed_fun = untyped_fun.clone
-          typed_fun.params.unshift Parameter.new(nil, context.types[typed_fun.receiver.name]) if typed_fun.receiver
-          typed_fun.body.type = context.types[typed_fun.return_type]
+          typed_fun.params.unshift Parameter.new(nil, Type.types[typed_fun.receiver.name]) if typed_fun.receiver
+          typed_fun.body.type = Type.types[typed_fun.return_type]
           untyped_fun << typed_fun
         end
         node.target_fun = typed_fun
@@ -232,7 +231,7 @@ module SLang
     def typed_function(function, call)
       instance = function.clone
       instance.owner = call.obj.type if call.obj
-      instance.body.type = context.void
+      instance.body.type = Type.void
 
       context.new_scope(function, call.obj && call.obj.type) do
         if call.obj
@@ -264,11 +263,15 @@ module SLang
 
         instance.body.accept self
 
-        unless instance.return_type == :unknown
-          instance.body.type = context.types[instance.return_type]
+        if call.obj.type.is_a?(ClassType) && call.name == :__alloc__
+          instance.body.type = call.obj.type.object_type.new_instance
         end
 
-        unless instance.body.type == context.void
+        unless instance.return_type == :unknown
+          instance.body.type = Type.types[instance.return_type]
+        end
+
+        unless instance.body.type == Type.void
           unless instance.body.last.nil? || instance.body.last.is_a?(Return)
             ret = Return.new([instance.body.last])
             ret.accept self
@@ -284,7 +287,7 @@ module SLang
       context.add_function node
       if node.name == :main
         node.body.accept self
-        node.body.type = context.types[node.return_type]
+        node.body.type = Type.types[node.return_type]
         node << node
       end
       false
@@ -311,7 +314,7 @@ module SLang
 
     def end_visit_if(node)
       if node.else.any?
-        node.type = context.merge(node.then.type, node.else.type)
+        node.type = Type.union([node.then.type, node.else.type])
       else
         node.type = node.then.type
       end
@@ -319,7 +322,7 @@ module SLang
 
     def end_visit_return(node)
       if node.values.empty?
-        node.type = context.void
+        node.type = Type.void
       else
         node.type = node.values[0].type
       end
@@ -330,10 +333,8 @@ module SLang
       node.type = node.target.type = node.value.type
 
       case node.target
-      when Member
+      when Member, ClassVar
         old_var = context.lookup_member(node.target.name)
-      when ClassVar
-        old_var = context.lookup_class_var(node.target.name)
       else
         old_var = context.lookup_variable(node.target.name)
       end
@@ -341,10 +342,10 @@ module SLang
       if old_var
         unless old_var.type.base_type == node.type.base_type
           if !old_var.is_a?(ClassVar) || old_var.target == node.target.target
-            unless old_var.type == context.types[:UnionType]
-              context.union_type(old_var.type)
+            unless old_var.type == Type.types[:UnionType]
+              Type.union_type(old_var.type)
             end
-            context.union_type(node.value.type)
+            Type.union_type(node.value.type)
             old_var.optional = true
             node.target.optional = true
           end
@@ -359,9 +360,8 @@ module SLang
     end
 
     def visit_cast(node)
-      node.target.accept self
       node.value.accept self
-      node.type = node.value.type = node.target.obj.type.object_type
+      node.type = node.value.type = Type.types[node.target.name]
       false
     end
   end

@@ -74,7 +74,7 @@ module SLang
       end
 
       def visit_bool_literal(node)
-        stream << context.bool.members[node.value ? 1 : 0].to_s
+        stream << node.value ? 'True' : 'False'
       end
 
       def visit_string_literal(node)
@@ -114,12 +114,12 @@ module SLang
         if node.obj
           if node.name == :type
             stream << '"'
-            stream << "#{node.obj.type.object_type}"
+            stream << "#{node.obj.type}"
             stream << '"'
             return false
           end
 
-          if node.obj.type.is_a?(CLang::ClassType)
+          if node.obj.type.is_a?(ClassType)
             case node.name
             when :sizeof
               stream << "sizeof(#{node.obj.type.object_type})"
@@ -143,10 +143,10 @@ module SLang
       def visit_variable(node)
         if node.optional
           unless node.defined
-            stream << "#{context.union_type} #{node.name};\n"
+            stream << "#{Type.union_type} #{node.name};\n"
             indent
           end
-          stream << "#{node.name}.#{context.union_type.members[node.type]}"
+          stream << "#{node.name}.#{Type.union_type.member(node.type)}"
         else
           stream << "#{node.type.base_type} " unless node.defined
           stream << "#{node.name}"
@@ -156,23 +156,23 @@ module SLang
 
       def visit_parameter(node)
         if node.var_list?
-          stream << "#{node.type.ref}"
+          stream << "#{node.type.reference}"
           return false
         end
 
-        stream << "#{node.type.ref}"
+        stream << "#{node.type.reference}"
         stream << " #{node.name}" if node.name
         false
       end
 
       def visit_const(node)
-        stream << "&#{context.types[node.name].class_type.class_name}"
+        stream << "&#{Type.types[node.name].class_type.instance_name}"
         false
       end
 
       def visit_member(node)
         stream << "self->#{node.name}"
-        stream << ".#{context.union_type.members[node.type]}" if node.optional
+        stream << ".#{Type.union_type.member(node.type)}" if node.optional
         false
       end
 
@@ -246,8 +246,79 @@ module SLang
       end
 
       def visit_cast(node)
-        stream << "(#{node.type.ref})"
+        stream << "(#{node.type.reference})"
         node.value.accept self
+      end
+
+      def define_types
+        Type.types.each_value do |type|
+          stream << "#{type.define}"
+          stream << "#{type.class_type.define}"
+        end
+
+        Type.types.each_value do |type|
+          declare_functions type.functions
+          declare_functions type.class_type.functions
+        end
+      end
+
+      def define_type_functions
+        Type.types.each_value do |type|
+          define_functions type.functions
+          define_functions type.class_type.functions
+        end
+      end
+
+      def declare_functions(functions)
+        functions.each do |pt|
+          pt.instances.each {|fun| declare_function fun unless fun.name == :main || fun.is_a?(Operator)}
+        end
+      end
+
+      def define_functions(functions)
+        functions.each do |pt|
+          pt.instances.each {|fun| define_function fun unless fun.is_a? External}
+        end
+      end
+
+      def declare_function(fun)
+        declare_function_instance fun unless fun.redefined
+      end
+
+      def declare_function_instance(node)
+        stream << "extern #{node.body.type.reference} #{node.mangled_name}("
+        define_parameters(node)
+        stream << ");\n"
+      end
+
+      def define_function(fun)
+        define_function_instance fun unless fun.redefined
+      end
+
+      def define_function_instance(node)
+        stream << "#{node.body.type.reference} #{node.mangled_name}("
+        define_parameters(node)
+        stream << ")\n{\n"
+        with_indent do
+          node.body.accept self
+        end
+        indent
+        stream << "}\n"
+      end
+
+      def define_parameters(node)
+        if node.params.length > 0
+          node.params.each_with_index do |param, i|
+            stream << ', ' if i > 0
+            if node.is_a?(External) && param.var_list?
+              stream << '...'
+            else
+              param.accept self
+            end
+          end
+        else
+          stream << Type.void.to_s
+        end
       end
 
       def with_indent

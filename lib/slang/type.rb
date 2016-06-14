@@ -6,8 +6,12 @@ module SLang
       @@types
     end
 
-    def self.object(name, parent = nil)
+    def self.object_type(name, parent = nil)
       types[name] ||= ObjectType.new(name, parent)
+    end
+
+    def self.module_type(name)
+      types[name] ||= ModuleType.new(name)
     end
 
     def self.lookup(name)
@@ -33,7 +37,7 @@ module SLang
     def initialize(obj, parent = nil)
       @functions = {}
       @ancestors = [obj]
-      @template = ObjectTypeTemplate.new
+      @template = TypeTemplate.new
       extend(parent)
     end
 
@@ -71,11 +75,7 @@ module SLang
 
     def extend(parent)
       if parent.nil?
-        Type.main.ancestors.each do |type|
-          type.prototype.functions.each do |name, prototype|
-            functions[name] = prototype unless functions.has_key? name
-          end
-        end if Type.main
+        include_module(Type.kernel)
         return
       end
 
@@ -85,6 +85,12 @@ module SLang
           functions[name] = prototype unless functions.has_key? name
         end
       end
+    end
+
+    def include_module(mod)
+      mod.prototype.functions.each do |name, prototype|
+        functions[name] = prototype unless functions.has_key? name
+      end if mod
     end
   end
 
@@ -99,8 +105,8 @@ module SLang
       @name = name
       @parent = parent
       @functions = []
-      @prototype = prototype || TypePrototype.new(self, parent)
       @sequence = 0
+      @prototype = prototype || TypePrototype.new(self, parent)
     end
 
     def new_instance
@@ -113,6 +119,10 @@ module SLang
 
     def template
       prototype.template
+    end
+
+    def include_module(mod)
+      prototype.include_module mod
     end
 
     def add_function(fun)
@@ -190,6 +200,16 @@ module SLang
 
     def [](name)
       class_vars[name]
+    end
+  end
+
+  class ModuleType < BaseType
+    def initialize(name, prototype = nil)
+      super name, nil, prototype
+    end
+
+    def clone
+      self.class.new @name, prototype
     end
   end
 

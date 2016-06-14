@@ -134,16 +134,14 @@ module SLang
 	class ArrayLiteral < Expressions
 	end
 
-	class ClassDef < ASTNode
+	class Module < ASTNode
 		attr_accessor :name
 		attr_accessor :body
-		attr_accessor :superclass
 
-		def initialize(name, superclass = nil, body = nil)
+		def initialize(name, body = nil)
 			@name = name
 			@body = Expressions.from body
 			@body.parent = self
-			@superclass = superclass
 		end
 
 		def <<(fun)
@@ -155,7 +153,40 @@ module SLang
 		end
 
 		def ==(other)
-			other.class == self.class && other.name == name && other.body == body && other.superclass == superclass
+			other.class == self.class && other.name == name && other.body == body
+		end
+
+		def clone
+			self.class.new name, body.clone
+		end
+	end
+
+	class Include < ASTNode
+		attr_accessor :modules
+
+		def initialize(modules = [])
+			@modules = modules
+		end
+
+		def ==(other)
+			other.class == self.class && other.modules == modules
+		end
+
+		def clone
+			self.class.new modules
+		end
+	end
+
+	class ClassDef < Module
+		attr_accessor :superclass
+
+		def initialize(name, body = nil, superclass = nil)
+			super name, body
+			@superclass = superclass
+		end
+
+		def ==(other)
+			super && other.superclass == superclass
 		end
 
 		def clone

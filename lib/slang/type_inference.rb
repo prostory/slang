@@ -162,9 +162,25 @@ module SLang
 
     def visit_class_def(node)
       superclass = Type.types[node.superclass] or raise "uninitialized constant '#{node.superclass}'" if node.superclass
-      type = Type.object node.name, superclass
+      type = Type.object_type node.name, superclass
       context.new_scope(nil, type) do
         node.accept_children self
+      end
+      false
+    end
+
+    def visit_module(node)
+      type = Type.module_type node.name
+      context.new_scope(nil, type) do
+        node.accept_children self
+      end
+      false
+    end
+
+    def visit_include(node)
+      node.modules.each do |mod|
+        type = Type.types[mod] or raise "uninitialized constant '#{mod}'" if mod
+        context.scope.type.include_module type
       end
       false
     end
@@ -225,7 +241,7 @@ module SLang
       if untyped_fun.is_a?(External)
         if typed_fun.nil?
           typed_fun = untyped_fun.clone
-          typed_fun.params.unshift Parameter.new(nil, Type.types[untyped_fun.receiver.name]) if untyped_fun.receiver
+          typed_fun.params.unshift Parameter.new(nil, node.obj.type) if node.obj && untyped_fun.receiver
           typed_fun.body.type = Type.types[untyped_fun.return_type]
           untyped_fun << typed_fun
         end

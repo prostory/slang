@@ -8,7 +8,7 @@ module SLang
       def initialize
         Type.init_base_types
 
-        @scopes = [Scope.new(main, Type.main)]
+        @scopes = [Scope.new(main, Type.kernel)]
         @type = TypeVisitor.new(self)
         @codegen = CodeGenVisitor.new(self)
       end
@@ -35,7 +35,7 @@ module SLang
         if fun.receiver
           Type.types[fun.receiver.name].add_function fun
         else
-          Type.main.add_function fun
+          Type.kernel.add_function fun
         end
         fun
       end

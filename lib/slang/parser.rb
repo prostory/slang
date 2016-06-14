@@ -40,6 +40,10 @@ module SLang
 				return External.new(exp[1], exp[1], parse_params(exp[2]), exp[3], @target) if exp[2].is_a? Array
 			when :class
         parse_class(exp[1..-1])
+			when :module
+				parse_module(exp[1..-1])
+			when :include
+				Include.new(exp[1..-1])
 			when :operator
 				return Operator.new(exp[1], exp[2], parse_params(exp[3]), exp[4], @target) if exp[2].is_a? Symbol
 				return Operator.new(exp[1], exp[1], parse_params(exp[2]), exp[3], @target) if exp[2].is_a? Array
@@ -111,11 +115,18 @@ module SLang
     end
 
     def parse_class(exp)
-      @target = class_def = ClassDef.new(exp[0], exp[1])
+      @target = class_def = ClassDef.new(exp[0], nil, exp[1])
       parse_class_body(exp[2..-1])
       @target = nil
       class_def
     end
+
+		def parse_module(exp)
+			@target = mod = Module.new(exp[0])
+			parse_class_body(exp[1..-1])
+			@target = nil
+			mod
+		end
 
     def parse_class_body(children)
       children.map {|child| @target << parse_expression(child)} if children

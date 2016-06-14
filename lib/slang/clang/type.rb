@@ -3,6 +3,14 @@ module SLang
     def define
       target_type.nil? ? '' : "typedef #{target_type} #{name};\n"
     end
+
+    def reference
+      name.to_s
+    end
+
+    def base_type
+      self
+    end
   end
 
   class CBaseType < BaseType
@@ -13,14 +21,6 @@ module SLang
 
     def target_type
       @target_type
-    end
-
-    def reference
-      name.to_s
-    end
-
-    def base_type
-      self
     end
 
     def clone
@@ -131,6 +131,10 @@ module SLang
     end
   end
 
+  class ModuleType < BaseType
+
+  end
+
   class Type
     def self.init_base_types
       base(:int, :Integer)
@@ -139,7 +143,7 @@ module SLang
       base('void *', :Pointer)
       enum({False: 0, True: 1}, :Bool)
       base(:void, :Void)
-      base(nil, :Main)
+      module_type(:Kernel)
       types[:Lambda] ||= LambdaType.new
       union_type
     end
@@ -211,8 +215,8 @@ module SLang
       types[:Pointer]
     end
 
-    def self.main
-      types[:Main]
+    def self.kernel
+      types[:Kernel]
     end
   end
 end

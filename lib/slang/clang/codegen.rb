@@ -9,7 +9,13 @@ module SLang
     end
   end
 
-  class ClassDef
+  class Module
+    def has_code?
+      false
+    end
+  end
+
+  class Include
     def has_code?
       false
     end

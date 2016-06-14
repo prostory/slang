@@ -58,7 +58,8 @@ module SLang
     end
 
     def add_instance(instance)
-      @instances << instance
+      @instances.pop
+      @instances.push instance
     end
   end
 

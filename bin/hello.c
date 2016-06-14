@@ -36,8 +36,6 @@ extern String strdup(String);
 extern String realloc(String, Integer);
 extern String strcat(String, String);
 extern Integer printf(String, ...);
-extern Integer printf(String, ...);
-extern Integer printf(String, ...);
 extern String String___lsh__(String self, String s);
 extern String String_Class_new(String_Class * self, String const_str);
 extern Integer lambda0(Integer n);

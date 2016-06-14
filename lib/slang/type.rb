@@ -34,7 +34,7 @@ module SLang
       @functions = {}
       @ancestors = [obj]
       @template = ObjectTypeTemplate.new
-      extend(parent) if parent
+      extend(parent)
     end
 
     def class_type
@@ -70,6 +70,15 @@ module SLang
     end
 
     def extend(parent)
+      if parent.nil?
+        Type.main.ancestors.each do |type|
+          type.prototype.functions.each do |name, prototype|
+            functions[name] = prototype unless functions.has_key? name
+          end
+        end if Type.main
+        return
+      end
+
       ancestors.push parent, *parent.ancestors
       parent.ancestors.each do |type|
         type.prototype.functions.each do |name, prototype|

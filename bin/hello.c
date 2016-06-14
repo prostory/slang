@@ -16,6 +16,8 @@ static Bool_Class Bool_class;
 typedef void Void;
 typedef struct { Integer unused; } Void_Class;
 static Void_Class Void_class;
+typedef struct { Integer unused; } Main_Class;
+static Main_Class Main_class;
 typedef struct { Integer unused; } Lambda_Class;
 static Lambda_Class Lambda_class;
 typedef struct { Integer unused; } UnionType_Class;
@@ -38,6 +40,7 @@ extern String strcat(String, String);
 extern Integer printf(String, ...);
 extern String String___lsh__(String self, String s);
 extern String String_Class_new(String_Class * self, String const_str);
+extern Pointer calloc(Integer, Integer);
 extern Integer lambda0(Integer n);
 extern Integer lambda1(Integer n);
 extern Integer lambda2(Integer n);
@@ -52,7 +55,6 @@ extern Integer A_Class_b(A_Class * self);
 extern Integer A_Class_b1(A_Class * self);
 extern Integer B_Class_b1(B_Class * self);
 extern String B_name(B * self);
-extern Pointer calloc(Integer, Integer);
 Void Integer_times_Lambda(Integer self)
 {
     Integer i = 1;
@@ -89,6 +91,25 @@ String String___lsh__(String self, String s)
 String String_Class_new(String_Class * self, String const_str)
 {
     return strdup(const_str);
+}
+Integer main(Void)
+{
+    Pointer b = B_Class_new(&B_class, String___lsh__(String_Class_new(&String_class, "Xiao"), String_Class_new(&String_class, " Peng")), 1);
+    B_a(b);
+    A_Class_b(&A_class);
+    B_a1(b);
+    A_Class_b1(&A_class);
+    B_Class_b1(&B_class);
+    B_set_id(b, 2.3);
+    B_get_id(b);
+    puts(B_name(b));
+    puts("B");
+    puts("Float");
+    printf(String_Class_new(&String_class, "hello, goto %f\n"), B_get_id(b));
+    Integer_times_Lambda(5);
+    Integer_times_Lambda1(5);
+    Integer_times_Lambda2(5);
+    return (5 & (1 << 2));
 }
 Integer lambda0(Integer n)
 {
@@ -150,23 +171,4 @@ Integer B_Class_b1(B_Class * self)
 String B_name(B * self)
 {
     return self->name;
-}
-Integer main(Void)
-{
-    Pointer b = B_Class_new(&B_class, String___lsh__(String_Class_new(&String_class, "Xiao"), String_Class_new(&String_class, " Peng")), 1);
-    B_a(b);
-    A_Class_b(&A_class);
-    B_a1(b);
-    A_Class_b1(&A_class);
-    B_Class_b1(&B_class);
-    B_set_id(b, 2.3);
-    B_get_id(b);
-    puts(B_name(b));
-    puts("B");
-    puts("Float");
-    printf(String_Class_new(&String_class, "hello, goto %f\n"), B_get_id(b));
-    Integer_times_Lambda(5);
-    Integer_times_Lambda1(5);
-    Integer_times_Lambda2(5);
-    return (5 & (1 << 2));
 }

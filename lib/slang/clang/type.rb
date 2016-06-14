@@ -139,6 +139,7 @@ module SLang
       base('void *', :Pointer)
       enum({False: 0, True: 1}, :Bool)
       base(:void, :Void)
+      base(nil, :Main)
       types[:Lambda] ||= LambdaType.new
       union_type
     end
@@ -208,6 +209,10 @@ module SLang
 
     def self.pointer
       types[:Pointer]
+    end
+
+    def self.main
+      types[:Main]
     end
   end
 end

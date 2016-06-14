@@ -6,12 +6,11 @@ module SLang
       attr_accessor :codegen
 
       def initialize
-        @cfunc = CFunction.new(self)
-        @scopes = [Scope.new(main, nil)]
+        Type.init_base_types
+
+        @scopes = [Scope.new(main, Type.main)]
         @type = TypeVisitor.new(self)
         @codegen = CodeGenVisitor.new(self)
-
-        Type.init_base_types
       end
 
       def main
@@ -27,29 +26,22 @@ module SLang
         type_inference node
 
         codegen.declare_type_functions
-        @cfunc.declare_functions
         codegen.define_type_functions
-        @cfunc.define_functions
 
         codegen.to_s
       end
 
       def add_function(fun)
-        if class_def = fun.receiver
-          Type.types[class_def.name].add_function fun
+        if fun.receiver
+          Type.types[fun.receiver.name].add_function fun
         else
-          @cfunc << fun
+          Type.main.add_function fun
         end
         fun
       end
 
-      def lookup_function(name, args, obj = nil)
-        if obj && obj.type
-          fun = obj.type.lookup_function(name, args)
-          return fun if fun
-        end
-        template = @cfunc[name]
-        return template.lookup(args) if template
+      def lookup_function(name, args, obj)
+        obj.type.lookup_function(name, args)
       end
 
       def define_variable(var)

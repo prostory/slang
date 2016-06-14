@@ -138,11 +138,13 @@ module SLang
     def run
       code = to_clang
       output code
-      state = TCC::State.new
-      state.set_error_func(method(:error_func))
-      state.add_library_path '../vendor/tcc/lib'
-      state.compile(code)
-      state.run
+      if run?
+        state = TCC::State.new
+        state.set_error_func(method(:error_func))
+        state.add_library_path '../vendor/tcc/lib'
+        state.compile(code)
+        state.run
+      end
     end
 
 		def parse_opt
@@ -152,7 +154,10 @@ module SLang
 			OptionParser.new do |opts|
 				opts.on('-o ', 'Output filename') do |output|
 					@options[:output_filename] = output
-				end
+        end
+        opts.on('-r', 'Run program') do
+          @run = true
+        end
 			end.parse!
 
 			if output_file.nil? && ARGV.length > 0
@@ -166,6 +171,10 @@ module SLang
 
 		def output_file
 			@options[:output_filename]
-		end
+    end
+
+    def run?
+      @run
+    end
   end
 end

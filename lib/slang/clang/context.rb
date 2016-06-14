@@ -43,13 +43,13 @@ module SLang
         fun
       end
 
-      def lookup_function(name, obj = nil, arg_size = 0)
+      def lookup_function(name, args, obj = nil)
         if obj && obj.type
-          fun = obj.type.lookup_function(name, arg_size)
+          fun = obj.type.lookup_function(name, args)
           return fun if fun
         end
         template = @cfunc[name]
-        return template.lookup(arg_size) if template
+        return template.lookup(args) if template
       end
 
       def define_variable(var)

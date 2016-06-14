@@ -1,8 +1,4 @@
 module SLang
-  class Function
-    attr_accessor :redefined
-  end
-
   module CLang
     class CFunction
       attr_accessor :context

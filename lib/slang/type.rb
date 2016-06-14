@@ -25,13 +25,13 @@ module SLang
   end
 
   class TypePrototype
-    attr_accessor :methods
+    attr_accessor :functions
     attr_accessor :template
     attr_accessor :ancestors
     attr_accessor :class_type
 
     def initialize(obj, parent = nil)
-      @methods = {}
+      @functions = {}
       @ancestors = [obj]
       @template = ObjectTypeTemplate.new
       extend(parent) if parent
@@ -47,13 +47,11 @@ module SLang
       @class_type
     end
 
-    def add_method(fun)
-      prototype = methods[fun.name]
-      unless prototype
-        prototype =  FunctionPrototype.new
-        prototype << fun
-        fun.prototype = prototype
-        methods[fun.name] = prototype
+    def add_function(fun)
+      prototype = functions[fun.name]
+      if prototype.nil?
+        prototype = fun.new_prototype
+        functions[fun.name] = prototype
         return prototype
       end
       prototype << fun
@@ -61,9 +59,9 @@ module SLang
       nil
     end
 
-    def lookup_method(name, arg_size = 0)
-      prototype = methods[name]
-      prototype.lookup arg_size if prototype
+    def lookup_function(name, args)
+      prototype = functions[name]
+      prototype.lookup args if prototype
     end
 
     def add_instance(instance)
@@ -72,9 +70,11 @@ module SLang
     end
 
     def extend(parent)
-      ancestors.push parent, *parent.prototype.ancestors
-      ancestors.each do |type|
-        type.prototype.methods.each {|name, fun| methods[name] = fun unless methods[name]}
+      ancestors.push parent, *parent.ancestors
+      parent.ancestors.each do |type|
+        type.prototype.functions.each do |name, prototype|
+          functions[name] = prototype unless functions.has_key? name
+        end
       end
     end
   end
@@ -108,16 +108,16 @@ module SLang
 
     def add_function(fun)
       if fun.is_a? ClassFun
-        method = class_type.prototype.add_method(fun)
-        class_type.functions << method if method
+        function = class_type.prototype.add_function(fun)
+        class_type.functions << function if function
       else
-        method = prototype.add_method(fun)
-        functions << method if method
+        function = prototype.add_function(fun)
+        functions << function if function
       end
     end
 
-    def lookup_function(name, arg_size)
-      prototype.lookup_method name, arg_size
+    def lookup_function(name, args)
+      prototype.lookup_function name, args
     end
 
     def ancestors
@@ -128,8 +128,12 @@ module SLang
 
     end
 
+    def seq
+      sequence > 0 ? sequence.to_s : ''
+    end
+
     def clone
-      self.class.new name, parent, prototype
+      self.class.new @name, parent, prototype
     end
 
     def to_s
@@ -268,6 +272,20 @@ module SLang
 
     def ==(other)
       other.class == self.class && other.members == members
+    end
+
+    def clone
+      self.class.new parent, prototype
+    end
+  end
+
+  class LambdaType < BaseType
+    def initialize(parent = nil, prototype = nil)
+      super :Lambda, parent, prototype
+    end
+
+    def lookup_function(args)
+      prototype.lookup_function :lambda, args
     end
 
     def clone

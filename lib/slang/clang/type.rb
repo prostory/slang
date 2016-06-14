@@ -47,10 +47,6 @@ module SLang
       "#{members.map{|n, v| "#{v.optional ? Type.union_type : v.type.reference} #{n};"}.join ' '}"
     end
 
-    def seq
-      sequence > 0 ? sequence.to_s : ''
-    end
-
     def name
       "#{@name}#{seq}"
     end
@@ -129,6 +125,12 @@ module SLang
     end
   end
 
+  class LambdaType < BaseType
+    def name
+      "#{@name}#{seq}"
+    end
+  end
+
   class Type
     def self.init_base_types
       base(:int, :Integer)
@@ -137,6 +139,7 @@ module SLang
       base('void *', :Pointer)
       enum({False: 0, True: 1}, :Bool)
       base(:void, :Void)
+      types[:Lambda] ||= LambdaType.new
       union_type
     end
 
@@ -177,6 +180,10 @@ module SLang
 
     def self.varlist
       VarList.new
+    end
+
+    def self.lambda
+      types[:Lambda]
     end
 
     def self.void

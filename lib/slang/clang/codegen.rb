@@ -3,6 +3,10 @@ module SLang
     def has_code?
       true
     end
+
+    def has_terminator?
+      true
+    end
   end
 
   class ClassDef
@@ -58,6 +62,24 @@ module SLang
     end
   end
 
+  class Lambda
+    def mangled_name
+      "#{name}#{sequence}"
+    end
+  end
+
+  class If
+    def has_terminator?
+      false
+    end
+  end
+
+  class While
+    def has_terminator?
+      false
+    end
+  end
+
   module CLang
     class CodeGenVisitor < Visitor
       attr_accessor :context
@@ -89,9 +111,12 @@ module SLang
 
       def visit_expressions(node)
         node.children.each do |exp|
-            indent if exp.has_code?
-            exp.accept self
-            stream << ";\n" if exp.has_code?
+          indent if exp.has_code?
+          exp.accept self
+          if exp.has_code?
+            stream << ';' if exp.has_terminator?
+            stream << "\n"
+          end
         end
         false
       end
@@ -133,8 +158,10 @@ module SLang
         stream << '('
         node.obj.accept self if node.obj
         node.args.each_with_index do |arg, i|
-          stream << ', ' if i > 0 || node.obj
-          arg.accept self
+          unless arg.type.is_a?(LambdaType)
+            stream << ', ' if i > 0 || node.obj
+            arg.accept self
+          end
         end
         stream << ')'
         false
@@ -301,11 +328,13 @@ module SLang
       def define_parameters(node)
         if node.params.length > 0
           node.params.each_with_index do |param, i|
-            stream << ', ' if i > 0
-            if node.is_a?(External) && param.var_list?
-              stream << '...'
-            else
-              param.accept self
+            unless param.type.is_a?(LambdaType)
+              stream << ', ' if i > 0
+              if node.is_a?(External) && param.var_list?
+                stream << '...'
+              else
+                param.accept self
+              end
             end
           end
         else

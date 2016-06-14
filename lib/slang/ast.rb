@@ -286,22 +286,14 @@ module SLang
 	end
 
 	class Lambda < Function
-		@@sequence = 0
-
-		def initialize(params = [], body = [], return_type = :unknown, is_clone = false, receiver = nil)
-			name = :"lambda__#{@@sequence}"
-			super name, params, body, return_type, receiver
-			@@sequence += 1 unless is_clone
-		end
-
-		def ==(other)
-			other.class == self.class && other.params == params && other.body == body &&
-				other.return_type == return_type && other.receiver == receiver
+		def initialize(params = [], body = [], return_type = :unknown, receiver = nil)
+			super :lambda, params, body, return_type, receiver
 		end
 
 		def clone
-			lambda = self.class.new params, body, return_type, true, receiver
-			lambda.name = name
+			lambda = self.class.new params, body, return_type, receiver
+			lambda.sequence = sequence
+			lambda.source_code = source_code
 			lambda
 		end
 	end
@@ -371,7 +363,8 @@ module SLang
 		end
 
 		def accept_children(visitor)
-			cond.accept visitor body.accept visitor
+			cond.accept visitor
+			body.accept visitor
 		end
 
 		def ==(other)

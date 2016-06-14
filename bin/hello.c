@@ -16,6 +16,8 @@ static Bool_Class Bool_class;
 typedef void Void;
 typedef struct { Integer unused; } Void_Class;
 static Void_Class Void_class;
+typedef struct { Integer unused; } Lambda_Class;
+static Lambda_Class Lambda_class;
 typedef struct { Integer unused; } UnionType_Class;
 static UnionType_Class UnionType_class;
 typedef struct { Integer unused; } Object_Class;
@@ -25,14 +27,22 @@ static A_Class A_class;
 typedef struct { String name; Integer id; Float a; } B;
 typedef struct { Integer a; } B_Class;
 static B_Class B_class;
+extern Void Integer_times_Lambda(Integer self);
+extern Void Integer_times_Lambda1(Integer self);
+extern Void Integer_times_Lambda2(Integer self);
 extern Integer puts(String);
 extern Integer strlen(String);
 extern String strdup(String);
 extern String realloc(String, Integer);
 extern String strcat(String, String);
 extern Integer printf(String, ...);
+extern Integer printf(String, ...);
+extern Integer printf(String, ...);
 extern String String___lsh__(String self, String s);
 extern String String_Class_new(String_Class * self, String const_str);
+extern Integer lambda0(Integer n);
+extern Integer lambda1(Integer n);
+extern Integer lambda2(Integer n);
 extern Integer B___init__(B * self, String name, Integer id);
 extern B * B_Class___alloc__(B_Class * self, Integer size);
 extern B * B_Class_new(B_Class * self, String var0, Integer var1);
@@ -45,15 +55,54 @@ extern Integer A_Class_b1(A_Class * self);
 extern Integer B_Class_b1(B_Class * self);
 extern String B_name(B * self);
 extern Pointer calloc(Integer, Integer);
+Void Integer_times_Lambda(Integer self)
+{
+    Integer i = 1;
+    while ((i <= self))
+    {
+        lambda0(i);
+        i = (i + 1);
+    }
+}
+Void Integer_times_Lambda1(Integer self)
+{
+    Integer i = 1;
+    while ((i <= self))
+    {
+        lambda1(i);
+        i = (i + 1);
+    }
+}
+Void Integer_times_Lambda2(Integer self)
+{
+    Integer i = 1;
+    while ((i <= self))
+    {
+        lambda2(i);
+        i = (i + 1);
+    }
+}
 String String___lsh__(String self, String s)
 {
-    Float len = ((strlen(self) + strlen(s)) + 1);
+    Integer len = ((strlen(self) + strlen(s)) + 1);
     self = realloc(self, len);
     return strcat(self, s);
 }
 String String_Class_new(String_Class * self, String const_str)
 {
     return strdup(const_str);
+}
+Integer lambda0(Integer n)
+{
+    return puts(String_Class_new(&String_class, "Hello"));
+}
+Integer lambda1(Integer n)
+{
+    return puts(String_Class_new(&String_class, "World"));
+}
+Integer lambda2(Integer n)
+{
+    return printf(String_Class_new(&String_class, "count: %d\n"), n);
 }
 Integer B___init__(B * self, String name, Integer id)
 {
@@ -118,5 +167,8 @@ Integer main(Void)
     puts("B");
     puts("Float");
     printf(String_Class_new(&String_class, "hello, goto %f\n"), B_get_id(b));
+    Integer_times_Lambda(5);
+    Integer_times_Lambda1(5);
+    Integer_times_Lambda2(5);
     return (5 & (1 << 2));
 }

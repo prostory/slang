@@ -75,6 +75,20 @@ module SLang
     def has_var_list?
       params.any? && params.last.var_list?
     end
+
+    def new_prototype
+      @prototype ||= FunctionPrototype.new
+      @prototype << self
+      @prototype
+    end
+  end
+
+  class External
+    def new_prototype
+      @prototype ||= ExternalPrototype.new
+      @prototype << self
+      @prototype
+    end
   end
 
   class TypeVisitor < Visitor
@@ -190,7 +204,14 @@ module SLang
         end
       end
 
-      unless untyped_fun = context.lookup_function(node.name, node.obj, node.args.size)
+      var = context.lookup_variable(node.name)
+      if var && var.type.is_a?(LambdaType) && node.name == var.name
+        untyped_fun = var.type.lookup_function(node.args)
+      end
+
+      untyped_fun = context.lookup_function(node.name, node.args, node.obj) if untyped_fun.nil?
+
+      if untyped_fun.nil?
         error = "undefined function '#{node.name}' (#{types.map(&:to_s).join ', '}), #{node.source_code}"
         error << " for #{node.obj.type.name}" if node.obj
         raise error
@@ -202,10 +223,10 @@ module SLang
       typed_fun = untyped_fun[types]
 
       if untyped_fun.is_a?(External)
-        unless typed_fun
+        if typed_fun.nil?
           typed_fun = untyped_fun.clone
-          typed_fun.params.unshift Parameter.new(nil, Type.types[typed_fun.receiver.name]) if typed_fun.receiver
-          typed_fun.body.type = Type.types[typed_fun.return_type]
+          typed_fun.params.unshift Parameter.new(nil, Type.types[untyped_fun.receiver.name]) if untyped_fun.receiver
+          typed_fun.body.type = Type.types[untyped_fun.return_type]
           untyped_fun << typed_fun
         end
         node.target_fun = typed_fun
@@ -263,7 +284,7 @@ module SLang
 
         instance.body.accept self
 
-        if call.obj.type.is_a?(ClassType) && call.name == :__alloc__
+        if call.obj && call.obj.type.is_a?(ClassType) && call.name == :__alloc__
           instance.body.type = call.obj.type.object_type.new_instance
         end
 
@@ -294,12 +315,9 @@ module SLang
     end
 
     def visit_lambda(node)
-      visit_function node
-    end
-
-    def visit_external(node)
-      context.add_function node
-      true
+      node.type = Type.lambda.new_instance
+      Type.lambda.add_function node
+      false
     end
 
     def visit_class_fun(node)
@@ -307,9 +325,12 @@ module SLang
       false
     end
 
-    def visit_operator(node)
+    def end_visit_external(node)
       context.add_function node
-      true
+    end
+
+    def end_visit_operator(node)
+      context.add_function node
     end
 
     def end_visit_if(node)
@@ -318,6 +339,10 @@ module SLang
       else
         node.type = node.then.type
       end
+    end
+
+    def end_visit_while(node)
+      node.type = Type.void
     end
 
     def end_visit_return(node)

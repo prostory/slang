@@ -43,7 +43,8 @@ module SLang
                [:operator, :==, [:Float], :Bool],
                [:operator, :!=, [:Float], :Bool],
                [:fun, :to_f, [], [:cast, :Float, :self]],
-               [:fun, :to_i, [], [:ret, :self]]
+               [:fun, :to_i, [], [:ret, :self]],
+               [:fun, :times, [:fn], [[:set, :i, 1], [:while, [:<=, :i, [:self]], [[:fn, nil, [:i]], [:set, :i, [:+, :i, [1]]]]]]]
               ],
               [:class, :Float, nil,
                [:operator, :+, [:Integer], :Float],
@@ -117,7 +118,10 @@ module SLang
               [:echo, [:name, :b]],
               [:echo, [:type, :b]],
               [:echo, [:type, [:get_id, :b]]],
-              [:printf, 'hello, goto %f\n', [[:get_id, :b]]]
+              [:printf, 'hello, goto %f\n', [[:get_id, :b]]],
+              [:times, 5, [[:lambda, [:n], [:echo, 'Hello']]]],
+              [:times, 5, [[:lambda, [:n], [:echo, 'World']]]],
+              [:times, 5, [[:lambda, [:n], [:printf, 'count: %d\n', [:n]]]]]
       ]
       main_prog = [:fun, :main, [], prog << [:ret, [:&, 5, [[:<<, 1, [2]]]]], :Integer]
 

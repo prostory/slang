@@ -3,16 +3,16 @@ require_relative '../tcc/tcc'
 module SLang
   class Program
     def initialize
-			parse_opt
-		end
+      parse_opt
+    end
 
     def to_clang
       prog = [:do,
               [:external, :calloc, [:Integer, :Integer], :Pointer],
               [:class, :Object, nil,
-                  [:static, :__alloc__, [:size], [:calloc, nil, [:size, 1]]],
-                  [:static, :new, {args: :VarList}, [[:set, :obj, [:__alloc__, :self, [[:sizeof]]]], [:__init__, :obj, [:args]], [:ret, :obj]]],
-                  [:fun, :__init__, [], []]
+               [:static, :__alloc__, [:size], [:calloc, nil, [:size, 1]]],
+               [:static, :new, {args: :VarList}, [[:set, :obj, [:__alloc__, :self, [[:sizeof]]]], [:__init__, :obj, [:args]], [:ret, :obj]]],
+               [:fun, :__init__, [], []]
               ],
               [:class, :Integer, nil,
                [:operator, :+, [:Integer], :Integer],
@@ -96,22 +96,22 @@ module SLang
                                   [:cat, :self, [:s]]]],
               ],
               [:class, :A, :Object,
-                [:fun, :a, [], [:echo, "hello"]],
-                  [:static, :b, [], [:echo, "static hello"]],
-                  [:fun, :set_id, [:n], [:set, :@a, :n]],
-                  [:fun, :get_id, [], [:ret, :@a]]
+               [:fun, :a, [], [:echo, "hello"]],
+               [:static, :b, [], [:echo, "static hello"]],
+               [:fun, :set_id, [:n], [:set, :@a, :n]],
+               [:fun, :get_id, [], [:ret, :@a]]
               ],
               [:class, :B, :A,
-                  [:fun, :__init__, [:name], [:set, :@name, :name]],
-                  [:fun, :__init__, [:name, :id], [[:set, :@name, :name], [:set, :@id, :id]]],
-                  [:fun, :name, [], [:ret, :@name]]
+               [:fun, :__init__, [:name], [:set, :@name, :name]],
+               [:fun, :__init__, [:name, :id], [[:set, :@name, :name], [:set, :@id, :id]]],
+               [:fun, :name, [], [:ret, :@name]]
               ],
               [:set, :b, [:new, :B, [[:<<, "Xiao", [" Peng"]], 1]]],
               [:a, :b],
               [:b, :A],
               [:class, :A, nil,
-                [:fun, :a, [], [:echo, "world"]],
-                  [:static, :b, [], [[:echo, "static world"], [:set, :@@a, 5]]]
+               [:fun, :a, [], [:echo, "world"]],
+               [:static, :b, [], [[:echo, "static world"], [:set, :@@a, 5]]]
               ],
               [:a, :b],
               [:b, :A],
@@ -147,30 +147,30 @@ module SLang
       end
     end
 
-		def parse_opt
-			require 'optparse'
+    def parse_opt
+      require 'optparse'
 
-			@options = {}
-			OptionParser.new do |opts|
-				opts.on('-o ', 'Output filename') do |output|
-					@options[:output_filename] = output
+      @options = {}
+      OptionParser.new do |opts|
+        opts.on('-o ', 'Output filename') do |output|
+          @options[:output_filename] = output
         end
         opts.on('-r', 'Run program') do
           @run = true
         end
-			end.parse!
+      end.parse!
 
-			if output_file.nil? && ARGV.length > 0
-				@options[:output_filename] = File.basename(ARGV[0], File.extname(ARGV[0]))
-			end
-		end
+      if output_file.nil? && ARGV.length > 0
+        @options[:output_filename] = File.basename(ARGV[0], File.extname(ARGV[0]))
+      end
+    end
 
-		def output(code)
-			File.open(output_file, "w") { |io| io.puts code } if output_file
-		end
+    def output(code)
+      File.open(output_file, "w") { |io| io.puts code } if output_file
+    end
 
-		def output_file
-			@options[:output_filename]
+    def output_file
+      @options[:output_filename]
     end
 
     def run?

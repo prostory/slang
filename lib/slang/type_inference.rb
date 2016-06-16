@@ -310,7 +310,7 @@ module SLang
         end
 
         unless instance.body.type.child_of? instance.return_type
-          raise "can't cast #{instance.return_type} to #{instance.return_type}"
+          raise "can't cast #{instance.body.type} to #{instance.return_type}"
         end
 
         unless instance.body.type == Type.void

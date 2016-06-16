@@ -40,8 +40,8 @@ module SLang
         fun
       end
 
-      def lookup_function(name, args, obj)
-        obj.type.lookup_function(name, args)
+      def lookup_function(name, signature, obj)
+        obj.type.lookup_function(name, signature)
       end
 
       def define_variable(var)

@@ -1,65 +1,48 @@
 module SLang
   class FunctionPrototype
-    attr_accessor :templates
+    attr_accessor :functions
     attr_accessor :instances
+    attr_accessor :specific_function
 
     def initialize
-      @templates = {}
+      @functions = {}
       @instances = []
+    end
+
+    def set_specific_function(fun)
+      if @specific_function
+        @specific_function.template << fun
+      else
+        @specific_function = fun
+      end
     end
 
     def <<(fun)
       if fun.has_var_list?
-        template = templates[:varlist] || FunctionTemplate.new
-        template << fun
-        templates[:varlist] = template
+        set_specific_function fun
+        return
+      end
+
+      function = functions[fun.signature]
+      if function.nil?
+        functions[fun.signature] = fun
+
+        functions.sort do |i, j|
+          i[0] <=> j[0]
+        end
       else
-        template = templates[fun.params.size] || FunctionTemplate.new
-        template << fun
-        templates[fun.params.size] = template
+        function.template << fun
+        return
       end
     end
 
-    def lookup(args)
-      template = templates[args.size] || templates[:varlist]
-      template.latest if template
+    def lookup(sig)
+      function = functions.select { |signature, function| sig.child_of? signature }.to_a.flatten[1] || specific_function
+      function.template.latest if function
     end
 
     def add_instance(instance)
       @instances << instance
-    end
-  end
-
-  class ExternalPrototype
-    attr_accessor :templates
-    attr_accessor :instances
-
-    def initialize
-      @templates = {}
-      @instances = []
-    end
-
-    def <<(fun)
-      if fun.has_var_list?
-        template = templates[:varlist] || FunctionTemplate.new
-        template << fun
-        templates[:varlist] = template
-      else
-        signature = Function.signature(fun)
-        template = templates[signature] || FunctionTemplate.new
-        template << fun
-        templates[signature] = template
-      end
-    end
-
-    def lookup(args)
-      template = templates[args.map(&:type)] || templates[:varlist]
-      template.latest if template
-    end
-
-    def add_instance(instance)
-      @instances.pop
-      @instances.push instance
     end
   end
 end

@@ -1,34 +1,5 @@
 module SLang
-  class BaseType
-    def define
-      target_type.nil? ? '' : "typedef #{target_type} #{name};\n"
-    end
-
-    def reference
-      name.to_s
-    end
-
-    def base_type
-      self
-    end
-  end
-
-  class CBaseType < BaseType
-    def initialize(name, target_type = nil)
-      super name
-      @target_type = target_type
-    end
-
-    def target_type
-      @target_type
-    end
-
-    def clone
-      self.clone name, target_type
-    end
-  end
-
-  class ObjectType < BaseType
+  class BaseObjectType < BaseType
     def target_type
       "struct { #{display_members} }"
     end
@@ -41,14 +12,10 @@ module SLang
 
     def display_members
       if members.empty?
-        return "#{Type.int.reference} unused;"
+        return 'char unused;'
       end
 
       "#{members.map{|n, v| "#{v.optional ? Type.union_type : v.type.reference} #{n};"}.join ' '}"
-    end
-
-    def name
-      "#{@name}#{seq}"
     end
 
     def reference
@@ -57,6 +24,39 @@ module SLang
 
     def base_type
       Type.pointer
+    end
+  end
+
+  class CBaseType < AnyType
+    def initialize(name, target_type = nil)
+      super name
+      @target_type = target_type
+    end
+
+    def define
+      target_type.nil? ? '' : "typedef #{target_type} #{name};\n"
+    end
+
+    def reference
+      name.to_s
+    end
+
+    def base_type
+      self
+    end
+
+    def target_type
+      @target_type
+    end
+
+    def clone
+      self.clone name, target_type
+    end
+  end
+
+  class ObjectType < AnyType
+    def name
+      "#{@name}#{seq}"
     end
   end
 
@@ -74,7 +74,7 @@ module SLang
     end
   end
 
-  class UnionType < BaseType
+  class UnionType < AnyType
     def target_type
       "union { #{display_members} }"
     end
@@ -92,7 +92,7 @@ module SLang
     end
   end
 
-  class EnumType < BaseType
+  class EnumType < AnyType
     def target_type
       "enum { #{display_members} }"
     end
@@ -102,7 +102,7 @@ module SLang
     end
   end
 
-  class VarList < BaseType
+  class VarList < AnyType
     def reference
       s = ''
       members.each_with_index do |t, i|
@@ -125,13 +125,13 @@ module SLang
     end
   end
 
-  class LambdaType < BaseType
+  class LambdaType < AnyType
     def name
       "#{@name}#{seq}"
     end
   end
 
-  class ModuleType < BaseType
+  class ModuleType < BaseObjectType
 
   end
 
@@ -143,8 +143,6 @@ module SLang
       base('void *', :Pointer)
       enum({False: 0, True: 1}, :Bool)
       base(:void, :Void)
-      module_type(:Kernel)
-      types[:Lambda] ||= LambdaType.new
       union_type
     end
 
@@ -183,14 +181,6 @@ module SLang
       type
     end
 
-    def self.varlist
-      VarList.new
-    end
-
-    def self.lambda
-      types[:Lambda]
-    end
-
     def self.void
       types[:Void]
     end
@@ -213,10 +203,6 @@ module SLang
 
     def self.pointer
       types[:Pointer]
-    end
-
-    def self.kernel
-      types[:Kernel]
     end
   end
 end

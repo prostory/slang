@@ -22,7 +22,7 @@ module SLang
             when :fun
               Function.new exp[1], parse_params(exp[2]), parse_expression(exp[3]), exp[4], @target
             when :lambda
-              Lambda.new parse_params(exp[1]), parse_expression(exp[2]), exp[4], @target
+              Lambda.new parse_params(exp[1]), parse_expression(exp[2]), exp[3], @target
             when :call
               if exp[1].is_a? Array
                 func = parse_expression(exp[1])

@@ -10,6 +10,10 @@ module SLang
   class Call
     attr_accessor :target_fun
 
+    def signature
+      @signature ||= Signature.new(args.map(&:type))
+    end
+
     def has_var_list?
       args.any? && args.last.is_a?(Variable) && args.last.var_list?
     end
@@ -43,33 +47,42 @@ module SLang
     attr_accessor :mangled_return_type
     attr_accessor :prototype
 
+    def template
+      if @template.nil?
+        @template = FunctionTemplate.new
+        @template << self
+      end
+      @template
+    end
+
     def <<(instance)
       @instances ||= {}
       unless mangled
         if @mangled = prototype.instances.size > 0
-          prototype.instances.each {|instance| instance.mangled = @mangled}
+          prototype.instances.each do |fun|
+            fun.mangled = @mangled
+            if fun.signature == instance.signature && fun.body.type != instance.body.type
+              fun.mangled_return_type = true
+              instance.mangled_return_type = true
+            end
+          end
         end
       end
       instance.mangled = @mangled
-      fun = @instances[self.class.signature(instance)]
-      if fun && fun.body.type != instance.body.type
-        fun.instances ||= {}
-        fun.instances[fun.body.type] = fun unless fun.instances[fun.body.type]
-        fun.instances[instance.body.type] = instance
-        fun.mangled_return_type = true
-        instance.mangled_return_type = true
+      if instance.has_var_list?
+        @instances[:VarList] = instance
       else
-        @instances[self.class.signature(instance)] = instance
+        @instances[instance.signature] = instance
       end
       prototype.add_instance instance
     end
 
-    def self.signature(fun)
-      fun.params.map(&:type)
+    def [](signature)
+      @instances && (@instances[signature]||@instances[:VarList])
     end
 
-    def [](arg_types)
-      @instances && @instances[arg_types]
+    def signature
+      @signature ||= Signature.new(params.map(&:type))
     end
 
     def has_var_list?
@@ -78,14 +91,6 @@ module SLang
 
     def new_prototype
       @prototype ||= FunctionPrototype.new
-      @prototype << self
-      @prototype
-    end
-  end
-
-  class External
-    def new_prototype
-      @prototype ||= ExternalPrototype.new
       @prototype << self
       @prototype
     end
@@ -186,7 +191,7 @@ module SLang
     end
 
     def visit_call(node)
-      node.obj ||= Variable.new(:self, context.scope.type) if context.scope
+      node.obj ||= Variable.new(:self, context.scope.type) if context.scope.type
 
       if node.obj
         node.obj.accept self
@@ -222,10 +227,10 @@ module SLang
 
       var = context.lookup_variable(node.name)
       if var && var.type.is_a?(LambdaType) && node.name == var.name
-        untyped_fun = var.type.lookup_function(node.args)
+        untyped_fun = var.type.lookup_function(node.signature)
       end
 
-      untyped_fun = context.lookup_function(node.name, node.args, node.obj) if untyped_fun.nil?
+      untyped_fun = context.lookup_function(node.name, node.signature, node.obj) if untyped_fun.nil?
 
       if untyped_fun.nil?
         error = "undefined function '#{node.name}' (#{types.map(&:to_s).join ', '}), #{node.source_code}"
@@ -236,13 +241,13 @@ module SLang
       types.unshift node.obj.type if node.obj && untyped_fun.receiver
       node.obj = nil if untyped_fun.receiver.nil?
 
-      typed_fun = untyped_fun[types]
+      typed_fun = untyped_fun[Signature.new(types)]
 
       if untyped_fun.is_a?(External)
         if typed_fun.nil?
           typed_fun = untyped_fun.clone
           typed_fun.params.unshift Parameter.new(nil, node.obj.type) if node.obj && untyped_fun.receiver
-          typed_fun.body.type = Type.types[untyped_fun.return_type]
+          typed_fun.body.type = untyped_fun.return_type
           untyped_fun << typed_fun
         end
         node.target_fun = typed_fun
@@ -300,12 +305,12 @@ module SLang
 
         instance.body.accept self
 
-        if call.obj && call.obj.type.is_a?(ClassType) && call.name == :__alloc__
+        if call.name == :__alloc__ && call.obj.type.is_a?(ClassType)
           instance.body.type = call.obj.type.object_type.new_instance
         end
 
-        unless instance.return_type == :unknown
-          instance.body.type = Type.types[instance.return_type]
+        unless instance.body.type.child_of? instance.return_type
+          raise "can't cast #{instance.return_type} to #{instance.return_type}"
         end
 
         unless instance.body.type == Type.void
@@ -321,32 +326,41 @@ module SLang
     end
 
     def visit_function(node)
+      node.params.each {|param| param.accept self }
+      node.return_type = Type.types[node.return_type]
       context.add_function node
       if node.name == :main
         node.body.accept self
-        node.body.type = Type.types[node.return_type]
+        node.body.type = node.return_type
         node << node
       end
       false
     end
 
     def visit_lambda(node)
+      node.params.each {|param| param.accept self }
+      node.return_type = Type.types[node.return_type]
       node.type = Type.lambda.new_instance
       Type.lambda.add_function node
       false
     end
 
     def visit_class_fun(node)
+      node.params.each {|param| param.accept self }
+      node.return_type = Type.types[node.return_type]
       context.add_function node
       false
     end
 
-    def end_visit_external(node)
+    def visit_external(node)
+      node.params.each {|param| param.accept self }
+      node.return_type = Type.types[node.return_type]
       context.add_function node
+      false
     end
 
-    def end_visit_operator(node)
-      context.add_function node
+    def visit_operator(node)
+      visit_external node
     end
 
     def end_visit_if(node)

@@ -93,7 +93,7 @@ module TCC
     end
 
     def function(name, return_type, args_type)
-      FFI::Function.new(return_type, args_type, symbol(state, name))
+      FFI::Function.new(return_type, args_type, symbol(name))
     end
   end
 end

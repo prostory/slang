@@ -14,6 +14,22 @@ module SLang
       types[name] ||= ModuleType.new(name)
     end
 
+    def self.varlist
+      VarList.new
+    end
+
+    def self.lambda
+      types[:Lambda] ||= LambdaType.new
+    end
+
+    def self.kernel
+      types[:Kernel] ||= ModuleType.new(:Kernel)
+    end
+
+    def self.any
+      types[:Any] ||= BaseObjectType.new(:Any)
+    end
+
     def self.lookup(name)
       types[name]
     end
@@ -38,7 +54,7 @@ module SLang
       @functions = {}
       @ancestors = [obj]
       @template = TypeTemplate.new
-      extend(parent)
+      extend(parent) if parent
     end
 
     def class_type
@@ -63,9 +79,9 @@ module SLang
       nil
     end
 
-    def lookup_function(name, args)
+    def lookup_function(name, signature)
       prototype = functions[name]
-      prototype.lookup args if prototype
+      prototype.lookup signature if prototype
     end
 
     def add_instance(instance)
@@ -74,11 +90,6 @@ module SLang
     end
 
     def extend(parent)
-      if parent.nil?
-        include_module(Type.kernel)
-        return
-      end
-
       ancestors.push parent, *parent.ancestors
       parent.ancestors.each do |type|
         type.prototype.functions.each do |name, prototype|
@@ -135,8 +146,8 @@ module SLang
       end
     end
 
-    def lookup_function(name, args)
-      prototype.lookup_function name, args
+    def lookup_function(name, signature)
+      prototype.lookup_function name, signature
     end
 
     def ancestors
@@ -147,8 +158,30 @@ module SLang
 
     end
 
+    def child_of?(type)
+      ancestors.include? type
+    end
+
+    def is_any?
+      self.name == :Any
+    end
+
+    def public_parent(*types)
+      parent = self
+      types.each {|type| parent = type if parent.child_of? type}
+      parent
+    end
+
     def seq
       sequence > 0 ? sequence.to_s : ''
+    end
+
+    def hash
+      @name.hash
+    end
+
+    def eql?
+      @name == @name
     end
 
     def clone
@@ -160,7 +193,7 @@ module SLang
     end
   end
 
-  class ObjectType < BaseType
+  class BaseObjectType < BaseType
     attr_accessor :members
 
     def initialize(name, parent = nil, prototype = nil)
@@ -179,6 +212,17 @@ module SLang
     def [](name)
       members[name]
     end
+  end
+
+  class AnyType < BaseObjectType
+    def initialize(name, parent = nil, prototype = nil)
+      super name, parent || Type.any, prototype
+
+      include_module(Type.kernel)
+    end
+  end
+
+  class ObjectType < AnyType
   end
 
   class ClassType < ObjectType
@@ -203,7 +247,7 @@ module SLang
     end
   end
 
-  class ModuleType < BaseType
+  class ModuleType < BaseObjectType
     def initialize(name, prototype = nil)
       super name, nil, prototype
     end
@@ -213,7 +257,7 @@ module SLang
     end
   end
 
-  class UnionType < BaseType
+  class UnionType < AnyType
     attr_accessor :members
 
     def initialize(name, parent = nil, prototype = nil)
@@ -243,7 +287,7 @@ module SLang
     end
   end
 
-  class EnumType < BaseType
+  class EnumType < AnyType
     attr_accessor :members
 
     def initialize(name, parent = nil, prototype = nil)
@@ -265,7 +309,7 @@ module SLang
     end
   end
 
-  class VarList < BaseType
+  class VarList < AnyType
     include Enumerable
 
     attr_accessor :members
@@ -308,13 +352,13 @@ module SLang
     end
   end
 
-  class LambdaType < BaseType
+  class LambdaType < AnyType
     def initialize(parent = nil, prototype = nil)
       super :Lambda, parent, prototype
     end
 
-    def lookup_function(args)
-      prototype.lookup_function :lambda, args
+    def lookup_function(signature)
+      prototype.lookup_function :lambda, signature
     end
 
     def clone

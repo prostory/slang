@@ -198,9 +198,9 @@ module SLang
 		attr_accessor :name
 		attr_accessor :type
 
-		def initialize(name, type = :unknown)
+		def initialize(name, type = :Any)
 			@name = name
-			@type = type || :unknown
+			@type = type || :Any
 		end
 
 		def ==(other)
@@ -221,7 +221,7 @@ module SLang
 	class ClassVar < Variable
 		attr_accessor :target
 
-		def initialize(name, target = nil, type = :unknown)
+		def initialize(name, target = nil, type = :Any)
 			super name, type
 			@target = target
 		end
@@ -286,13 +286,13 @@ module SLang
 		attr_accessor :receiver
 		attr_accessor :sequence
 
-		def initialize(name, params = [], body = [], return_type = :unknown, receiver = nil)
+		def initialize(name, params = [], body = [], return_type = :Any, receiver = nil)
 			@name = name
 			@params = params
 			@params.each {|param| param.parent = self}
 			@body = Expressions.from body
 			@body.parent = self
-			@return_type = return_type || :unknown
+			@return_type = return_type || :Any
 			@receiver = receiver
 			@receiver.parent = self if receiver
 			@sequence = 0
@@ -317,7 +317,7 @@ module SLang
 	end
 
 	class Lambda < Function
-		def initialize(params = [], body = [], return_type = :unknown, receiver = nil)
+		def initialize(params = [], body = [], return_type = :Any, receiver = nil)
 			super :lambda, params, body, return_type, receiver
 		end
 
@@ -332,7 +332,7 @@ module SLang
 	class External < Function
 		attr_accessor :output_name
 
-		def initialize(name, output_name, params = [], return_type = :unknown, receiver = nil)
+		def initialize(name, output_name, params = [], return_type = :Any, receiver = nil)
 			super name, params, [], return_type, receiver
 			@output_name = output_name || name
 		end

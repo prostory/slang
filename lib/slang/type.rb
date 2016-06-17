@@ -30,6 +30,34 @@ module SLang
       types[:Any] ||= BaseObjectType.new(:Any)
     end
 
+    def self.void
+      types[:Void]
+    end
+
+    def self.int
+      types[:Integer]
+    end
+
+    def self.float
+      types[:Float]
+    end
+
+    def self.bool
+      types[:Bool]
+    end
+
+    def self.string
+      types[:String]
+    end
+
+    def self.pointer
+      types[:Pointer]
+    end
+
+    def self.array_type(items)
+      ArrayType.new(items)
+    end
+
     def self.lookup(name)
       types[name]
     end
@@ -53,7 +81,7 @@ module SLang
     def initialize(obj, parent = nil)
       @functions = {}
       @ancestors = [obj]
-      @template = TypeTemplate.new
+      @template = TypeTemplate.new(obj.name)
       extend(parent) if parent
     end
 
@@ -93,14 +121,14 @@ module SLang
       ancestors.push parent, *parent.ancestors
       parent.ancestors.each do |type|
         type.prototype.functions.each do |name, prototype|
-          functions[name] = prototype unless functions.has_key? name
+          functions[name] = prototype.clone unless functions.has_key? name
         end
       end
     end
 
     def include_module(mod)
       mod.prototype.functions.each do |name, prototype|
-        functions[name] = prototype unless functions.has_key? name
+        functions[name] = prototype.clone unless functions.has_key? name
       end if mod
     end
   end
@@ -108,7 +136,6 @@ module SLang
   class BaseType
     attr_accessor :name
     attr_accessor :parent
-    attr_accessor :functions
     attr_accessor :prototype
     attr_accessor :sequence
 
@@ -138,16 +165,18 @@ module SLang
 
     def add_function(fun)
       if fun.is_a? ClassFun
-        function = class_type.prototype.add_function(fun)
-        class_type.functions << function if function
+        class_type.prototype.add_function(fun)
       else
-        function = prototype.add_function(fun)
-        functions << function if function
+        prototype.add_function(fun)
       end
     end
 
     def lookup_function(name, signature)
       prototype.lookup_function name, signature
+    end
+
+    def functions
+      prototype.functions
     end
 
     def ancestors
@@ -164,12 +193,6 @@ module SLang
 
     def is_any?
       self.name == :Any
-    end
-
-    def public_parent(*types)
-      parent = self
-      types.each {|type| parent = type if parent.child_of? type}
-      parent
     end
 
     def seq
@@ -222,6 +245,61 @@ module SLang
     end
   end
 
+  class SequenceType < AnyType
+    include Enumerable
+
+    def initialize(name, members = [], parent = nil, prototype = nil)
+      super name, parent, prototype
+      @members = members
+    end
+
+    def size
+      members.size
+    end
+
+    def empty?
+      members.empty?
+    end
+
+    def each(&block)
+      items.each(&block)
+    end
+
+    def [](index)
+      members[index]
+    end
+
+    def []=(index, type)
+      members[index] = type
+    end
+
+    def <<(type)
+      members << type
+    end
+
+    def hash
+      name.hash + members.hash
+    end
+
+    def eql?(other)
+      other.class == self.class && other.name == self.name && other.members == members
+    end
+  end
+
+  class ArrayType < SequenceType
+    def initialize(members = [], parent = nil, prototype = nil)
+      super :Array, members, parent, prototype
+    end
+
+    def items_type
+      Type.merge(*members)
+    end
+
+    def clone
+      self.class.new parent, prototype
+    end
+  end
+
   class ObjectType < AnyType
   end
 
@@ -258,8 +336,6 @@ module SLang
   end
 
   class UnionType < AnyType
-    attr_accessor :members
-
     def initialize(name, parent = nil, prototype = nil)
       super name, parent, prototype
       @members = []
@@ -288,8 +364,6 @@ module SLang
   end
 
   class EnumType < AnyType
-    attr_accessor :members
-
     def initialize(name, parent = nil, prototype = nil)
       super name, parent, prototype
       @members = {}
@@ -309,42 +383,11 @@ module SLang
     end
   end
 
-  class VarList < AnyType
+  class VarList < SequenceType
     include Enumerable
 
-    attr_accessor :members
-
     def initialize(parent = nil, prototype = nil)
-      super :VarList, parent, prototype
-      @members = []
-    end
-
-    def size
-      members.size
-    end
-
-    def empty?
-      members.empty?
-    end
-
-    def each(&block)
-      members.each(&block)
-    end
-
-    def [](index)
-      members[index]
-    end
-
-    def []=(index, type)
-      members[index] = type
-    end
-
-    def <<(type)
-      members << type
-    end
-
-    def ==(other)
-      other.class == self.class && other.members == members
+      super :VarList, [], parent, prototype
     end
 
     def clone

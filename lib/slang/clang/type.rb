@@ -25,6 +25,10 @@ module SLang
     def base_type
       Type.pointer
     end
+
+    def define_variable(var)
+      "#{base_type} #{var}"
+    end
   end
 
   class CBaseType < AnyType
@@ -54,6 +58,20 @@ module SLang
     end
   end
 
+  class ArrayType < SequenceType
+    def reference
+      "#{items_type} []"
+    end
+
+    def base_type
+      self
+    end
+
+    def define_variable(var)
+      "#{items_type} #{var}[#{size}]"
+    end
+  end
+
   class ObjectType < AnyType
     def name
       "#{@name}#{seq}"
@@ -80,7 +98,7 @@ module SLang
     end
 
     def define
-      members.empty? ? '' : super
+      members.empty? ? '' : "typedef #{target_type} #{name};\n"
     end
 
     def display_members
@@ -102,7 +120,7 @@ module SLang
     end
   end
 
-  class VarList < AnyType
+  class VarList < SequenceType
     def reference
       s = ''
       members.each_with_index do |t, i|
@@ -137,12 +155,12 @@ module SLang
 
   class Type
     def self.init_base_types
+      base(:void, :Void)
       base(:int, :Integer)
       base(:double, :Float)
       base('char *', :String)
       base('void *', :Pointer)
       enum({False: 0, True: 1}, :Bool)
-      base(:void, :Void)
       union_type
     end
 
@@ -181,28 +199,10 @@ module SLang
       type
     end
 
-    def self.void
-      types[:Void]
-    end
-
-    def self.int
-      types[:Integer]
-    end
-
-    def self.float
-      types[:Float]
-    end
-
-    def self.bool
-      types[:Bool]
-    end
-
-    def self.string
-      types[:String]
-    end
-
-    def self.pointer
-      types[:Pointer]
+    def self.merge(*types)
+      uniq_types = types.uniq
+      return uniq_types.last if uniq_types.size == 1
+      self.union uniq_types
     end
   end
 end

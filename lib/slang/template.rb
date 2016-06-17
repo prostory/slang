@@ -2,7 +2,10 @@ module SLang
   class Template
     include Enumerable
 
-    def initialize
+    attr_accessor :name
+
+    def initialize(name)
+      @name = name
       @instances = []
     end
 
@@ -25,6 +28,10 @@ module SLang
 
     def latest
       @instances.last
+    end
+
+    def to_s
+      name.to_s
     end
   end
 

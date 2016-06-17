@@ -9,6 +9,14 @@ module SLang
     def to_clang
       prog = [:do,
               [:external, :calloc, [:Integer, :Integer], :Pointer],
+              [:class, :Pointer, nil,
+               [:static, :new, [:size], [:calloc, nil, [:size, 1]]],
+               [:static, :new, [:size, :nitems], [:calloc, nil, [:size, :nitems]]],
+               [:external, :realloc, [:Integer], :Pointer],
+               [:external, :release, [], :Void],
+               [:fun, :[], [:index], [:+, :self, [:index]]],
+               [:fun, :[]=, [:index, :value], [:at, [:+, :self, [:index]], :value]]
+              ],
               [:class, :Object, nil,
                [:static, :__alloc__, [:size], [:calloc, nil, [:size, 1]]],
                [:static, :new, {args: :VarList}, [[:set, :obj, [:__alloc__, :self, [[:sizeof]]]], [:__init__, :obj, [:args]], [:ret, :obj]]],
@@ -84,7 +92,6 @@ module SLang
                [:external, :echo, :puts, [], :Integer],
                [:external, :len, :strlen, [], :Integer],
                [:external, :dup, :strdup, [], :String],
-               [:external, :grow, :realloc, [:Integer], :String],
                [:external, :cat, :strcat, [:String], :String],
                [:external, :printf, [:VarList], :Integer],
               ],
@@ -106,7 +113,8 @@ module SLang
                [:fun, :__init__, [:name, :id], [[:set, :@name, :name], [:set, :@id, :id]]],
                [:fun, :name, [], [:ret, :@name]]
               ],
-              [:set, :b, [:new, :B, [[:<<, "Xiao", [" Peng"]], 1]]],
+              [:set, :b, [:new, :B, ["Xiao Peng"]]],
+              [:set, :b, [:new, :B, ["Xiao Peng", 1]]],
               [:a, :b],
               [:b, :A],
               [:class, :A, nil,
@@ -117,14 +125,18 @@ module SLang
               [:b, :A],
               [:b, :B],
               [:set_id, :b, [2.3]],
-              [:get_id, :b],
+              [:echo, [:type, [:get_id, :b]]],
+              [:set_id, :b, [1]],
+              [:echo, [:type, [:get_id, :b]]],
               [:echo, [:name, :b]],
               [:echo, [:type, :b]],
-              [:echo, [:type, [:get_id, :b]]],
-              [:printf, 'hello, goto %f\n', [[:get_id, :b]]],
+              [:printf, 'hello, goto %d\n', [[:get_id, :b]]],
               [:times, 5, [[:lambda, [:n], [:echo, 'Hello']]]],
               [:times, 5, [[:lambda, [:n], [:echo, 'World']]]],
-              [:times, 5, [[:lambda, [:n], [:printf, 'count: %d\n', [:n]]]]]
+              [:times, 5, [[:lambda, [:n], [:printf, 'count: %d\n', [:n]]]]],
+              [:set, :a, [:list, 1, 2, 3, 4]],
+              [:set, :p, [:new, :Pointer, [[:sizeof, :Integer], 4]]],
+              [:[]=, :p, [0, 5]]
       ]
       main_prog = [:fun, :main, [], prog << [:ret, [:&, 5, [[:<<, 1, [2]]]]], :Integer]
 

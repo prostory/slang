@@ -40,62 +40,6 @@ module SLang
     end
   end
 
-  class Function
-    attr_accessor :owner
-    attr_accessor :instances
-    attr_accessor :mangled
-    attr_accessor :mangled_return_type
-    attr_accessor :prototype
-
-    def template
-      if @template.nil?
-        @template = FunctionTemplate.new
-        @template << self
-      end
-      @template
-    end
-
-    def <<(instance)
-      @instances ||= {}
-      unless mangled
-        if @mangled = prototype.instances.size > 0
-          prototype.instances.each do |fun|
-            fun.mangled = @mangled
-            if fun.signature == instance.signature && fun.body.type != instance.body.type
-              fun.mangled_return_type = true
-              instance.mangled_return_type = true
-            end
-          end
-        end
-      end
-      instance.mangled = @mangled
-      if instance.has_var_list?
-        @instances[:VarList] = instance
-      else
-        @instances[instance.signature] = instance
-      end
-      prototype.add_instance instance
-    end
-
-    def [](signature)
-      @instances && (@instances[signature]||@instances[:VarList])
-    end
-
-    def signature
-      @signature ||= Signature.new(params.map(&:type))
-    end
-
-    def has_var_list?
-      params.any? && params.last.var_list?
-    end
-
-    def new_prototype
-      @prototype ||= FunctionPrototype.new
-      @prototype << self
-      @prototype
-    end
-  end
-
   class TypeVisitor < Visitor
     attr_accessor :context
 
@@ -127,10 +71,20 @@ module SLang
 
     def visit_bool_literal(node)
       node.type = Type.bool
+      false
     end
 
     def visit_string_literal(node)
       node.type = Type.string
+      false
+    end
+
+    def visit_array_literal(node)
+      node.children.each do |child|
+        child.accept self
+      end
+
+      node.type = Type.array_type node.children.map(&:type)
       false
     end
 
@@ -158,10 +112,15 @@ module SLang
 
     def visit_class_var(node)
       var = context.lookup_member(node.name) or raise "Bug: class variable '#{node.name}' is not defined!"
-      node.target = var.target
       node.type = var.type
       node.optional = var.optional
       var << node
+      false
+    end
+
+
+    def visit_const(node)
+      node.type = Type.types[node.name].class_type or raise "uninitialized constant '#{node.name}'"
       false
     end
 
@@ -195,10 +154,6 @@ module SLang
 
       if node.obj
         node.obj.accept self
-
-        if node.obj.is_a? Const
-          node.obj.type = Type.types[node.obj.name].class_type or raise "uninitialized constant #{node.obj.name}"
-        end
 
         if node.name == :type
           node.type = Type.string

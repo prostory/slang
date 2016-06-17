@@ -111,6 +111,16 @@ module SLang
         stream << '"'
       end
 
+      def visit_array_literal(node)
+        stream << '{ '
+        node.children.each_with_index do |child, idx|
+          child.accept self
+          stream << ', ' if idx < node.children.size-1
+        end
+        stream << ' }'
+        false
+      end
+
       def visit_class_def(node)
         true
       end
@@ -145,14 +155,21 @@ module SLang
         if node.obj
           if node.name == :type
             stream << '"'
-            stream << "#{node.obj.type}"
+            stream << "#{node.obj.type.template}"
             stream << '"'
             return false
           end
+        end
 
-          if node.obj.type.is_a?(ClassType)
-            case node.name
-            when :sizeof
+        if node.name == :sizeof
+          if node.args.size == 1
+            if node.args.first.type.is_a?(ClassType)
+              stream << "sizeof(#{node.args.first.type.object_type})"
+              return false
+            end
+          end
+          if node.args.size == 0
+            if node.obj.type.is_a?(ClassType)
               stream << "sizeof(#{node.obj.type.object_type})"
               return false
             end
@@ -181,8 +198,11 @@ module SLang
           end
           stream << "#{node.name}.#{Type.union_type.member(node.type)}"
         else
-          stream << "#{node.type.base_type} " unless node.defined
-          stream << "#{node.name}"
+          unless node.defined
+            stream << "#{node.type.define_variable(node.name)}"
+          else
+            stream << "#{node.name}"
+          end
         end
         false
       end
@@ -303,13 +323,13 @@ module SLang
       end
 
       def declare_functions(functions)
-        functions.each do |pt|
+        functions.each_value do |pt|
           pt.instances.each {|fun| declare_function fun unless fun.name == :main || fun.is_a?(Operator)}
         end
       end
 
       def define_functions(functions)
-        functions.each do |pt|
+        functions.each_value do |pt|
           pt.instances.each {|fun| define_function fun unless fun.is_a? External}
         end
       end

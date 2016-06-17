@@ -7,6 +7,7 @@ module SLang
     end
 
     def child_of_types?(types)
+      return true if types == :VarList
       return false if types.size != @types.size
 
       result = types.each_with_index do |type, idx|
@@ -29,7 +30,7 @@ module SLang
     end
 
     def eql?(other)
-      other.class.equal?(self.class) && other.types == types
+      other.types == types
     end
 
     def <=>(other)
@@ -44,6 +45,16 @@ module SLang
 
     def to_s
       types.join ', '
+    end
+  end
+
+  class VarListSignature < Signature
+    def initialize
+      @types = :VarList
+    end
+
+    def child_of_types?(types)
+      false
     end
   end
 end

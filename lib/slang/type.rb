@@ -54,8 +54,8 @@ module SLang
       types[:Pointer]
     end
 
-    def self.array_type(items)
-      ArrayType.new(items)
+    def self.static_array_type(items)
+      StaticArrayType.new(items)
     end
 
     def self.lookup(name)
@@ -245,7 +245,7 @@ module SLang
     end
   end
 
-  class SequenceType < AnyType
+  class ContainerType < AnyType
     include Enumerable
 
     def initialize(name, members = [], parent = nil, prototype = nil)
@@ -286,9 +286,9 @@ module SLang
     end
   end
 
-  class ArrayType < SequenceType
+  class StaticArrayType < ContainerType
     def initialize(members = [], parent = nil, prototype = nil)
-      super :Array, members, parent, prototype
+      super :StaticArray, members, parent, prototype
     end
 
     def items_type
@@ -383,7 +383,7 @@ module SLang
     end
   end
 
-  class VarList < SequenceType
+  class VarList < ContainerType
     include Enumerable
 
     def initialize(parent = nil, prototype = nil)

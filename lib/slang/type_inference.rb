@@ -84,7 +84,7 @@ module SLang
         child.accept self
       end
 
-      node.type = Type.array_type node.children.map(&:type)
+      node.type = Type.static_array_type node.children.map(&:type)
       false
     end
 

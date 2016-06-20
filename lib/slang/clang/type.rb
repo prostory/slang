@@ -58,7 +58,7 @@ module SLang
     end
   end
 
-  class ArrayType < SequenceType
+  class StaticArrayType < ContainerType
     def reference
       "#{items_type} []"
     end
@@ -120,7 +120,7 @@ module SLang
     end
   end
 
-  class VarList < SequenceType
+  class VarList < ContainerType
     def reference
       s = ''
       members.each_with_index do |t, i|

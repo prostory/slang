@@ -32,34 +32,40 @@ module SLang
     end
 
     def mangled_name
-      if owner && params.first && params.first.type == owner
-        param_types = params[1..-1].map(&:type)
+      # if owner && params.first && params.first.type == owner
+      #   param_types = params[1..-1].map(&:type)
+      # else
+      #   param_types = params.map(&:type)
+      # end
+      # return_type = body.type if mangled_return_type
+      # name = self.class.mangled_name(owner, simple_name)
+      # name << "#{sequence}" if sequence > 0
+      # name << self.class.mangled_params(param_types, mangled, return_type)
+      if name == :main
+        name.to_s
       else
-        param_types = params.map(&:type)
+        "#{simple_name}#{sequence}"
       end
-      return_type = body.type if mangled_return_type
-      name = self.class.mangled_name(owner, simple_name)
-      name << "#{sequence}" if sequence > 0
-      name << self.class.mangled_params(param_types, mangled, return_type)
-    end
 
-    def self.mangled_name(owner, name)
-      if owner
-        "#{owner}_#{name}"
-      else
-        "#{name}"
-      end
     end
-
-    def self.mangled_params(param_types, mangled, return_type = nil)
-      if (param_types.any? && mangled) || return_type
-        s = "_#{param_types.join '_'}"
-        s << "_#{return_type}" if return_type
-        s
-      else
-        ''
-      end
-    end
+    #
+    # def self.mangled_name(owner, name)
+    #   if owner
+    #     "#{owner}_#{name}"
+    #   else
+    #     "#{name}"
+    #   end
+    # end
+    #
+    # def self.mangled_params(param_types, mangled, return_type = nil)
+    #   if (param_types.any? && mangled) || return_type
+    #     s = "_#{param_types.join '_'}"
+    #     s << "_#{return_type}" if return_type
+    #     s
+    #   else
+    #     ''
+    #   end
+    # end
   end
 
   class External
@@ -191,19 +197,13 @@ module SLang
       end
 
       def visit_variable(node)
-        if node.optional
-          unless node.defined
-            stream << "#{Type.union_type} #{node.name};\n"
-            indent
-          end
-          stream << "#{node.name}.#{Type.union_type.member(node.type)}"
-        else
-          unless node.defined
-            stream << "#{node.type.define_variable(node.name)}"
-          else
-            stream << "#{node.name}"
-          end
+        unless node.defined
+          stream << "#{node.type.define_variable(node.name)};\n"
+          indent
         end
+
+        stream << "#{node.name}"
+        stream << ".#{Type.union_type.member(node.type)}" if node.optional
         false
       end
 
@@ -303,35 +303,19 @@ module SLang
         node.value.accept self
       end
 
-      def declare_type_functions
+      def define_types
         Type.types.each_value do |type|
           stream << "#{type.define}"
           stream << "#{type.class_type.define}"
         end
-
-        Type.types.each_value do |type|
-          declare_functions type.functions
-          declare_functions type.class_type.functions
-        end
       end
 
-      def define_type_functions
-        Type.types.each_value do |type|
-          define_functions type.functions
-          define_functions type.class_type.functions
-        end
+      def declare_functions
+        FunctionPrototype.instances.each {|fun| declare_function fun unless fun.name == :main || fun.is_a?(Operator)}
       end
 
-      def declare_functions(functions)
-        functions.each_value do |pt|
-          pt.instances.each {|fun| declare_function fun unless fun.name == :main || fun.is_a?(Operator)}
-        end
-      end
-
-      def define_functions(functions)
-        functions.each_value do |pt|
-          pt.instances.each {|fun| define_function fun unless fun.is_a? External}
-        end
+      def define_functions
+        FunctionPrototype.instances.each {|fun| define_function fun unless fun.is_a? External}
       end
 
       def declare_function(node)

@@ -83,13 +83,17 @@ module SLang
 
     def parse_params(params)
       return params.map do |exp|
-        if exp.to_s.match /^[A-Z]/
-          Parameter.new(nil, exp)
-        else
-          Parameter.new(exp, nil)
+        case exp
+        when Array
+          Parameter.new(exp[0], exp[1])
+        when Symbol
+          if exp.to_s.match /^[A-Z]/
+            Parameter.new(nil, exp)
+          else
+            Parameter.new(exp, nil)
+          end
         end
-      end if params.is_a? Array
-      return params.map {|name, type| Parameter.new(name, type)} if params.is_a? Hash
+      end
     end
 
     def parse_args(args)

@@ -28,177 +28,200 @@ typedef struct { char unused; } StringHelper_Class;
 static StringHelper_Class StringHelper_class;
 typedef struct { Integer a; } A_Class;
 static A_Class A_class;
-typedef struct { String name; } B;
-typedef struct { String name; Integer id; UnionType a; } B1;
-typedef struct { char unused; } B_Class;
+typedef struct { Integer id; } B;
+typedef struct { String name; } B1;
+typedef struct { String name; Integer id; UnionType a; } B2;
+typedef struct { Integer a; } B_Class;
 static B_Class B_class;
 typedef struct { char unused; } Lambda;
 typedef struct { char unused; } Lambda1;
 typedef struct { char unused; } Lambda2;
 typedef struct { char unused; } Lambda_Class;
 static Lambda_Class Lambda_class;
-extern Void Integer_times_Lambda(Integer self);
-extern Void Integer_times_Lambda1(Integer self);
-extern Void Integer_times_Lambda2(Integer self);
-extern Integer puts(String);
+extern Pointer calloc(Integer, Integer);
+extern B * __alloc__1(B_Class * self, Integer size);
+extern Integer __init__2(B * self, Integer id);
+extern B * new3(B_Class * self, Integer var0);
 extern String strdup(String);
+extern String new5(String_Class * self, String const_str);
+extern B1 * __alloc__6(B_Class * self, Integer size);
+extern String __init__7(B1 * self, String name);
+extern B1 * new8(B_Class * self, String var0);
+extern B2 * __alloc__9(B_Class * self, Integer size);
+extern Integer __init__10(B2 * self, String name, Integer id);
+extern B2 * new11(B_Class * self, String var0, Integer var1);
+extern Integer puts(String);
+extern Integer a13(B2 * self);
+extern Integer b14(A_Class * self);
+extern Integer a15(B2 * self);
+extern Integer b16(A_Class * self);
+extern Integer b17(B_Class * self);
+extern Float set_id18(B2 * self, Float n);
+extern Float get_id19(B2 * self);
+extern Integer set_id20(B2 * self, Integer n);
+extern Integer get_id21(B2 * self);
+extern String name22(B2 * self);
 extern Integer printf(String, ...);
-extern String String_Class_new(String_Class * self, String const_str);
-extern Pointer calloc(Integer, Integer);
-extern Pointer Pointer_Class_new(Pointer_Class * self, Integer size, Integer nitems);
-extern Integer A_Class_b(A_Class * self);
-extern Integer A_Class_b1(A_Class * self);
-extern String B___init___String(B * self, String name);
-extern Integer B1___init___String_Integer(B1 * self, String name, Integer id);
-extern Integer B1_a(B1 * self);
-extern Float B1_set_id_Float(B1 * self, Float n);
-extern Integer B1_set_id_Integer(B1 * self, Integer n);
-extern Float B1_get_id__Float(B1 * self);
-extern Integer B1_get_id__Integer(B1 * self);
-extern String B1_name(B1 * self);
-extern Pointer calloc(Integer, Integer);
-extern B * B_Class___alloc___Integer_B(B_Class * self, Integer size);
-extern B1 * B_Class___alloc___Integer_B1(B_Class * self, Integer size);
-extern B * B_Class_new_String(B_Class * self, String var0);
-extern B1 * B_Class_new_String_Integer(B_Class * self, String var0, Integer var1);
-extern Integer B_Class_b(B_Class * self);
-extern Integer lambda0(Integer n);
-extern Integer lambda1(Integer n);
-extern Integer lambda2(Integer n);
-Integer main(Void)
+extern Integer lambda25(Integer n);
+extern Void times27(Integer self);
+extern Integer lambda28(Integer n);
+extern Void times29(Integer self);
+extern Integer lambda30(Integer n);
+extern Void times31(Integer self);
+B * __alloc__1(B_Class * self, Integer size)
 {
-    Pointer b = B_Class_new_String(&B_class, String_Class_new(&String_class, "Xiao Peng"));
-    b = B_Class_new_String_Integer(&B_class, String_Class_new(&String_class, "Xiao Peng"), 1);
-    B1_a(b);
-    A_Class_b(&A_class);
-    B1_a(b);
-    A_Class_b1(&A_class);
-    B_Class_b(&B_class);
-    B1_set_id_Float(b, 2.3);
-    puts("Float");
-    B1_set_id_Integer(b, 1);
-    puts("Integer");
-    puts(B1_name(b));
-    puts("B");
-    printf(String_Class_new(&String_class, "hello, goto %d\n"), B1_get_id__Integer(b));
-    Integer_times_Lambda(5);
-    Integer_times_Lambda1(5);
-    Integer_times_Lambda2(5);
-    Integer a[4] = { 1, 2, 3, 4 };
-    Pointer p = Pointer_Class_new(&Pointer_class, sizeof(Integer), 4);
-    (p []= 0 []= 5);
-    return (5 & (1 << 2));
+    return calloc(size, 1);
 }
-Void Integer_times_Lambda(Integer self)
+Integer __init__2(B * self, Integer id)
 {
-    Integer i = 1;
-    while ((i <= self))
-    {
-        lambda0(i);
-        i = (i + 1);
-    }
+    return self->id = id;
 }
-Void Integer_times_Lambda1(Integer self)
+B * new3(B_Class * self, Integer var0)
 {
-    Integer i = 1;
-    while ((i <= self))
-    {
-        lambda1(i);
-        i = (i + 1);
-    }
+    Pointer obj;
+    obj = __alloc__1(self, sizeof(B));
+    __init__2(obj, var0);
+    return obj;
 }
-Void Integer_times_Lambda2(Integer self)
-{
-    Integer i = 1;
-    while ((i <= self))
-    {
-        lambda2(i);
-        i = (i + 1);
-    }
-}
-String String_Class_new(String_Class * self, String const_str)
+String new5(String_Class * self, String const_str)
 {
     return strdup(const_str);
 }
-Pointer Pointer_Class_new(Pointer_Class * self, Integer size, Integer nitems)
+B1 * __alloc__6(B_Class * self, Integer size)
 {
-    return calloc(size, nitems);
+    return calloc(size, 1);
 }
-Integer A_Class_b(A_Class * self)
-{
-    return puts(String_Class_new(&String_class, "static hello"));
-}
-Integer A_Class_b1(A_Class * self)
-{
-    puts(String_Class_new(&String_class, "static world"));
-    return self->a = 5;
-}
-String B___init___String(B * self, String name)
+String __init__7(B1 * self, String name)
 {
     return self->name = name;
 }
-Integer B1___init___String_Integer(B1 * self, String name, Integer id)
+B1 * new8(B_Class * self, String var0)
+{
+    Pointer obj;
+    obj = __alloc__6(self, sizeof(B));
+    __init__7(obj, var0);
+    return obj;
+}
+B2 * __alloc__9(B_Class * self, Integer size)
+{
+    return calloc(size, 1);
+}
+Integer __init__10(B2 * self, String name, Integer id)
 {
     self->name = name;
     return self->id = id;
 }
-Integer B1_a(B1 * self)
+B2 * new11(B_Class * self, String var0, Integer var1)
 {
-    return puts(String_Class_new(&String_class, "hello"));
+    Pointer obj;
+    obj = __alloc__9(self, sizeof(B));
+    __init__10(obj, var0, var1);
+    return obj;
 }
-Float B1_set_id_Float(B1 * self, Float n)
+Integer a13(B2 * self)
+{
+    return puts(new5(&String_class, "hello"));
+}
+Integer b14(A_Class * self)
+{
+    return puts(new5(&String_class, "static hello"));
+}
+Integer a15(B2 * self)
+{
+    return puts(new5(&String_class, "world"));
+}
+Integer b16(A_Class * self)
+{
+    puts(new5(&String_class, "static world"));
+    return self->a = 5;
+}
+Integer b17(B_Class * self)
+{
+    puts(new5(&String_class, "static world"));
+    return self->a = 5;
+}
+Float set_id18(B2 * self, Float n)
 {
     return self->a.uFloat = n;
 }
-Integer B1_set_id_Integer(B1 * self, Integer n)
-{
-    return self->a.uInteger = n;
-}
-Float B1_get_id__Float(B1 * self)
+Float get_id19(B2 * self)
 {
     return self->a.uFloat;
 }
-Integer B1_get_id__Integer(B1 * self)
+Integer set_id20(B2 * self, Integer n)
+{
+    return self->a.uInteger = n;
+}
+Integer get_id21(B2 * self)
 {
     return self->a.uInteger;
 }
-String B1_name(B1 * self)
+String name22(B2 * self)
 {
     return self->name;
 }
-B * B_Class___alloc___Integer_B(B_Class * self, Integer size)
+Integer lambda25(Integer n)
 {
-    return calloc(size, 1);
+    return puts(new5(&String_class, "Hello"));
 }
-B1 * B_Class___alloc___Integer_B1(B_Class * self, Integer size)
+Void times27(Integer self)
 {
-    return calloc(size, 1);
+    Integer i;
+    i = 1;
+    while ((i <= self))
+    {
+        lambda25(i);
+        i = (i + 1);
+    }
 }
-B * B_Class_new_String(B_Class * self, String var0)
+Integer lambda28(Integer n)
 {
-    Pointer obj = B_Class___alloc___Integer_B(self, sizeof(B));
-    B___init___String(obj, var0);
-    return obj;
+    return puts(new5(&String_class, "World"));
 }
-B1 * B_Class_new_String_Integer(B_Class * self, String var0, Integer var1)
+Void times29(Integer self)
 {
-    Pointer obj = B_Class___alloc___Integer_B1(self, sizeof(B));
-    B1___init___String_Integer(obj, var0, var1);
-    return obj;
+    Integer i;
+    i = 1;
+    while ((i <= self))
+    {
+        lambda28(i);
+        i = (i + 1);
+    }
 }
-Integer B_Class_b(B_Class * self)
+Integer lambda30(Integer n)
 {
-    return puts(String_Class_new(&String_class, "static hello"));
+    return printf(new5(&String_class, "count: %d\n"), n);
 }
-Integer lambda0(Integer n)
+Void times31(Integer self)
 {
-    return puts(String_Class_new(&String_class, "Hello"));
+    Integer i;
+    i = 1;
+    while ((i <= self))
+    {
+        lambda30(i);
+        i = (i + 1);
+    }
 }
-Integer lambda1(Integer n)
+Integer main(Void)
 {
-    return puts(String_Class_new(&String_class, "World"));
-}
-Integer lambda2(Integer n)
-{
-    return printf(String_Class_new(&String_class, "count: %d\n"), n);
+    Pointer b;
+    b = new3(&B_class, 2);
+    b = new8(&B_class, new5(&String_class, "Xiao Peng"));
+    b = new11(&B_class, new5(&String_class, "Xiao Peng"), 1);
+    a13(b);
+    b14(&A_class);
+    a15(b);
+    b16(&A_class);
+    b17(&B_class);
+    set_id18(b, 2.3);
+    puts("Float");
+    set_id20(b, 1);
+    puts("Integer");
+    puts(name22(b));
+    puts("B");
+    printf(new5(&String_class, "hello, goto %d\n"), get_id21(b));
+    times27(5);
+    times29(5);
+    times31(5);
+    return (5 & (1 << 2));
 }

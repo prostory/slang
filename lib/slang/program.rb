@@ -9,17 +9,9 @@ module SLang
     def to_clang
       prog = [:do,
               [:external, :calloc, [:Integer, :Integer], :Pointer],
-              [:class, :Pointer, nil,
-               [:static, :new, [:size], [:calloc, nil, [:size, 1]]],
-               [:static, :new, [:size, :nitems], [:calloc, nil, [:size, :nitems]]],
-               [:external, :realloc, [:Integer], :Pointer],
-               [:external, :release, [], :Void],
-               [:fun, :[], [:index], [:+, :self, [:index]]],
-               [:fun, :[]=, [:index, :value], [:at, [:+, :self, [:index]], :value]]
-              ],
               [:class, :Object, nil,
                [:static, :__alloc__, [:size], [:calloc, nil, [:size, 1]]],
-               [:static, :new, {args: :VarList}, [[:set, :obj, [:__alloc__, :self, [[:sizeof]]]], [:__init__, :obj, [:args]], [:ret, :obj]]],
+               [:static, :new, [[:args, :VarList]], [[:set, :obj, [:__alloc__, :self, [[:sizeof]]]], [:__init__, :obj, [:args]], [:ret, :obj]]],
                [:fun, :__init__, [], []]
               ],
               [:class, :Integer, nil,
@@ -109,10 +101,12 @@ module SLang
                [:fun, :get_id, [], [:ret, :@a]]
               ],
               [:class, :B, :A,
+               [:fun, :__init__, [[:id, :Integer]], [:set, :@id, :id]],
                [:fun, :__init__, [:name], [:set, :@name, :name]],
                [:fun, :__init__, [:name, :id], [[:set, :@name, :name], [:set, :@id, :id]]],
                [:fun, :name, [], [:ret, :@name]]
               ],
+              [:set, :b, [:new, :B, [2]]],
               [:set, :b, [:new, :B, ["Xiao Peng"]]],
               [:set, :b, [:new, :B, ["Xiao Peng", 1]]],
               [:a, :b],
@@ -134,9 +128,7 @@ module SLang
               [:times, 5, [[:lambda, [:n], [:echo, 'Hello']]]],
               [:times, 5, [[:lambda, [:n], [:echo, 'World']]]],
               [:times, 5, [[:lambda, [:n], [:printf, 'count: %d\n', [:n]]]]],
-              [:set, :a, [:list, 1, 2, 3, 4]],
-              [:set, :p, [:new, :Pointer, [[:sizeof, :Integer], 4]]],
-              [:[]=, :p, [0, 5]]
+              # [:set, :a, [:list, 1, 2, 3, 4]],
       ]
       main_prog = [:fun, :main, [], prog << [:ret, [:&, 5, [[:<<, 1, [2]]]]], :Integer]
 

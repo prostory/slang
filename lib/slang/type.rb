@@ -54,8 +54,8 @@ module SLang
       types[:Pointer]
     end
 
-    def self.static_array_type(items)
-      StaticArrayType.new(items)
+    def self.static_array_type
+      types[:StaticArray]
     end
 
     def self.lookup(name)
@@ -286,20 +286,6 @@ module SLang
     end
   end
 
-  class StaticArrayType < ContainerType
-    def initialize(members = [], parent = nil, prototype = nil)
-      super :StaticArray, members, parent, prototype
-    end
-
-    def items_type
-      Type.merge(*members)
-    end
-
-    def clone
-      self.class.new parent, prototype
-    end
-  end
-
   class ObjectType < AnyType
     def latest
       template.latest
@@ -408,6 +394,19 @@ module SLang
 
     def lookup_function(signature)
       prototype.lookup_function :lambda, signature
+    end
+
+    def clone
+      self.class.new parent, prototype
+    end
+  end
+
+  class StaticArrayType < AnyType
+    attr_accessor :size
+    attr_accessor :items_type
+
+    def initialize(parent = nil, prototype = nil)
+      super :StaticArray, parent, prototype
     end
 
     def clone

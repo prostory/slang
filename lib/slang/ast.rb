@@ -488,9 +488,81 @@ module SLang
 		end
 	end
 
+	class StaticArray < ASTNode
+		attr_accessor :size
+		attr_accessor :items_type
+
+		def initialize(size, items_type = Const.new(:Any))
+			@size = size
+			@items_type = items_type
+			@items_type.parent = self
+		end
+
+		def accept_children(visitor)
+			items_type.accept visitor
+		end
+
+		def ==(other)
+			other.class == self.class && other.size == size && other.items_type == items_type
+		end
+
+		def clone
+			self.class.new size, items_type
+		end
+	end
+
 	class StaticArraySet < ASTNode
+		attr_accessor :target
+		attr_accessor :index
+		attr_accessor :value
+
+		def initialize(target, index, value)
+			@target = target
+			@target.parent = self
+			@index = index
+			@index.parent = self
+			@value = value
+			@value.parent = self
+		end
+
+		def accept_children(visitor)
+			target.accept visitor
+			index.accept visitor
+			value.accept visitor
+		end
+
+		def ==(other)
+			other.class == self.class && other.target == target && other.index == index &&
+				other.value == value
+		end
+
+		def clone
+			self.class.new target, index, value
+		end
 	end
 
 	class StaticArrayGet < ASTNode
+		attr_accessor :target
+		attr_accessor :index
+
+		def initialize(target, index)
+			@target = target
+			@target.parent = self
+			@index = index
+			@index.parent = self
+		end
+
+		def accept_children(visitor)
+			target.accept visitor
+			index.accept visitor
+		end
+
+		def ==(other)
+			other.class == self.class && other.target == target && other.index == index
+		end
+
+		def clone
+			self.class.new target, index
+		end
 	end
 end

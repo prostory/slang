@@ -23,6 +23,8 @@ static Bool_Class Bool_class;
 typedef union { Integer uInteger; Float uFloat; } UnionType;
 typedef struct { char unused; } UnionType_Class;
 static UnionType_Class UnionType_class;
+typedef struct { char unused; } StaticArray_Class;
+static StaticArray_Class StaticArray_class;
 typedef struct { char unused; } Object_Class;
 static Object_Class Object_class;
 typedef struct { char unused; } StringHelper_Class;
@@ -56,27 +58,26 @@ extern Integer id15(B2 * self);
 extern Bool __eq__17(B3 * self, B2 * other);
 extern Integer id18(B3 * self);
 extern Integer printf(String, ...);
-extern Integer printf(String, ...);
 extern Integer puts(String);
-extern Integer a22(B2 * self);
-extern Integer b23(A_Class * self);
-extern Integer a24(B2 * self);
-extern Integer b25(A_Class * self);
-extern Integer b26(B_Class * self);
-extern Float set_id27(B2 * self, Float n);
-extern Float get_id28(B2 * self);
-extern Integer set_id29(B2 * self, Integer n);
-extern Integer get_id30(B2 * self);
-extern String name31(B2 * self);
-extern Integer printf(String, ...);
-extern Integer lambda34(Integer n);
+extern Integer a21(B2 * self);
+extern Integer b22(A_Class * self);
+extern Integer a23(B2 * self);
+extern Integer b24(A_Class * self);
+extern Integer b25(B_Class * self);
+extern Float set_id26(B2 * self, Float n);
+extern Float get_id27(B2 * self);
+extern Integer set_id28(B2 * self, Integer n);
+extern Integer get_id29(B2 * self);
+extern String name30(B2 * self);
+extern Integer lambda32(Integer n);
+extern Void times34(Integer self);
+extern Integer lambda35(Integer n);
 extern Void times36(Integer self);
 extern Integer lambda37(Integer n);
 extern Void times38(Integer self);
-extern Integer printf(String, ...);
-extern Integer printf(String, ...);
-extern Integer lambda41(Integer n);
-extern Void times42(Integer self);
+extern Float * new39(StaticArray_Class * self, Float_Class * type, Integer size);
+extern Float __set__40(Float * self, Integer index, Float value);
+extern Float __get__41(Float * self, Integer index);
 B * __alloc__1(B_Class * self)
 {
     return calloc(sizeof(B), 1);
@@ -154,51 +155,65 @@ Integer id18(B3 * self)
 {
     return self->id;
 }
-Integer a22(B2 * self)
+Integer a21(B2 * self)
 {
     return puts(new5(&String_class, "hello"));
 }
-Integer b23(A_Class * self)
+Integer b22(A_Class * self)
 {
     return puts(new5(&String_class, "static hello"));
 }
-Integer a24(B2 * self)
+Integer a23(B2 * self)
 {
     return puts(new5(&String_class, "world"));
 }
-Integer b25(A_Class * self)
+Integer b24(A_Class * self)
 {
     puts(new5(&String_class, "static world"));
     return self->a = 5;
 }
-Integer b26(B_Class * self)
+Integer b25(B_Class * self)
 {
     puts(new5(&String_class, "static world"));
     return self->a = 5;
 }
-Float set_id27(B2 * self, Float n)
+Float set_id26(B2 * self, Float n)
 {
     return self->a.uFloat = n;
 }
-Float get_id28(B2 * self)
+Float get_id27(B2 * self)
 {
     return self->a.uFloat;
 }
-Integer set_id29(B2 * self, Integer n)
+Integer set_id28(B2 * self, Integer n)
 {
     return self->a.uInteger = n;
 }
-Integer get_id30(B2 * self)
+Integer get_id29(B2 * self)
 {
     return self->a.uInteger;
 }
-String name31(B2 * self)
+String name30(B2 * self)
 {
     return self->name;
 }
-Integer lambda34(Integer n)
+Integer lambda32(Integer n)
 {
     return puts(new5(&String_class, "Hello"));
+}
+Void times34(Integer self)
+{
+    Integer i;
+    i = 1;
+    while ((i <= self))
+    {
+        lambda32(i);
+        i = (i + 1);
+    }
+}
+Integer lambda35(Integer n)
+{
+    return puts(new5(&String_class, "World"));
 }
 Void times36(Integer self)
 {
@@ -206,13 +221,13 @@ Void times36(Integer self)
     i = 1;
     while ((i <= self))
     {
-        lambda34(i);
+        lambda35(i);
         i = (i + 1);
     }
 }
 Integer lambda37(Integer n)
 {
-    return puts(new5(&String_class, "World"));
+    return printf(new5(&String_class, "count: %d\n"), n);
 }
 Void times38(Integer self)
 {
@@ -224,19 +239,17 @@ Void times38(Integer self)
         i = (i + 1);
     }
 }
-Integer lambda41(Integer n)
+Float * new39(StaticArray_Class * self, Float_Class * type, Integer size)
 {
-    return printf(new5(&String_class, "count: %d\n"), n);
+    return calloc(sizeof(Float), size);
 }
-Void times42(Integer self)
+Float __set__40(Float * self, Integer index, Float value)
 {
-    Integer i;
-    i = 1;
-    while ((i <= self))
-    {
-        lambda41(i);
-        i = (i + 1);
-    }
+    return (((Float *)self)[index] = value);
+}
+Float __get__41(Float * self, Integer index)
+{
+    return ((Float *)self)[index];
 }
 Integer main(Void)
 {
@@ -257,20 +270,30 @@ Integer main(Void)
     {
         printf(new5(&String_class, "c[%d] != b[%d]\n"), id18(c), id15(b));
     }
-    a22(b);
-    b23(&A_class);
-    a24(b);
-    b25(&A_class);
-    b26(&B_class);
-    set_id27(b, 2.3);
+    a21(b);
+    b22(&A_class);
+    a23(b);
+    b24(&A_class);
+    b25(&B_class);
+    set_id26(b, 2.3);
     puts("Float");
-    set_id29(b, 1);
+    set_id28(b, 1);
     puts("Integer");
-    puts(name31(b));
+    puts(name30(b));
     puts("B");
-    printf(new5(&String_class, "hello, goto %d\n"), get_id30(b));
+    printf(new5(&String_class, "hello, goto %d\n"), get_id29(b));
+    times34(5);
     times36(5);
     times38(5);
-    times42(5);
+    Pointer ary;
+    ary = calloc(sizeof(Integer), 5);
+    (((Integer *)ary)[2] = 1);
+    (((Integer *)ary)[1] = 2);
+    (((Integer *)ary)[0] = 5);
+    printf(new5(&String_class, "value: %d, %d\n"), ((Integer *)ary)[0], ((Integer *)ary)[1]);
+    ary = new39(&StaticArray_class, &Float_class, 3);
+    __set__40(ary, 0, 0.234);
+    __set__40(ary, 1, 0.456);
+    printf(new5(&String_class, "value: %f, %f\n"), __get__41(ary, 0), __get__41(ary, 1));
     return (5 & (1 << 2));
 }

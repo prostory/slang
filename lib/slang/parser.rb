@@ -59,6 +59,12 @@ module SLang
               Typeof.new(parse_obj(exp[1]))
             when :sizeof
               Sizeof.new(parse_obj(exp[1]))
+            when :array
+              StaticArray.new(exp[1], parse_obj(exp[2]))
+            when :ary_set
+              StaticArraySet.new(parse_var(exp[1]), parse_obj(exp[2]), parse_obj(exp[3]))
+            when :ary_get
+              StaticArrayGet.new(parse_var(exp[1]), parse_obj(exp[2]))
             else
               Call.new exp[0], parse_args(exp[2]), parse_obj(exp[1])
             end

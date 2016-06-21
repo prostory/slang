@@ -369,12 +369,34 @@ module SLang
     end
 
     def end_visit_sizeof(node)
-      if node.value.type.is_a? ClassType
-        node.value.type = node.value.type.object_type.latest
+      if node.value.type.is_a?(ClassType)
+        if node.value.type.object_type.is_a?(ObjectType)
+          node.value.type = node.value.type.object_type.latest
+        else
+          node.value.type = node.value.type.object_type
+        end
       elsif node.value.type.is_a? ObjectType
         node.value.type = node.value.type.latest
       end
       node.type = Type.int
+    end
+
+    def end_visit_static_array(node)
+      node.type = Type.static_array_type.new_instance
+      node.type.size = node.size
+      node.type.items_type = node.items_type.type.object_type
+    end
+
+    def end_visit_static_array_set(node)
+      raise "can't set to the #{node.target.type}" unless node.target.type.is_a? StaticArrayType
+      raise "static array index can not be #{node.index.type}" unless node.index.type == Type.int
+      raise "can't set #{node.value.type} to (#{node.target.type.items_type})" unless node.value.type.base_type == node.target.type.items_type.base_type
+      node.type = node.target.type.items_type
+    end
+
+    def end_visit_static_array_get(node)
+      raise "can't set to the #{node.target.type}" unless node.target.type.is_a? StaticArrayType
+      node.type = node.target.type.items_type
     end
   end
 end

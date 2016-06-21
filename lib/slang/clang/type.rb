@@ -44,20 +44,6 @@ module SLang
     end
   end
 
-  class StaticArrayType < ContainerType
-    def reference
-      "#{items_type} []"
-    end
-
-    def base_type
-      self
-    end
-
-    def define_variable(var)
-      "#{items_type} #{var}[#{size}]"
-    end
-  end
-
   class ObjectType < AnyType
     def target_type
       "struct { #{display_members} }"
@@ -169,6 +155,16 @@ module SLang
 
   end
 
+  class StaticArrayType < AnyType
+    def reference
+      "#{items_type} *"
+    end
+
+    def base_type
+      Type.pointer
+    end
+  end
+
   class Type
     def self.init_base_types
       base(:void, :Void)
@@ -178,6 +174,7 @@ module SLang
       base('void *', :Pointer)
       enum({False: 0, True: 1}, :Bool)
       union_type
+      types[:StaticArray] = StaticArrayType.new
     end
 
     def self.base(ctype, name)

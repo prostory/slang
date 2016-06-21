@@ -23,6 +23,8 @@ module SLang
       symbols[:&] = '__band__'
       symbols[:|] = '__bor__'
       symbols[:^] = '__xor__'
+      symbols[:[]=] = '__set__'
+      symbols[:[]] = '__get__'
 
       def self.convert(s)
         symbols[s.to_sym] || s

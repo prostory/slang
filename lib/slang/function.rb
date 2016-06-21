@@ -53,6 +53,22 @@ module SLang
     end
   end
 
+  class External
+    def <<(instance)
+      @instances ||= {}
+      if instance.has_var_list?
+        @instances[:VarList] = instance
+      else
+        @instances[instance.signature] = instance
+      end
+      FunctionPrototype.add_instance instance
+    end
+
+    def [](signature)
+      @instances && (@instances[signature] || @instances[:VarList])
+    end
+  end
+
   class FunctionPrototype
     attr_accessor :functions
     @@instances = []

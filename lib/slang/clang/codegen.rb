@@ -118,12 +118,6 @@ module SLang
       end
 
       def visit_array_literal(node)
-        stream << '{ '
-        node.children.each_with_index do |child, idx|
-          child.accept self
-          stream << ', ' if idx < node.children.size-1
-        end
-        stream << ' }'
         false
       end
 
@@ -288,6 +282,31 @@ module SLang
 
       def visit_sizeof(node)
         stream << "sizeof(#{node.value.type})"
+        false
+      end
+
+      def visit_static_array(node)
+        stream << "calloc(sizeof(#{node.type.items_type.base_type}), #{node.size})"
+        false
+      end
+
+      def visit_static_array_set(node)
+        stream << "(((#{node.target.type.reference})"
+        node.target.accept self
+        stream << ')['
+        node.index.accept self
+        stream << '] = '
+        node.value.accept self
+        stream << ')'
+        false
+      end
+
+      def visit_static_array_get(node)
+        stream << "((#{node.target.type.reference})"
+        node.target.accept self
+        stream << ')['
+        node.index.accept self
+        stream << ']'
         false
       end
 

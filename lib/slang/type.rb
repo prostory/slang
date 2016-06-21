@@ -96,15 +96,10 @@ module SLang
     end
 
     def add_function(fun)
-      prototype = functions[fun.name]
-      if prototype.nil?
-        prototype = fun.new_prototype
-        functions[fun.name] = prototype
-        return prototype
-      end
+      prototype = functions[fun.name] || fun.new_prototype
       prototype << fun
       fun.prototype = prototype
-      nil
+      functions[fun.name] = prototype
     end
 
     def lookup_function(name, signature)
@@ -118,7 +113,7 @@ module SLang
     end
 
     def extend(parent)
-      ancestors.push parent, *parent.ancestors
+      ancestors.push *parent.ancestors
       parent.ancestors.each do |type|
         type.prototype.functions.each do |name, prototype|
           functions[name] = prototype.clone unless functions.has_key? name
@@ -200,15 +195,15 @@ module SLang
     end
 
     def hash
-      @name.hash
+      template.name.hash
     end
 
-    def eql?
-      @name == @name
+    def eql?(other)
+      other.class.eql?(self.class) && other.template.name == template.name
     end
 
     def clone
-      self.class.new @name, parent, prototype
+      self.class.new template.name, parent, prototype
     end
 
     def to_s
@@ -234,6 +229,10 @@ module SLang
 
     def [](name)
       members[name]
+    end
+
+    def despect
+      "<#{template.name}: #{members.map {|n, v| "#{v.type} #{n}"}.join ';'}>"
     end
   end
 
@@ -278,11 +277,12 @@ module SLang
     end
 
     def hash
-      name.hash + members.hash
+      @name.hash + members.hash
     end
 
     def eql?(other)
-      other.class == self.class && other.name == self.name && other.members == members
+      other.class == self.class && other.template.name == template.name &&
+        other.members == members
     end
   end
 
@@ -301,6 +301,9 @@ module SLang
   end
 
   class ObjectType < AnyType
+    def latest
+      template.latest
+    end
   end
 
   class ClassType < ObjectType
@@ -353,6 +356,10 @@ module SLang
       members.any?{|t| t == type}
     end
 
+    def hash
+      @name.hash + members.hash
+    end
+
     def include?(types)
       return has_type? type unless types.is_a? Array
       types.any? {|type| !has_type?(type)}
@@ -366,7 +373,6 @@ module SLang
   class EnumType < AnyType
     def initialize(name, parent = nil, prototype = nil)
       super name, parent, prototype
-      @members = {}
     end
 
     def push(name, value = nil)

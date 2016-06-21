@@ -158,30 +158,6 @@ module SLang
           return false
         end
 
-        if node.obj
-          if node.name == :type
-            stream << '"'
-            stream << "#{node.obj.type.template}"
-            stream << '"'
-            return false
-          end
-        end
-
-        if node.name == :sizeof
-          if node.args.size == 1
-            if node.args.first.type.is_a?(ClassType)
-              stream << "sizeof(#{node.args.first.type.object_type})"
-              return false
-            end
-          end
-          if node.args.size == 0
-            if node.obj.type.is_a?(ClassType)
-              stream << "sizeof(#{node.obj.type.object_type})"
-              return false
-            end
-          end
-        end
-
         stream << node.target_fun.mangled_name.to_s
 
         stream << '('
@@ -262,7 +238,7 @@ module SLang
         with_indent {node.then.accept self}
         unless node.else.children.empty?
           indent
-          stream << "\n"
+          stream << "}\n"
           indent
           stream << "else\n"
           indent
@@ -303,6 +279,18 @@ module SLang
         node.value.accept self
       end
 
+      def visit_typeof(node)
+        stream << '"'
+        stream << "#{node.value.type.template}"
+        stream << '"'
+        false
+      end
+
+      def visit_sizeof(node)
+        stream << "sizeof(#{node.value.type})"
+        false
+      end
+
       def define_types
         Type.types.each_value do |type|
           stream << "#{type.define}"
@@ -311,11 +299,11 @@ module SLang
       end
 
       def declare_functions
-        FunctionPrototype.instances.each {|fun| declare_function fun unless fun.name == :main || fun.is_a?(Operator)}
+        FunctionPrototype.instances.each {|fun| declare_function fun unless fun.name == :main || fun.is_a?(Operator) || fun.redefined}
       end
 
       def define_functions
-        FunctionPrototype.instances.each {|fun| define_function fun unless fun.is_a? External}
+        FunctionPrototype.instances.each {|fun| define_function fun unless fun.is_a? External || fun.redefined}
       end
 
       def declare_function(node)

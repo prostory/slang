@@ -154,19 +154,6 @@ module SLang
 
       if node.obj
         node.obj.accept self
-
-        if node.name == :type
-          node.type = Type.string
-          return false
-        end
-
-        if node.obj.type.is_a?(ClassType)
-          case node.name
-          when :sizeof
-            node.type = Type.int
-            return false
-          end
-        end
       end
 
       types = node.args.each {|arg| arg.accept self}.map(&:type)
@@ -258,11 +245,13 @@ module SLang
 
         instance.params.unshift self_var if self_var
 
+        if call.name == :__alloc__ && call.obj.type.is_a?(ClassType)
+          new_type = call.obj.type.object_type.new_instance
+        end
+
         instance.body.accept self
 
-        if call.name == :__alloc__ && call.obj.type.is_a?(ClassType)
-          instance.body.type = call.obj.type.object_type.new_instance
-        end
+        instance.body.type = new_type if new_type
 
         unless instance.body.type.child_of? instance.return_type
           raise "can't cast #{instance.body.type} to #{instance.return_type}"
@@ -373,6 +362,19 @@ module SLang
       node.value.accept self
       node.type = node.value.type = Type.types[node.target.name]
       false
+    end
+
+    def end_visit_typeof(node)
+      node.type = Type.string
+    end
+
+    def end_visit_sizeof(node)
+      if node.value.type.is_a? ClassType
+        node.value.type = node.value.type.object_type.latest
+      elsif node.value.type.is_a? ObjectType
+        node.value.type = node.value.type.latest
+      end
+      node.type = Type.int
     end
   end
 end

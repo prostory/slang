@@ -38,6 +38,23 @@ module SLang
   class FunctionTemplate < Template
   end
 
+  class Member
+    def hash
+      name.hash + type.hash
+    end
+
+    def eql?(other)
+      other == self
+    end
+  end
+
+  class Function
+    attr_accessor :redefined
+  end
+
   class TypeTemplate < Template
+    def uniq
+      @instances
+    end
   end
 end

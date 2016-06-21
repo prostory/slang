@@ -1,29 +1,15 @@
 module SLang
   class BaseObjectType < BaseType
-    def target_type
-      "struct { #{display_members} }"
-    end
-
     def define
-      template.map do |obj|
-        "typedef #{obj.target_type} #{obj.name};\n"
-      end.join ''
-    end
-
-    def display_members
-      if members.empty?
-        return 'char unused;'
-      end
-
-      "#{members.map{|n, v| "#{v.optional ? Type.union_type : v.type.reference} #{n};"}.join ' '}"
+      target_type.nil? ? '' : "typedef #{target_type} #{name};\n"
     end
 
     def reference
-      "#{name} *"
+      name.to_s
     end
 
     def base_type
-      Type.pointer
+      self
     end
 
     def define_variable(var)
@@ -73,6 +59,32 @@ module SLang
   end
 
   class ObjectType < AnyType
+    def target_type
+      "struct { #{display_members} }"
+    end
+
+    def define
+      template.uniq.map do |obj|
+        "typedef #{obj.target_type} #{obj.name};\n"
+      end.join ''
+    end
+
+    def display_members
+      if members.empty?
+        return 'char unused;'
+      end
+
+      "#{members.map{|n, v| "#{v.optional ? Type.union_type : v.type.reference} #{n};"}.join ' '}"
+    end
+
+    def reference
+      "#{name} *"
+    end
+
+    def base_type
+      Type.pointer
+    end
+
     def name
       "#{@name}#{seq}"
     end
@@ -98,7 +110,7 @@ module SLang
     end
 
     def define
-      members.empty? ? '' : "typedef #{target_type} #{name};\n"
+      members.empty? ? '' : super
     end
 
     def display_members
@@ -111,6 +123,10 @@ module SLang
   end
 
   class EnumType < AnyType
+    def define
+      members.empty? ? '' : super
+    end
+
     def target_type
       "enum { #{display_members} }"
     end

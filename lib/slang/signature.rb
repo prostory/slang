@@ -3,9 +3,10 @@ module SLang
     attr_accessor :types
 
     def initialize(types = [])
-      @types = types
+      @types = types.clone
       if types.last.is_a?(VarList)
         @types.pop
+        @types.push types.last.members
         @is_var_list = true
       else
         @is_var_list = false
@@ -58,6 +59,10 @@ module SLang
     end
 
     def eql?(other)
+      other.types == types
+    end
+
+    def ==(other)
       other.types == types
     end
 

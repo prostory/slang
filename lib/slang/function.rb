@@ -30,16 +30,12 @@ module SLang
       #   fun.mangled_return_type = true
       #   instance.mangled_return_type = true
       # end
-      if instance.has_var_list?
-        @instances[:VarList] = instance
-      else
-        @instances[instance.signature] = instance
-      end
+      @instances[instance.signature] = instance
       FunctionPrototype.add_instance instance
     end
 
     def [](signature)
-      @instances && (@instances[signature] || @instances[:VarList])
+      @instances && @instances[signature]
     end
 
     def signature

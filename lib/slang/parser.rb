@@ -55,6 +55,10 @@ module SLang
               Cast.new(parse_obj(exp[1]), parse_obj(exp[2]))
             when :static
               ClassFun.new(exp[1], parse_params(exp[2]), parse_expression(exp[3]), exp[4], @target)
+            when :typeof
+              Typeof.new(parse_obj(exp[1]))
+            when :sizeof
+              Sizeof.new(parse_obj(exp[1]))
             else
               Call.new exp[0], parse_args(exp[2]), parse_obj(exp[1])
             end

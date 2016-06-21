@@ -355,7 +355,9 @@ module SLang
 		end
 
 		def accept_children(visitor)
-			@cond.accept visitor @then.accept visitor @else.accept visitor if @else
+			@cond.accept visitor
+			@then.accept visitor
+			@else.accept visitor if @else
 		end
 
 		def ==(other)
@@ -442,5 +444,53 @@ module SLang
 	end
 
 	class Cast < Assign
+	end
+
+	class Typeof < ASTNode
+		attr_accessor :value
+
+		def initialize(value)
+			@value = value
+			@value.parent = self
+		end
+
+		def accept_children(visitor)
+			value.accept visitor
+		end
+
+		def ==(other)
+			other.class == self.class && other.value == value
+		end
+
+		def clone
+			self.class.new value.clone
+		end
+	end
+
+	class Sizeof < ASTNode
+		attr_accessor :value
+
+		def initialize(value)
+			@value = value
+			@value.parent = self
+		end
+
+		def accept_children(visitor)
+			value.accept visitor
+		end
+
+		def ==(other)
+			other.class == self.class && other.value == value
+		end
+
+		def clone
+			self.class.new value.clone
+		end
+	end
+
+	class StaticArraySet < ASTNode
+	end
+
+	class StaticArrayGet < ASTNode
 	end
 end

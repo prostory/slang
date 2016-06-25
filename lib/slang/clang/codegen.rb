@@ -318,11 +318,11 @@ module SLang
       end
 
       def declare_functions
-        FunctionPrototype.instances.each {|fun| declare_function fun unless fun.name == :main || fun.is_a?(Operator) || fun.redefined}
+        FunctionInstance.instances.each {|fun| declare_function fun unless fun.name == :main || fun.is_a?(Operator) || fun.redefined}
       end
 
       def define_functions
-        FunctionPrototype.instances.each {|fun| define_function fun unless fun.is_a? External || fun.redefined}
+        FunctionInstance.instances.each {|fun| define_function fun unless fun.is_a? External || fun.redefined}
       end
 
       def declare_function(node)

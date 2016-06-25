@@ -3,9 +3,6 @@ module SLang
     attr_accessor :owner
     attr_accessor :instances
     attr_accessor :template
-    # attr_accessor :mangled
-    # attr_accessor :mangled_return_type
-    attr_accessor :prototype
 
     def template
       if @template.nil?
@@ -17,21 +14,8 @@ module SLang
 
     def <<(instance)
       @instances ||= {}
-      # unless mangled
-      #   if @mangled = prototype.instances.size > 0
-      #     prototype.instances.each do |fun|
-      #       fun.mangled = @mangled
-      #     end
-      #   end
-      # end
-      # instance.mangled = @mangled
-      # fun = @instances[instance.signature]
-      # if fun && fun.body.type != instance.body.type
-      #   fun.mangled_return_type = true
-      #   instance.mangled_return_type = true
-      # end
       @instances[instance.signature] = instance
-      FunctionPrototype.add_instance instance
+      FunctionInstance.add_instance instance
     end
 
     def [](signature)
@@ -45,12 +29,6 @@ module SLang
     def has_var_list?
       params.any? && params.last.var_list?
     end
-
-    def new_prototype
-      @prototype ||= FunctionPrototype.new
-      @prototype << self
-      @prototype
-    end
   end
 
   class External
@@ -61,7 +39,7 @@ module SLang
       else
         @instances[instance.signature] = instance
       end
-      FunctionPrototype.add_instance instance
+      FunctionInstance.add_instance instance
     end
 
     def [](signature)
@@ -71,7 +49,6 @@ module SLang
 
   class FunctionPrototype
     attr_accessor :functions
-    @@instances = []
 
     def initialize
       @functions = {}
@@ -95,20 +72,10 @@ module SLang
       function[1].template.latest if function
     end
 
-    def self.add_instance(instance)
-      instance.sequence = @@instances.length
-      @@instances << instance
-    end
-
-    def self.instances
-      @@instances
-    end
-
     def clone
       prototype = self.class.new
       functions.each do |sig, fun|
         new_fun = fun.clone
-        new_fun.prototype = prototype
         new_fun.template = fun.template
         prototype.functions[sig] = new_fun
       end
@@ -117,6 +84,19 @@ module SLang
 
     def to_s
       functions.map{|sig, fun| "#{fun.name}(#{sig})"}.join ';'
+    end
+  end
+
+  class FunctionInstance
+    @@instances = []
+
+    def self.add_instance(instance)
+      @@instances << instance
+    end
+
+    def self.instances
+      @@instances.each_with_index { |instance, idx| instance.sequence = idx }
+      @@instances
     end
   end
 end

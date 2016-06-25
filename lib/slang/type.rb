@@ -96,10 +96,8 @@ module SLang
     end
 
     def add_function(fun)
-      prototype = functions[fun.name] || fun.new_prototype
-      prototype << fun
-      fun.prototype = prototype
-      functions[fun.name] = prototype
+      functions[fun.name] = FunctionPrototype.new unless functions.has_key? fun.name
+      functions[fun.name] << fun
     end
 
     def lookup_function(name, signature)

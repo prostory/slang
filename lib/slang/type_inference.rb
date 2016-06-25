@@ -80,11 +80,11 @@ module SLang
     end
 
     def visit_array_literal(node)
-      node.children.each do |child|
+      node.elements.each do |child|
         child.accept self
       end
 
-      node.type = Type.static_array_type node.children.map(&:type)
+      node.type = Type.array_type node.elements.map(&:type)
       false
     end
 
@@ -260,7 +260,7 @@ module SLang
         unless instance.body.type == Type.void
           unless instance.body.last.nil? || instance.body.last.is_a?(Return)
             ret = Return.new([instance.body.last])
-            ret.accept self
+            ret.type = instance.body.type
             instance.body.children.pop
             instance.body << ret
           end
@@ -360,7 +360,10 @@ module SLang
 
     def visit_cast(node)
       node.value.accept self
-      node.type = node.value.type = Type.types[node.target.name]
+      node.type = Type.types[node.target.name]
+      if node.value.type.is_a? UnionType
+        raise "can't case #{node.type} to #{node.value.type.despect}" unless node.value.type.include? node.type
+      end
       false
     end
 
@@ -381,22 +384,22 @@ module SLang
       node.type = Type.int
     end
 
-    def end_visit_static_array(node)
-      node.type = Type.static_array_type.new_instance
-      node.type.size = node.size
-      node.type.items_type = node.items_type.type.object_type
+    def end_visit_array_new(node)
+      raise "array size can not be #{node.size.type}" unless node.size.type == Type.int
+      node.type = Type.array_type.new_instance
     end
 
-    def end_visit_static_array_set(node)
-      raise "can't set to the #{node.target.type}" unless node.target.type.is_a? StaticArrayType
-      raise "static array index can not be #{node.index.type}" unless node.index.type == Type.int
-      raise "can't set #{node.value.type} to (#{node.target.type.items_type})" unless node.value.type.base_type == node.target.type.items_type.base_type
-      node.type = node.target.type.items_type
+    def end_visit_array_set(node)
+      raise "can't set to the #{node.target.type}" unless node.target.type.is_a? ArrayType
+      raise "array index can not be #{node.index.type}" unless node.index.type == Type.int
+      node.type = node.value.type
+      node.target.type << node.type
     end
 
-    def end_visit_static_array_get(node)
-      raise "can't set to the #{node.target.type}" unless node.target.type.is_a? StaticArrayType
-      node.type = node.target.type.items_type
+    def end_visit_array_get(node)
+      raise "can't set to the #{node.target.type}" unless node.target.type.is_a? ArrayType
+      raise "array index can not be #{node.index.type}" unless node.index.type == Type.int
+      node.type = node.target.type.elements_type
     end
   end
 end

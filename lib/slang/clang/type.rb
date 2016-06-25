@@ -155,9 +155,9 @@ module SLang
 
   end
 
-  class StaticArrayType < AnyType
+  class ArrayType
     def reference
-      "#{items_type} *"
+      "#{elements_type} *"
     end
 
     def base_type
@@ -173,8 +173,8 @@ module SLang
       base('char *', :String)
       base('void *', :Pointer)
       enum({False: 0, True: 1}, :Bool)
+      types[:Array] = ArrayType.new
       union_type
-      types[:StaticArray] = StaticArrayType.new
     end
 
     def self.base(ctype, name)
@@ -192,17 +192,17 @@ module SLang
     end
 
     def self.union(members)
-      type = types[:UnionType] || UnionType.new(:UnionType)
-      members.each { |member| type << member }
-      types[:UnionType] = type
+      type = types[:Options] || UnionType.new(:Options)
+      type.add_types members
+      types[:Options] = type
       type
     end
 
     def self.union_type(type = nil)
-      types[:UnionType] ||= UnionType.new(:UnionType)
-      return types[:UnionType] unless type
-      types[:UnionType] << type
-      types[:UnionType]
+      types[:Options] ||= UnionType.new(:Options)
+      return types[:Options] unless type
+      types[:Options] << type
+      types[:Options]
     end
 
     def self.enum(members, name)
@@ -213,9 +213,13 @@ module SLang
     end
 
     def self.merge(*types)
+      return Type.int if types.empty?
       uniq_types = types.uniq
       return uniq_types.last if uniq_types.size == 1
-      self.union uniq_types
+      union = union_type.new_instance
+      union.add_types uniq_types
+      self.union(union.members)
+      union
     end
   end
 end

@@ -131,7 +131,27 @@ module SLang
 	class StringLiteral < Literal
 	end
 
-	class ArrayLiteral < Expressions
+	class ArrayLiteral < ASTNode
+		attr_accessor :elements
+
+		def initialize(elements = [])
+			@elements = elements
+			@elements.each {|element| element.parent = self}
+		end
+
+		def accept_children(visitor)
+			elements.map { |element| element.accept(visitor) }
+		end
+
+		def ==(other)
+			other.class == self.class && other.elements == elements
+		end
+
+		def clone
+			array = self.class.new elements.map(&:clone)
+			array.source_code = source_code
+			array
+		end
 	end
 
 	class Module < ASTNode
@@ -488,30 +508,28 @@ module SLang
 		end
 	end
 
-	class StaticArray < ASTNode
+	class ArrayNew < ASTNode
 		attr_accessor :size
-		attr_accessor :items_type
 
-		def initialize(size, items_type = Const.new(:Any))
+		def initialize(size)
 			@size = size
-			@items_type = items_type
-			@items_type.parent = self
-		end
-
-		def accept_children(visitor)
-			items_type.accept visitor
+			@size.parent = self
 		end
 
 		def ==(other)
-			other.class == self.class && other.size == size && other.items_type == items_type
+			other.class == self.class && other.size == size
+		end
+
+		def accept_children(visitor)
+			size.accept visitor
 		end
 
 		def clone
-			self.class.new size, items_type
+			self.class.new size.clone
 		end
 	end
 
-	class StaticArraySet < ASTNode
+	class ArraySet < ASTNode
 		attr_accessor :target
 		attr_accessor :index
 		attr_accessor :value
@@ -537,11 +555,13 @@ module SLang
 		end
 
 		def clone
-			self.class.new target, index, value
+			node = self.class.new target.clone, index.clone, value.clone
+			node.source_code = source_code
+			node
 		end
 	end
 
-	class StaticArrayGet < ASTNode
+	class ArrayGet < ASTNode
 		attr_accessor :target
 		attr_accessor :index
 
@@ -562,7 +582,7 @@ module SLang
 		end
 
 		def clone
-			self.class.new target, index
+			self.class.new target.clone, index.clone
 		end
 	end
 end

@@ -94,8 +94,8 @@ module SLang
                                   [:set, :self, [:grow, :self, [:len]]],
                                   [:cat, :self, [:s]]]],
               ],
-              [:class, :StaticArray, nil,
-               [:static, :new, [:type, :size], [:array, :size, :type]],
+              [:class, :Array, nil,
+               [:static, :new, [:size], [:array, :size]],
                [:fun, :[], [:index], [:ary_get, :self, :index]],
                [:fun, :[]=, [:index, :value], [:ary_set, :self, :index, :value]]
               ],
@@ -140,15 +140,18 @@ module SLang
               [:times, 5, [[:lambda, [:n], [:echo, 'Hello']]]],
               [:times, 5, [[:lambda, [:n], [:echo, 'World']]]],
               [:times, 5, [[:lambda, [:n], [:printf, 'count: %d\n', [:n]]]]],
-              [:set, :ary, [:array, 5, :Integer]],
+              [:set, :ary, [:array, 5]],
               [:ary_set, :ary, 2, 1],
               [:ary_set, :ary, 1, 2],
               [:ary_set, :ary, 0, 5],
               [:printf, 'value: %d, %d\n', [[:ary_get, :ary, 0], [:ary_get, :ary, 1]]],
-              [:set, :ary, [:new, :StaticArray, [:Float, 3]]],
+              [:set, :ary, [:new, :Array, [5]]],
               [:[]=, :ary, [0, 0.234]],
               [:[]=, :ary, [1, 0.456]],
-              [:printf, 'value: %f, %f\n', [[:[], :ary, [0]], [:[], :ary, [1]]]]
+              [:[]=, :ary, [2, 2]],
+              [:[]=, :ary, [3, "Hello"]],
+              [:printf, 'value: %f, %d\n', [[:cast, :Float, [:[], :ary, [0]]], [:cast, :Integer, [:[], :ary, [2]]]]],
+              [:echo, [:cast, :String, [:[], :ary, [3]]]]
       ]
       main_prog = [:fun, :main, [], prog << [:ret, [:&, 5, [[:<<, 1, [2]]]]], :Integer]
 

@@ -20,11 +20,11 @@ static Pointer_Class Pointer_class;
 typedef enum { False = 0, True = 1, } Bool;
 typedef struct { char unused; } Bool_Class;
 static Bool_Class Bool_class;
-typedef union { Integer uInteger; Float uFloat; } UnionType;
-typedef struct { char unused; } UnionType_Class;
-static UnionType_Class UnionType_class;
-typedef struct { char unused; } StaticArray_Class;
-static StaticArray_Class StaticArray_class;
+typedef struct { char unused; } Array_Class;
+static Array_Class Array_class;
+typedef union { Integer uInteger; Float uFloat; String uString; } Options;
+typedef struct { char unused; } Options_Class;
+static Options_Class Options_class;
 typedef struct { char unused; } Object_Class;
 static Object_Class Object_class;
 typedef struct { char unused; } StringHelper_Class;
@@ -33,7 +33,7 @@ typedef struct { Integer a; } A_Class;
 static A_Class A_class;
 typedef struct { Integer id; } B;
 typedef struct { String name; } B1;
-typedef struct { String name; Integer id; UnionType a; } B2;
+typedef struct { String name; Integer id; Options a; } B2;
 typedef struct { Integer id; } B3;
 typedef struct { Integer a; } B_Class;
 static B_Class B_class;
@@ -75,9 +75,13 @@ extern Integer lambda35(Integer n);
 extern Void times36(Integer self);
 extern Integer lambda37(Integer n);
 extern Void times38(Integer self);
-extern Float * new39(StaticArray_Class * self, Float_Class * type, Integer size);
-extern Float __set__40(Float * self, Integer index, Float value);
-extern Float __get__41(Float * self, Integer index);
+extern Options * new39(Array_Class * self, Integer size);
+extern Float __set__40(Options * self, Integer index, Float value);
+extern Integer __set__41(Options * self, Integer index, Integer value);
+extern String __set__42(Options * self, Integer index, String value);
+extern Options __get__43(Options * self, Integer index);
+extern Options __get__44(Options * self, Integer index);
+extern Options __get__45(Options * self, Integer index);
 B * __alloc__1(B_Class * self)
 {
     return calloc(sizeof(B), 1);
@@ -239,17 +243,33 @@ Void times38(Integer self)
         i = (i + 1);
     }
 }
-Float * new39(StaticArray_Class * self, Float_Class * type, Integer size)
+Options * new39(Array_Class * self, Integer size)
 {
-    return calloc(sizeof(Float), size);
+    return calloc(sizeof(Options), size);
 }
-Float __set__40(Float * self, Integer index, Float value)
+Float __set__40(Options * self, Integer index, Float value)
 {
-    return (((Float *)self)[index] = value);
+    return ((Options *)self)[index].uFloat = value;
 }
-Float __get__41(Float * self, Integer index)
+Integer __set__41(Options * self, Integer index, Integer value)
 {
-    return ((Float *)self)[index];
+    return ((Options *)self)[index].uInteger = value;
+}
+String __set__42(Options * self, Integer index, String value)
+{
+    return ((Options *)self)[index].uString = value;
+}
+Options __get__43(Options * self, Integer index)
+{
+    return ((Options *)self)[index];
+}
+Options __get__44(Options * self, Integer index)
+{
+    return ((Options *)self)[index];
+}
+Options __get__45(Options * self, Integer index)
+{
+    return ((Options *)self)[index];
 }
 Integer main(Void)
 {
@@ -287,13 +307,16 @@ Integer main(Void)
     times38(5);
     Pointer ary;
     ary = calloc(sizeof(Integer), 5);
-    (((Integer *)ary)[2] = 1);
-    (((Integer *)ary)[1] = 2);
-    (((Integer *)ary)[0] = 5);
+    ((Integer *)ary)[2] = 1;
+    ((Integer *)ary)[1] = 2;
+    ((Integer *)ary)[0] = 5;
     printf(new5(&String_class, "value: %d, %d\n"), ((Integer *)ary)[0], ((Integer *)ary)[1]);
-    ary = new39(&StaticArray_class, &Float_class, 3);
+    ary = new39(&Array_class, 5);
     __set__40(ary, 0, 0.234);
     __set__40(ary, 1, 0.456);
-    printf(new5(&String_class, "value: %f, %f\n"), __get__41(ary, 0), __get__41(ary, 1));
+    __set__41(ary, 2, 2);
+    __set__42(ary, 3, new5(&String_class, "Hello"));
+    printf(new5(&String_class, "value: %f, %d\n"), __get__43(ary, 0).uFloat, __get__44(ary, 2).uInteger);
+    puts(__get__45(ary, 3).uString);
     return (5 & (1 << 2));
 }

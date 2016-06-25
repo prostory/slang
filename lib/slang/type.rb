@@ -54,8 +54,8 @@ module SLang
       types[:Pointer]
     end
 
-    def self.static_array_type
-      types[:StaticArray]
+    def self.array_type(elements = [])
+      types[:Array].new_array(elements)
     end
 
     def self.lookup(name)
@@ -345,12 +345,16 @@ module SLang
     end
 
     def include?(types)
-      return has_type? type unless types.is_a? Array
+      return has_type? types unless types.is_a? Array
       types.any? {|type| !has_type?(type)}
     end
 
     def eql?(other)
       (self == other) || (include? other)
+    end
+
+    def despect
+      "#{name}(#{members.join '|'})"
     end
   end
 
@@ -399,16 +403,23 @@ module SLang
     end
   end
 
-  class StaticArrayType < AnyType
+  class ArrayType < ContainerType
     attr_accessor :size
-    attr_accessor :items_type
 
-    def initialize(parent = nil, prototype = nil)
-      super :StaticArray, parent, prototype
+    def initialize(elements = [], parent = nil, prototype = nil)
+      super :Array, elements, parent, prototype
+    end
+
+    def new_array(elements)
+      self.class.new elements, parent, prototype
+    end
+
+    def elements_type
+      Type.merge(*members)
     end
 
     def clone
-      self.class.new parent, prototype
+      self.class.new members, parent, prototype
     end
   end
 end

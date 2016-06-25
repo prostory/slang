@@ -269,6 +269,11 @@ module SLang
       end
 
       def visit_cast(node)
+        if node.value.type.is_a? UnionType
+          node.value.accept self
+          stream << ".#{Type.union_type.member(node.type)}"
+          return
+        end
         stream << "(#{node.type.reference})"
         node.value.accept self
       end
@@ -285,23 +290,28 @@ module SLang
         false
       end
 
-      def visit_static_array(node)
-        stream << "calloc(sizeof(#{node.type.items_type.base_type}), #{node.size})"
-        false
-      end
-
-      def visit_static_array_set(node)
-        stream << "(((#{node.target.type.reference})"
-        node.target.accept self
-        stream << ')['
-        node.index.accept self
-        stream << '] = '
-        node.value.accept self
+      def visit_array_new(node)
+        stream << "calloc(sizeof(#{node.type.elements_type.base_type}), "
+        node.size.accept self
         stream << ')'
         false
       end
 
-      def visit_static_array_get(node)
+      def visit_array_set(node)
+        elements_type = node.target.type.elements_type
+        stream << "((#{node.target.type.reference})"
+        node.target.accept self
+        stream << ')['
+        node.index.accept self
+        stream << ']'
+        stream << ".#{elements_type.member(node.value.type)}" if elements_type.is_a? UnionType
+        stream << ' = '
+        node.value.accept self
+        stream << ''
+        false
+      end
+
+      def visit_array_get(node)
         stream << "((#{node.target.type.reference})"
         node.target.accept self
         stream << ')['

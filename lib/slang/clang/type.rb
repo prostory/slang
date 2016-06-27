@@ -50,7 +50,9 @@ module SLang
     end
 
     def define
-      template.uniq.map do |obj|
+      template.combine_same_instances
+
+      template.map do |obj|
         "typedef #{obj.target_type} #{obj.name};\n"
       end.join ''
     end

@@ -6,7 +6,7 @@ module SLang
       @types = types.clone
       if types.last.is_a?(VarList)
         @types.pop
-        @types.push types.last.members
+        @types.push *types.last.members
         @is_var_list = true
       else
         @is_var_list = false
@@ -77,8 +77,8 @@ module SLang
     end
 
     def to_s
-      s = types.map(&:name).join ', '
-      s << 'VarList' if var_list?
+      s = types.join ', '
+      s << ', VarList' if var_list?
       s
     end
   end

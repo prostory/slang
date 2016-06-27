@@ -10,6 +10,11 @@ module SLang
   class Call
     attr_accessor :target_fun
 
+    def target_fun=(fun)
+      fun.add_call self
+      @target_fun = fun
+    end
+
     def signature
       @signature ||= Signature.new(args.map(&:type))
     end

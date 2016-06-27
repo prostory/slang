@@ -48,12 +48,20 @@ module SLang
     end
   end
 
-  class Function
-    attr_accessor :redefined
-  end
-
   class TypeTemplate < Template
-    def uniq
+    def combine_same_instances
+      uniq_instances = {}
+
+      @instances.each do |type|
+        if uniq_instances.has_key? type.members
+          old_type = uniq_instances[type.members]
+          type.sequence = old_type.sequence
+        else
+          uniq_instances[type.members] = type
+        end
+      end
+
+      @instances = uniq_instances.values
       @instances
     end
   end

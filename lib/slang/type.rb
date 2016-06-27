@@ -193,11 +193,15 @@ module SLang
     end
 
     def hash
-      template.name.hash
+      name.hash
     end
 
     def eql?(other)
-      other.class.eql?(self.class) && other.template.name == template.name
+      other.class.eql?(self.class) && other.name == name
+    end
+
+    def ==(other)
+      eql?(other)
     end
 
     def clone
@@ -227,6 +231,14 @@ module SLang
 
     def [](name)
       members[name]
+    end
+
+    def hash
+      name.hash ^ members.hash
+    end
+
+    def eql?(other)
+      super && other.members == members
     end
 
     def despect
@@ -272,15 +284,6 @@ module SLang
 
     def <<(type)
       members << type
-    end
-
-    def hash
-      @name.hash + members.hash
-    end
-
-    def eql?(other)
-      other.class == self.class && other.template.name == template.name &&
-        other.members == members
     end
   end
 
@@ -340,17 +343,9 @@ module SLang
       members.any?{|t| t == type}
     end
 
-    def hash
-      @name.hash + members.hash
-    end
-
     def include?(types)
       return has_type? types unless types.is_a? Array
       types.any? {|type| !has_type?(type)}
-    end
-
-    def eql?(other)
-      (self == other) || (include? other)
     end
 
     def despect

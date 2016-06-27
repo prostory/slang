@@ -44,7 +44,7 @@ module SLang
       if name == :main
         name.to_s
       else
-        "#{simple_name}#{sequence}"
+        "#{simple_name}#{id}"
       end
 
     end
@@ -328,11 +328,12 @@ module SLang
       end
 
       def declare_functions
-        FunctionInstance.instances.each {|fun| declare_function fun unless fun.name == :main || fun.is_a?(Operator) || fun.redefined}
+        FunctionInstance.combine_same_instances
+        FunctionInstance.instances.each {|fun| declare_function fun unless fun.name == :main || fun.is_a?(Operator)}
       end
 
       def define_functions
-        FunctionInstance.instances.each {|fun| define_function fun unless fun.is_a? External || fun.redefined}
+        FunctionInstance.instances.each {|fun| define_function fun unless fun.is_a?(External)}
       end
 
       def declare_function(node)

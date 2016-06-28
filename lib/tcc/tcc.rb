@@ -16,8 +16,8 @@ module TCC
       super(TCC.tcc_new)
     end
 
-    def self.release
-      TCC.tcc_delete self
+    def self.release(ptr)
+      TCC.tcc_delete ptr
     end
 
     def set_error_func(error_func, opaque = nil)

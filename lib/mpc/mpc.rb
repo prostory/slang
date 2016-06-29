@@ -1,13 +1,21 @@
 require_relative 'mpc_lib'
+require_relative 'typed_pointer'
+require_relative 'struct_helper'
 
 module MPC
   class State < FFI::Struct
     layout :pos, :long,
            :row, :long,
            :col, :long
+
+    member_reader :pos, :row, :col
+
+    def to_s
+      "#{pos} #{row}:#{col}"
+    end
   end
 
-  class Error < FFI::Struct
+  class Error < FFI::ManagedStruct
     layout :state, State,
            :expected_num, :int,
            :filename, :string,
@@ -15,15 +23,15 @@ module MPC
            :expected, :pointer,
            :recieved, :char
 
-    def delete
-      MPC.mpc_error_delete self
+    def self.release(ptr)
+      MPC.mpc_error_delete ptr
     end
 
     def to_s
       MPC.mpc_err_string self
     end
 
-    def print
+    def display
       MPC.mpc_err_print self
     end
 
@@ -35,10 +43,12 @@ module MPC
   class Result < FFI::Union
     layout :error, Error,
            :output, :pointer
+
+    member_reader :error, :output
   end
 
-  class Parser < FFI::ManagedStruct
-    layout :handle, :pointer
+  class Parser < FFI::TypedPointer
+    type :pointer
 
     def self.build(name)
       Parser.new MPC.mpc_new(name)
@@ -338,6 +348,8 @@ module MPC
            :children_num, :int,
            :children, :pointer
 
+    member_reader :tag, :contents, :state
+
     def self.build(tag, *contents)
       if contents.size == 1
         self.new MPC.mpc_ast_new(tag, contents[0])
@@ -374,6 +386,10 @@ module MPC
       self
     end
 
+    def children
+
+    end
+
     def display
       MPC.mpc_ast_print self
     end
@@ -386,34 +402,57 @@ module MPC
       self.class == other.class && MPC.mpc_ast_eq(self, other)
     end
   end
-
+  
+  class GrammarRule
+    attr_accessor :name
+    attr_accessor :rule
+    
+    def initialize(name, rule)
+      @name = name
+      @rule = rule
+      @parser = Parser.build(name.to_s)
+    end
+    
+    def parser
+      @parser
+    end
+    
+    def to_s
+      "#{name}\t:#{rule};"
+    end
+  end
+  
   class Language
-    @@nodes = {}
-
-    def self.define(tag, re)
-      @@nodes[tag] = {parser: MPC.mpc_new(tag.to_s), re: re}
+    @@rules = {}
+    
+    def initialize()
+      parsers = [:pointer].product(@@rules.values.map(&:parser)).push(:int, 0).flatten
+      err = MPC.mpca_lang(:mpca_lang_default, @@rules.values.join("\t\n"), *parsers)
+      raise Error.new(err).to_s unless err.null?
+    end
+    
+    def self.define(name, rule)
+      @@rules[name] = GrammarRule.new(name, rule)
+    end
+    
+    def rule(name)
+      @@rules[name] or raise "can't find rule '#{name}'"
+    end
+    
+    def parser(name)
+      rule(name).parser
+    end
+    
+    def parse_file(file, root)
+      result = Result.new
+      raise result.error.to_s if MPC.mpc_parse_contents(file, parser(root), result) == 0
+      result.output
     end
 
-    def self.parse
-      lang = @@nodes.map do |tag, node|
-        "#{tag}\t:#{node[:re]};\t"
-      end.join "\n"
-      parsers = []
-      @@nodes.each do |_, node|
-        parsers << :pointer
-        parsers << node[:parser]
-      end
-      parsers << :int
-      parsers << 0
-      MPC.mpca_lang(0, lang, *parsers)
+    def parse_string(string, root)
+      result = Result.new
+      raise result.error.to_s if MPC.mpc_parse(__FILE__, string, parser(root), result) == 0
+      result.output
     end
-
-    def self.node(tag)
-      @@nodes[tag][:parser]
-    end
-  end
-
-  def define(tag, re)
-    Language.define(tag, re)
-  end
+	end
 end

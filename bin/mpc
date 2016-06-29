@@ -4,45 +4,52 @@ require_relative '../lib/mpc/mpc'
 
 include MPC
 
-define :ident, "/[a-zA-Z_][a-zA-Z0-9_]*/"
-define :number, "/[0-9]+/"
-define :character, "/'.'/"
-define :string, "/\"(\\\\.|[^\"])*\"/"
-define :factor, "'(' <lexp> ')'
-        | <number>
-        | <character>
-        | <string>
-        | <ident> '(' <lexp>? (',' <lexp>)* ')'
-        | <ident> "
-define :term, "<factor> (('*' | '/' | '%') <factor>)*"
-define :lexp, "<term> (('+' | '-') <term>)*"
-define :stmt, "'{' <stmt>* '}'
-        | \"while\" '(' <exp> ')' <stmt>
-        | \"if\"    '(' <exp> ')' <stmt>
-        | <ident> '=' <lexp> ';'
-        | \"print\" '(' <lexp>? ')' ';'
-        | \"return\" <lexp>? ';'
-        | <ident> '(' <ident>? (',' <ident>)* ')' ';'"
-define :exp, "<lexp> '>' <lexp>
-        | <lexp> '<' <lexp>
-        | <lexp> \">=\" <lexp>
-        | <lexp> \"<=\" <lexp>
-        | <lexp> \"!=\" <lexp>
-        | <lexp> \"==\" <lexp>"
-define :typeident, "(\"int\" | \"char\") <ident>"
-define :decls, "(<typeident> ';')*"
-define :args, "<typeident>? (',' <typeident>)*"
-define :body, "'{' <decls> <stmt>* '}'"
-define :procedure, "(\"int\" | \"char\") <ident> '(' <args> ')' <body>"
-define :main, "\"main\" '(' ')' <body>"
-define :includes, "(\"#include\" <string>)*"
-define :smallc, "/^/ <includes> <decls> <procedure>* <main> /$/"
+class SmallC < Language
+  define :ident, "/[a-zA-Z_][a-zA-Z0-9_]*/"
+  define :number, "/[0-9]+/"
+  define :character, "/'.'/"
+  define :string, "/\"(\\\\.|[^\"])*\"/"
+  define :factor, "'(' <lexp> ')'
+          | <number>
+          | <character>
+          | <string>
+          | <ident> '(' <lexp>? (',' <lexp>)* ')'
+          | <ident> "
+  define :term, "<factor> (('*' | '/' | '%') <factor>)*"
+  define :lexp, "<term> (('+' | '-') <term>)*"
+  define :stmt, "'{' <stmt>* '}'
+          | \"while\" '(' <exp> ')' <stmt>
+          | \"if\"    '(' <exp> ')' <stmt>
+          | <ident> '=' <lexp> ';'
+          | \"print\" '(' <lexp>? ')' (';' | \n)
+          | \"return\" <lexp>? ';'
+          | <ident> '(' <ident>? (',' <ident>)* ')' ';'"
+  define :exp, "<lexp> '>' <lexp>
+          | <lexp> '<' <lexp>
+          | <lexp> \">=\" <lexp>
+          | <lexp> \"<=\" <lexp>
+          | <lexp> \"!=\" <lexp>
+          | <lexp> \"==\" <lexp>"
+  define :typeident, "(\"int\" | \"char\") <ident>"
+  define :decls, "(<typeident> ';')*"
+  define :args, "<typeident>? (',' <typeident>)*"
+  define :body, "'{' <decls> <stmt>* '}'"
+  define :procedure, "(\"int\" | \"char\") <ident> '(' <args> ')' <body>"
+  define :main, "\"main\" '(' ')' <body>"
+  define :includes, "(\"#include\" <string>)*"
+  define :smallc, "/^/ <includes> <decls> <procedure>* <main> /$/"
+end
 
-Language.parse
+class MyLanguage < Language
+  define :integer, "/[0-9]+/"
+  define :float, "/[0-9]+\\.[0-9]+/"
+  define :number, "(<float> | <integer>)"
+  define :main, "/^/ <number>* /$/"
+end
 
-r = Result.new
+ast = AST.new MyLanguage.new.parse_string('10', :integer)
+ast.display
 
-MPC.mpc_parse_contents("fib.smallc", Language.node(:smallc), r)
+ast = AST.new MyLanguage.new.parse_string('0.10 10 2 3.5', :main)
+ast.display
 
-output = AST.new(r[:output])
-output.display

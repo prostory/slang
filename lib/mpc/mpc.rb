@@ -339,16 +339,22 @@ module MPC
     def total(dtor)
       self.class.new MPC.mpc_total(self, dtor)
     end
+
+    def display
+      MPC.mpc_print self
+    end
   end
 
   class AST < FFI::ManagedStruct
+    include Enumerable
+
     layout :tag, :string,
            :contents, :string,
            :state, State,
            :children_num, :int,
            :children, :pointer
 
-    member_reader :tag, :contents, :state
+    member_reader :contents, :state, :children_num
 
     def self.build(tag, *contents)
       if contents.size == 1
@@ -359,7 +365,11 @@ module MPC
     end
 
     def self.release(ptr)
-      MPC.mpc_ast_delete ptr
+#      MPC.mpc_ast_delete ptr
+    end
+
+    def each(&block)
+      children.each(&block)
     end
 
     def add_root
@@ -376,6 +386,11 @@ module MPC
       self
     end
 
+    def tag
+      tags = self[:tag].split("|")
+      tags.last == "regex" || tags.last == ">" ? tags.last(2).first.to_sym : tags.last.to_sym
+    end
+
     def tag=(tag)
       MPC.mpc_ast_tag(self, tag)
       self
@@ -387,7 +402,8 @@ module MPC
     end
 
     def children
-
+      return [] if children_num == 0
+      self[:children].get_array_of_pointer(0, children_num).map { |ptr| AST.new ptr }
     end
 
     def display
@@ -400,6 +416,10 @@ module MPC
 
     def ==(other)
       self.class == other.class && MPC.mpc_ast_eq(self, other)
+    end
+
+    def to_s
+      "#{tag}:#{contents}"
     end
   end
   
@@ -425,9 +445,9 @@ module MPC
   class Language
     @@rules = {}
     
-    def initialize()
+    def initialize(flags = :default)
       parsers = [:pointer].product(@@rules.values.map(&:parser)).push(:int, 0).flatten
-      err = MPC.mpca_lang(:mpca_lang_default, @@rules.values.join("\t\n"), *parsers)
+      err = MPC.mpca_lang(flags, @@rules.values.join("\t\n"), *parsers)
       raise Error.new(err).to_s unless err.null?
     end
     
@@ -441,6 +461,10 @@ module MPC
     
     def parser(name)
       rule(name).parser
+    end
+
+    def self.rules
+      @@rules
     end
     
     def parse_file(file, root)

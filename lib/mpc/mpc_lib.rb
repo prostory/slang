@@ -4,9 +4,9 @@ module MPC
   extend FFI::Library
   ffi_lib ['mpc', '../vendor/mpc/libmpc.so']
 
-  enum :mpca_lang_default, 0,
-       :mpca_lang_predictive, 1,
-       :mpca_lang_whitespace_sensitive, 2
+  enum :default, 0,
+       :predictive, 1,
+       :whitespace_sensitive, 2
 
   # Error Type
   attach_function :mpc_err_delete, [ :pointer ], :void

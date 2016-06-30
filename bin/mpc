@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 require_relative '../lib/mpc/mpc'
+require_relative '../lib/slang'
 
 include MPC
 
@@ -21,7 +22,7 @@ class SmallC < Language
           | \"while\" '(' <exp> ')' <stmt>
           | \"if\"    '(' <exp> ')' <stmt>
           | <ident> '=' <lexp> ';'
-          | \"print\" '(' <lexp>? ')' (';' | \n)
+          | \"print\" '(' <lexp>? ')' ';'
           | \"return\" <lexp>? ';'
           | <ident> '(' <ident>? (',' <ident>)* ')' ';'"
   define :exp, "<lexp> '>' <lexp>
@@ -40,16 +41,73 @@ class SmallC < Language
   define :smallc, "/^/ <includes> <decls> <procedure>* <main> /$/"
 end
 
-class MyLanguage < Language
-  define :integer, "/[0-9]+/"
-  define :float, "/[0-9]+\\.[0-9]+/"
-  define :number, "(<float> | <integer>)"
-  define :main, "/^/ <number>* /$/"
+#ast = AST.new SmallC.new.parse_file('fib.smallc', :smallc)
+#ast.display
+
+module MPC
+  class AST
+    def parse_contents(exp)
+      case tag
+      when :char
+        exp << contents.to_sym unless contents == '(' || contents == ')'
+      when :term, :lexp
+        children[0].parse_contents(exp) if children.size == 1
+        call = []
+        children[1].parse_contents(call)
+        children[0].parse_contents(call)
+        args = []
+        children[2].parse_contents(args)
+        call << args
+
+        obj = call
+        children[3..-1].each_slice(2) do |child|
+          call = []
+          child[0].parse_contents(call)
+          call << obj
+          args = []
+          child[1].parse_contents(args)
+          call << args
+          obj = call
+        end
+        exp << call
+      when :integer
+        exp << contents.to_i
+      when :float
+        exp << contents.to_f
+      else
+        children.each do |child|
+          child.parse_contents exp
+        end
+      end
+    end
+  end
 end
 
-ast = AST.new MyLanguage.new.parse_string('10', :integer)
-ast.display
+module SLang
+  class MyLanguage < Language
+    define :space, "/[ \t]/"
+    define :blank, "<space>+"
+    define :newline, "/\\n/"
+    define :ident, "/[a-zA-Z_][a-zA-Z0-9_]*/"
+    define :integer, "/[1-9][0-9]*/"
+    define :float, "/[0-9]+\\.[0-9]+/"
+    define :number, "<float> | <integer>"
+    define :factor, "<blank>* ('(' <lexp> ')'
+            | <number>
+            | <ident> '(' <lexp>? (',' <lexp>)* ')'
+            | <ident> ) <blank>*"
+    define :term, "<factor> (('*' | '/' | '%') <factor>)*"
+    define :lexp, "<term> (('+' | '-') <term>)*"
+    define :main, "/^/ <lexp>* /$/"
+  end
 
-ast = AST.new MyLanguage.new.parse_string('0.10 10 2 3.5', :main)
-ast.display
+  code = '1 +2* 3.5- 7 * (1.2 + 2.25)'
+
+  ast = AST.new MyLanguage.new(:whitespace_sensitive).parse_string(code, :main)
+  exp = [:ret]
+  ast.parse_contents(exp)
+  p exp
+  puts Program.new.run(exp)
+end
+
 

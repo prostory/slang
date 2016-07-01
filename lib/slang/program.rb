@@ -129,6 +129,9 @@ module SLang
         opts.on('-o ', 'Output filename') do |output|
           @options[:output_filename] = output
         end
+        opts.on('-e ', 'Execute Code') do |code|
+          @options[:code] = code
+        end
         opts.on('-r', 'Run program') do
           @run = true
         end
@@ -145,6 +148,10 @@ module SLang
 
     def output_file
       @options[:output_filename]
+    end
+
+    def code
+      @options[:code]
     end
 
     def run?

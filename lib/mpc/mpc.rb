@@ -414,6 +414,20 @@ module MPC
       MPC.mpc_ast_print_to self, fp
     end
 
+    def line
+      state.row + 1
+    end
+
+    def col
+      state.col + 1
+    end
+
+    def location(source)
+      s = ''
+      s << source[state.row]
+      s << "\n#{' ' * state.col}#{'^' * contents.length}"
+    end
+
     def ==(other)
       self.class == other.class && MPC.mpc_ast_eq(self, other)
     end
@@ -444,11 +458,22 @@ module MPC
   
   class Language
     @@rules = {}
+
+    def self.inherited(klass)
+      @@rules = {}
+    end
     
     def initialize(flags = :default)
       parsers = [:pointer].product(@@rules.values.map(&:parser)).push(:int, 0).flatten
-      err = MPC.mpca_lang(flags, @@rules.values.join("\t\n"), *parsers)
-      raise Error.new(err).to_s unless err.null?
+      err = MPC.mpca_lang(flags, grammar, *parsers)
+      unless err.null?
+        puts grammar
+        raise Error.new(err).to_s
+      end
+    end
+
+    def grammar
+      @@rules.values.join("\t\n")
     end
     
     def self.define(name, rule)
@@ -469,13 +494,20 @@ module MPC
     
     def parse_file(file, root)
       result = Result.new
-      raise result.error.to_s if MPC.mpc_parse_contents(file, parser(root), result) == 0
+      if MPC.mpc_parse_contents(file, parser(root), result) == 0
+        puts rule(root).to_s
+        raise result.error.to_s
+      end
       result.output
     end
 
     def parse_string(string, root)
       result = Result.new
-      raise result.error.to_s if MPC.mpc_parse(__FILE__, string, parser(root), result) == 0
+      if MPC.mpc_parse(__FILE__, string, parser(root), result) == 0
+        puts string
+        puts rule(root).to_s
+        raise result.error.to_s
+      end
       result.output
     end
 	end

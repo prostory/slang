@@ -46,12 +46,21 @@ end
 
 module MPC
   class AST
+    def self.source_code=(code)
+      @@source_code = code.split("\n")
+    end
+
+    def self.source_code
+      @@source_code
+    end
+
     def parse_contents(exp)
       case tag
       when :char
+        puts location(self.class.source_code)
         exp << contents.to_sym unless contents == '(' || contents == ')'
       when :term, :lexp
-        children[0].parse_contents(exp) if children.size == 1
+        return children[0].parse_contents(exp) if children.size == 1
         call = []
         children[1].parse_contents(call)
         children[0].parse_contents(call)
@@ -71,8 +80,10 @@ module MPC
         end
         exp << call
       when :integer
+        puts location(self.class.source_code)
         exp << contents.to_i
       when :float
+        puts location(self.class.source_code)
         exp << contents.to_f
       else
         children.each do |child|
@@ -85,29 +96,173 @@ end
 
 module SLang
   class MyLanguage < Language
-    define :space, "/[ \t]/"
-    define :blank, "<space>+"
-    define :newline, "/\\n/"
-    define :ident, "/[a-zA-Z_][a-zA-Z0-9_]*/"
-    define :integer, "/[1-9][0-9]*/"
-    define :float, "/[0-9]+\\.[0-9]+/"
-    define :number, "<float> | <integer>"
-    define :factor, "<blank>* ('(' <lexp> ')'
-            | <number>
-            | <ident> '(' <lexp>? (',' <lexp>)* ')'
-            | <ident> ) <blank>*"
-    define :term, "<factor> (('*' | '/' | '%') <factor>)*"
-    define :lexp, "<term> (('+' | '-') <term>)*"
-    define :main, "/^/ <lexp>* /$/"
+    define :space,      %Q( /[ \\t]/ )
+    define :trail,      %Q( /([\\t \\n]|#[^\\n]*\\n)*/ )
+    define :terms,      %Q( /[;\\n]/ )
+    # operator
+    define :op_add,     %Q( '+'<trail> )
+    define :op_sub,     %Q( '-'<trail> )
+    define :op_mul,     %Q( '*'<trail> )
+    define :op_div,     %Q( '/'<trail> )
+    define :op_mod,     %Q( '%'<trail> )
+    define :op_eq,      %Q( "=="<trail> )
+    define :op_ne,      %Q( "!="<trail> )
+    define :op_lt,      %Q( '<'<trail> )
+    define :op_le,      %Q( "<="<trail> )
+    define :op_gt,      %Q( '>'<trail> )
+    define :op_ge,      %Q( ">="<trail> )
+    define :op_and,     %Q( "&&"<trail> )
+    define :op_or,      %Q( "||"<trail> )
+    define :op_not,     %Q( '!'<trail> )
+    define :op_bor,     %Q( '|'<trail> )
+    define :op_band,    %Q( '&'<trail> )
+    define :op_lshift,  %Q( "<<"<trail> )
+    define :op_rshift,  %Q( ">>"<trail> )
+    define :op_rasgn,   %Q( "->"<trail> )
+    define :operator,   %Q{ <op_add> | <op_sub> | <op_mul> | <op_div> | <op_mod>
+                            | <op_eq> | <op_ne> | <op_lt> | <op_le> | <op_ge>
+                            | <op_and> | <op_or> | <op_bor> | <op_band> | <op_lshift> | <op_rshift>
+    }
+    # keyword
+    define :kd_if,      %Q( "if" )
+    define :kd_then,    %Q( "then"<trail> )
+    define :kd_elif,    %Q( <trail>"elif" )
+    define :kd_else,    %Q( <trail>"else"<trail> )
+    define :kd_while,   %Q( "while" )
+    define :kd_until,   %Q( "until" )
+    define :kd_do,      %Q( "do" )
+    define :kd_end,     %Q( "end" )
+    define :kd_break,   %Q( "break"<trail> )
+    define :kd_continue,%Q( "continue" )
+    define :kd_return,  %Q( "return" )
+    define :kd_module,  %Q( "module" )
+    define :kd_class,   %Q( "class" )
+    define :kd_import,  %Q( "import" )
+    define :kd_def,     %Q( "def" )
+    define :kd_nil,     %Q( "nil" )
+    define :kd_true,    %Q( "true" )
+    define :kd_false,   %Q( "false" )
+    # literal
+    define :lit_int,    %Q{ /([1-9][0-9]*)|0/ }
+    define :lit_float,  %Q{ /(([1-9][0-9]*)|0)\\.[0-9]+/ }
+    define :lit_hex,    %Q{ /0x[0-9a-fA-F]+/ }
+    define :lit_oct,    %Q{ /0o[0-7]+/ }
+    define :lit_string, %Q{ /\"([^\\\"]|\\.)*\"/ }
+    define :lit_bool,   %Q{ <kd_true>|<kd_false> }
+    define :lit_array,  %Q{ '[' <args>? ']' }
+    define :lit_hash,   %Q{ '{' <args>? '}' }
+
+    define :ident,      %Q{ /[a-zA-Z_][a-zA-Z0-9_=?!]*/ }
+
+    define :f_arg,      %Q{ <ident> (':' <ident>)? }
+    define :f_args,     %Q{ <f_arg> (',' <f_arg>)* }
+    define :bparam,     %Q{ (<f_args> | '(' <f_args>? ')')? <op_rasgn> }
+
+    define :primary,   %Q{ <lit_int> | <lit_float> | <lit_hex> | <lit_oct> | <lit_string> | <lit_bool>
+                            | <lit_array>
+                            | <lit_hash>
+                            | <ident>
+                            | '(' <expr> ')'
+                            | <do_stmt>
+                            | <if_stmt>
+                            | <lambda_stmt>
+                            | <block_stmt>
+                            | <call_stmt>
+                            | <kd_nil>
+                            | <kd_true>
+                            | <kd_false>
+    }
+    define :expr,       %Q{ <primary> <operator> <primary>
+                            | <op_not> <primary>
+                            | <primary> }
+
+    define :arg,        %Q{ <expr> | <ident> ':' <expr> }
+    define :args,       %Q{ <expr> (',' <expr>)* }
+
+    define :do_stmt,    %Q{ <kd_do> <stmts> <kd_end> }
+    define :if_stmt,    %Q{ <kd_if> <expr> (<kd_then>|<trail>) (<stmts>
+                            (<kd_elif> <expr> <trail> <stmts>)*
+                            (<kd_else> <stmts>)? <kd_end>)? }
+    define :block_stmt, %Q{ '{' <bparam>? <stmts> '}' }
+    define :lambda_stmt,%Q{ <bparam> <stmts> <kd_end> }
+    define :call_stmt,  %Q{ <ident> <args>
+                            | <ident> <block_stmt>
+                            | <ident> '(' <args>? ')' (<block_stmt>)?
+                            | <expr> '.' <ident> <args>? (<block_stmt>)?
+                            | <expr> '.' <ident> '(' <args>? ')' (<block_stmt>)?
+    }
+
+    define :stmt,       %Q{ <ident> '=' <expr>
+                            | <kd_return> <args>*
+                            | <kd_break>
+                            | <kd_continue>
+                            | <expr>
+    }
+
+    define :stmt_list,  %Q{ <stmt> (<terms> <stmt>)* }
+    define :stmts,      %Q{ <stmt_list>? <terms>* }
+
+    define :decl,       %Q{ <kd_module> <ident> <trail> <decls>? <kd_end>
+                            | <kd_class> <ident> ('<' <ident>)? <trail> <decls>? <kd_end>
+                            | <kd_import> <ident>
+                            | <kd_def> <ident> ('(' <f_args>? ')')? <stmts>? <kd_end>
+                            | <stmts>
+    }
+    define :decl_list,  %Q{ <decl> (<terms> <decl>)* }
+    define :decls,      %Q{ <decl_list>? <terms>* }
+    define :program,    %Q{ <decls> }
+
+
+    def self.parse(code, rule)
+      @instance ||= MyLanguage.new
+      AST.new @instance.parse_string(code, rule)
+    end
   end
 
-  code = '1 +2* 3.5- 7 * (1.2 + 2.25)'
+  MyLanguage.parse("break #abc\nabc", :kd_break).display
 
-  ast = AST.new MyLanguage.new(:whitespace_sensitive).parse_string(code, :main)
-  exp = [:ret]
-  ast.parse_contents(exp)
-  p exp
-  puts Program.new.run(exp)
+  MyLanguage.parse('0', :lit_int).display
+  MyLanguage.parse('0.1256', :lit_float).display
+  MyLanguage.parse('0x01ae', :lit_hex).display
+  MyLanguage.parse('0o0123', :lit_oct).display
+  MyLanguage.parse('"hello world"', :lit_string).display
+  MyLanguage.parse('true', :lit_bool).display
+  MyLanguage.parse('false', :lit_bool).display
+
+  MyLanguage.parse('a_23_00_bd', :ident).display
+  MyLanguage.parse('empty?', :ident).display
+  MyLanguage.parse('strip!', :ident).display
+  MyLanguage.parse('name=', :ident).display
+
+  MyLanguage.parse('a, b, c', :args).display
+  MyLanguage.parse('1, 2, 3', :args).display
+  MyLanguage.parse('1, a.foo, 3', :args).display
+
+  MyLanguage.parse('a, b, c, d', :f_args).display
+  MyLanguage.parse('a:Integer, b : Float, c, d', :f_args).display
+  MyLanguage.parse('->', :bparam).display
+  MyLanguage.parse('()->', :bparam).display
+  MyLanguage.parse('(a, b) ->', :bparam).display
+  MyLanguage.parse('a, b ->', :bparam).display
+
+  MyLanguage.parse('do 1 end', :do_stmt).display
+  MyLanguage.parse('do 1; 2 end', :do_stmt).display
+  # MyLanguage.parse('if true', :if_stmt).display
+  # MyLanguage.parse('if true 1 end', :if_stmt).display
+  # MyLanguage.parse('if true then 1 else 2 end', :if_stmt).display
+  # MyLanguage.parse('if true 1 elif false 2 else 3 end', :if_stmt).display
+  #
+  # MyLanguage.parse('-> 5 end', :lambda_stmt).display
+  # MyLanguage.parse('a, b -> 5 end', :lambda_stmt).display
+  # MyLanguage.parse('(a, b) -> 5 end', :lambda_stmt).display
+  #
+  # MyLanguage.parse('foo 5', :call_stmt).display
+  # MyLanguage.parse('foo 5, false', :call_stmt).display
+  # MyLanguage.parse('foo 5, false {-> 5}', :call_stmt).display
+  # MyLanguage.parse('o.foo 5', :call_stmt).display
+  # MyLanguage.parse('o.foo 5, false', :call_stmt).display
+  # MyLanguage.parse('o.foo 5, false {-> 5}', :call_stmt).display
+  # MyLanguage.parse('foo(5, false)', :call_stmt).display
 end
 
 

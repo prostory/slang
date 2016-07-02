@@ -274,7 +274,7 @@ module SLang
 		end
 
 		def ==(other)
-			other.class == self.class && other.name == name && other.args == args
+			other.class == self.class && other.name == name && other.args == args && other.obj == obj
 		end
 
 		def clone

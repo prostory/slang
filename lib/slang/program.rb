@@ -101,7 +101,7 @@ module SLang
               ]
       ]
       main_prog = [:fun, :main, [], core_lib << prog, :Integer]
-      CLang::Context.new.gen_code(Parser.parse(main_prog))
+      CLang::Context.new.gen_code(BaseParser.parse(main_prog))
     end
 
     def error_func(opaque, msg)

@@ -1,28 +1,40 @@
 require_relative '../spec_helper'
+require "parslet/rig/rspec"
 
-describe Parser do
-	def self.it_parse(exp, nodes)
-		it "parses ‘#{exp}’" do
-			Parser.parse(exp).should eq(Expressions.from nodes)
-		end
-	end
+describe SLang::Parser do
+  let(:parser) { SLang::Parser.new }
 
-	it_parse [:foo], Call.new(:foo)
-	it_parse [:inc, 1], Call.new(:inc, [], 1.int)
-	it_parse [:puts, "Hello World"], Call.new(:puts, [], "Hello World".string)
-	it_parse [:do, [:foo], [:bar]], Do.new([Call.new(:foo), Call.new(:bar)])
-	it_parse [:fun, :foo, [], [:bar]], Function.new(:foo, [], [Call.new(:bar)])
-	it_parse [:lambda, [], [:foo]], Lambda.new([], [Call.new(:foo)])
-	it_parse [:call, [:lambda, [], [:foo]], []], Expressions.new([Lambda.new([], [Call.new(:foo)]), Call.new(:lambda__3)])
-	it_parse [:if, [:test], [:foo], [:bar]], If.new(Call.new(:test), [Call.new(:foo)], [Call.new(:bar)])
-	it_parse [:while, [:test], [:foo]], While.new(Call.new(:test), [Call.new(:foo)])
-  it_parse [:fun, :foo, [], [:ret, 1]], Function.new(:foo, [], [Return.new([1.int])])
-	it_parse [:external, :puts, [:String], :Integer], External.new(:puts, nil, [Parameter.new(:String)], :Integer)
-	it_parse [:class, :Integer], ClassDef.new(:Integer)
-	it_parse [:operator, :+, [:Integer, :Integer], :Integer], Operator.new(:+, nil, [Parameter.new(:Integer), Parameter.new(:Integer)], :Integer)
-	it_parse [:set, :i, 0], Assign.new(Variable.new(:i), 0.int)
-	it_parse [:list, 1, 2, 3, 4], ArrayLiteral.new([1.int, 2.int, 3.int, 4.int])
-	it_parse [:set, :@i, 0], Assign.new(Member.new(:i), 0.int)
-	it_parse [:new, :Integer, [1]], Call.new(:new, [1.int], Const.new(:Integer))
-	it_parse [:set, :@@i, 2.3], Assign.new(ClassVar.new(:i), 2.3.float)
+  context "value parsing" do
+    let(:literal_parser) { parser.literal }
+
+    it "parses integers" do
+      expect(literal_parser).to     parse("1")
+      expect(literal_parser).to     parse("-123")
+      expect(literal_parser).to     parse("120381")
+      expect(literal_parser).to     parse("181")
+      expect(literal_parser).to_not parse("0181")
+    end
+
+    it "parses floats" do
+      expect(literal_parser).to     parse("0.1")
+      expect(literal_parser).to     parse("3.14159")
+      expect(literal_parser).to     parse("-0.00001")
+      expect(literal_parser).to_not parse(".1")
+    end
+
+    it "parses booleans" do
+      expect(literal_parser).to     parse("true")
+      expect(literal_parser).to     parse("false")
+      expect(literal_parser).to_not parse("truefalse")
+    end
+
+    it "parses strings" do
+      expect(literal_parser).to     parse('""')
+      expect(literal_parser).to     parse('"hello world"')
+      expect(literal_parser).to     parse('"hello\\nworld"')
+      expect(literal_parser).to     parse('"hello\\t\\n\\\\\\0world\\n"')
+      expect(literal_parser).to_not parse("\"hello\nworld\"")
+    end
+  end
 end
+

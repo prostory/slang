@@ -157,7 +157,7 @@ module SLang
     def visit_call(node)
       node.obj ||= Variable.new(:self, context.scope.type) if context.scope.type
 
-      if node.obj
+      unless node.obj.type == Type.kernel
         node.obj.accept self
       end
 

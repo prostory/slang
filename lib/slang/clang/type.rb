@@ -190,7 +190,7 @@ module SLang
 
     def self.struct(members, name)
       type = types[name] || ObjectType.new(name)
-      members.each_key { |member| type << member }
+      members.each { |member| type << member }
       types[name] = type
       type
     end

@@ -3,7 +3,7 @@ require 'rspec'
 require(File.expand_path("../../lib/slang", __FILE__))
 
 RSpec.configure do |config|
-	config.expect_with(:rspec) { |c| c.syntax = :should }
+	config.expect_with(:rspec) { |c| c.syntax = :should, :expect }
 end
 
 include SLang
@@ -23,5 +23,9 @@ end
 class String
 	def string
 		StringLiteral.new(self)
+	end
+
+	def new_string
+		Call.new(:new, [StringLiteral.new(self)], Const.new(:String))
 	end
 end

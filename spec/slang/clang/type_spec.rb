@@ -1,40 +1,32 @@
+require_relative '../../spec_helper'
+
 describe "CLang type" do
-  context = CLang::Context.new
+  CLang::Context.new
 
   it "types int" do
-    context.int.type.should eq(:int)
+    Type.int.target_type.should eq(:int)
   end
 
   it "types void" do
-    context.void.type.should eq(:void)
+    Type.void.target_type.should eq(:void)
   end
 
   it "types string" do
-    context.string.type.should eq('char *')
+    Type.string.target_type.should eq('char *')
   end
 
-  it "types struct with no name" do
-    point = context.struct({x: context.int, y: context.int})
-    point.type.should eq('struct { Integer x; Integer y; }')
+  it "types struct" do
+    point = Type.struct([Variable.new(:x, Type.int), Variable.new(:y, Type.int)], :Point)
+    point.target_type.should eq('struct { Integer x; Integer y; }')
   end
 
-  it "types struct width name" do
-    point = context.struct({x: context.int, y: context.int}, :Point)
-    point.define.should eq('typedef struct { Integer x; Integer y; } Point;')
-  end
-
-  it "types union with no name" do
-    value = context.union({i: context.int, s: context.string})
-    value.type.should eq('union { Integer i; String s; }')
-  end
-
-  it "types union width name" do
-    value = context.union({i: context.int, s: context.string}, :Value)
-    value.define.should eq('typedef union { Integer i; String s; } Value;')
+  it "types union" do
+    value = Type.union([Type.int, Type.string])
+    value.define.should eq("typedef union { Integer uInteger; String uString; } Options;\n")
   end
 
   it "types merge" do
-    context.merge(context.int, context.int).should eq(context.int)
-    context.merge(context.int, context.string).should eq(context.union([context.int, context.string]))
+    Type.merge(Type.int, Type.int).should eq(Type.int)
+    Type.merge(Type.int, Type.string).should eq(Type.union([Type.int, Type.string]))
   end
 end

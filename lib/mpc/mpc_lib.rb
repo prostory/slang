@@ -2,7 +2,7 @@ require 'ffi'
 
 module MPC
   extend FFI::Library
-  ffi_lib ['mpc', '../vendor/mpc/libmpc.so']
+  ffi_lib ['../vendor/mpc/libmpc.so', '../vendor/mpc/mpc.dll']
 
   enum :default, 0,
        :predictive, 1,

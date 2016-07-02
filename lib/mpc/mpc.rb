@@ -452,7 +452,7 @@ module MPC
     end
     
     def to_s
-      "#{name}\t:#{rule};"
+      "#{name} \"#{name}\"\t:#{rule};"
     end
   end
   

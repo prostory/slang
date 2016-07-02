@@ -158,39 +158,33 @@ module SLang
     define :f_args,     %Q{ <f_arg> (',' <f_arg>)* }
     define :bparam,     %Q{ (<f_args> | '(' <f_args>? ')')? <op_rasgn> }
 
-    define :primary,   %Q{ <lit_int> | <lit_float> | <lit_hex> | <lit_oct> | <lit_string> | <lit_bool>
+    define :primary0,   %Q{ <lit_float> | <lit_int> | <lit_hex> | <lit_oct> | <lit_string> | <lit_bool>
                             | <lit_array>
                             | <lit_hash>
-                            | <ident>
-                            | '(' <expr> ')'
+                            | <kd_nil>
+                            | <kd_true>
+                            | <kd_false>
                             | <do_stmt>
                             | <if_stmt>
                             | <lambda_stmt>
                             | <block_stmt>
-                            | <call_stmt>
-                            | <kd_nil>
-                            | <kd_true>
-                            | <kd_false>
+                            | <ident>
+                            | '(' <expr> ')'
     }
-    define :expr,       %Q{ <primary> <operator> <primary>
-                            | <op_not> <primary>
-                            | <primary> }
+    define :primary,    %Q{ <primary0> | <call_stmt> }
+    define :expr,       %Q{ <op_not>? <primary> (<operator> <primary>)* }
 
     define :arg,        %Q{ <expr> | <ident> ':' <expr> }
     define :args,       %Q{ <expr> (',' <expr>)* }
 
     define :do_stmt,    %Q{ <kd_do> <stmts> <kd_end> }
-    define :if_stmt,    %Q{ <kd_if> <expr> (<kd_then>|<trail>) (<stmts>
+    define :if_stmt,    %Q{ (<kd_if> <expr> (<kd_then>|<trail>) <stmts>
                             (<kd_elif> <expr> <trail> <stmts>)*
-                            (<kd_else> <stmts>)? <kd_end>)? }
+                            (<kd_else> <stmts>)? <kd_end>)
+                            | (<stmt> <kd_if> <expr>) }
     define :block_stmt, %Q{ '{' <bparam>? <stmts> '}' }
     define :lambda_stmt,%Q{ <bparam> <stmts> <kd_end> }
-    define :call_stmt,  %Q{ <ident> <args>
-                            | <ident> <block_stmt>
-                            | <ident> '(' <args>? ')' (<block_stmt>)?
-                            | <expr> '.' <ident> <args>? (<block_stmt>)?
-                            | <expr> '.' <ident> '(' <args>? ')' (<block_stmt>)?
-    }
+    define :call_stmt,  %Q{ (<primary0> '.')? <ident> (<args> | '(' <args>? ')')? (<block_stmt>)? }
 
     define :stmt,       %Q{ <ident> '=' <expr>
                             | <kd_return> <args>*
@@ -234,6 +228,11 @@ module SLang
   MyLanguage.parse('strip!', :ident).display
   MyLanguage.parse('name=', :ident).display
 
+  MyLanguage.parse('!a', :expr).display
+  MyLanguage.parse('!a && b', :expr).display
+  MyLanguage.parse('!(a && b)', :expr).display
+  MyLanguage.parse('a + b * c', :expr).display
+
   MyLanguage.parse('a, b, c', :args).display
   MyLanguage.parse('1, 2, 3', :args).display
   MyLanguage.parse('1, a.foo, 3', :args).display
@@ -247,22 +246,23 @@ module SLang
 
   MyLanguage.parse('do 1 end', :do_stmt).display
   MyLanguage.parse('do 1; 2 end', :do_stmt).display
-  # MyLanguage.parse('if true', :if_stmt).display
-  # MyLanguage.parse('if true 1 end', :if_stmt).display
-  # MyLanguage.parse('if true then 1 else 2 end', :if_stmt).display
-  # MyLanguage.parse('if true 1 elif false 2 else 3 end', :if_stmt).display
-  #
-  # MyLanguage.parse('-> 5 end', :lambda_stmt).display
-  # MyLanguage.parse('a, b -> 5 end', :lambda_stmt).display
-  # MyLanguage.parse('(a, b) -> 5 end', :lambda_stmt).display
-  #
-  # MyLanguage.parse('foo 5', :call_stmt).display
-  # MyLanguage.parse('foo 5, false', :call_stmt).display
-  # MyLanguage.parse('foo 5, false {-> 5}', :call_stmt).display
-  # MyLanguage.parse('o.foo 5', :call_stmt).display
-  # MyLanguage.parse('o.foo 5, false', :call_stmt).display
-  # MyLanguage.parse('o.foo 5, false {-> 5}', :call_stmt).display
-  # MyLanguage.parse('foo(5, false)', :call_stmt).display
+  MyLanguage.parse('i = 1 if true', :if_stmt).display
+  MyLanguage.parse('if true 1 end', :if_stmt).display
+  MyLanguage.parse('if true then 1 else 2 end', :if_stmt).display
+  MyLanguage.parse('if true 1 elif false 2 else 3 end', :if_stmt).display
+
+  MyLanguage.parse('-> 5 end', :lambda_stmt).display
+  MyLanguage.parse('a, b -> 5 end', :lambda_stmt).display
+  MyLanguage.parse('(a, b) -> 5 end', :lambda_stmt).display
+
+  MyLanguage.parse('foo 5', :call_stmt).display
+  MyLanguage.parse('foo 5, false', :call_stmt).display
+  MyLanguage.parse('foo 5, false {-> 5}', :call_stmt).display
+  MyLanguage.parse('o.foo 5', :call_stmt).display
+  MyLanguage.parse('o.foo 5, false', :call_stmt).display
+  MyLanguage.parse('o.foo 5, false {-> 5}', :call_stmt).display
+  MyLanguage.parse('foo(5, false)', :call_stmt).display
+  MyLanguage.parse('a.b.c.d', :call_stmt).display
 end
 
 

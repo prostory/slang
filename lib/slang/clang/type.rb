@@ -1,3 +1,5 @@
+require_relative '../type'
+
 module SLang
   class BaseObjectType < BaseType
     def define

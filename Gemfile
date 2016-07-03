@@ -5,4 +5,4 @@ gemspec
 
 gem 'rspec'
 gem 'parslet'
-gem 'ruby-llvm'
+gem 'ffi'

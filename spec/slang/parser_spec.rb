@@ -4,7 +4,7 @@ require "parslet/rig/rspec"
 describe SLang::Parser do
   let(:parser) { SLang::Parser.new }
 
-  context "value parsing" do
+  context "expression parsing" do
     let(:expr_parser) { parser.expr }
 
     it "parses integers" do
@@ -71,9 +71,9 @@ describe SLang::Parser do
       expect(expr_parser).to_not parse("{a:1, b:2, c:3, d:4")
     end
 
-    it "parses do statements" do
-     # expect(expr_parser).to     parse('do end')
-      expect(expr_parser).to     parse('do 1 end')
+    it "parses primarys" do
+      expect(expr_parser).to     parse('(1)')
+      expect(expr_parser).to     parse('(if empty? then false end)')
     end
 
     def self.it_parse(code, type, value = code)
@@ -88,6 +88,71 @@ describe SLang::Parser do
     it_parse '"Hello world"', :string
     it_parse '[1, 2, 3]', :array, [{:integer=>"1"}, {:integer=>"2"}, {:integer=>"3"}]
     it_parse '{a: 1, b: 2}', :hash, [{:key=>{:ident=>"a"}, :value=>{:integer=>"1"}}, {:key=>{:ident=>"b"}, :value=>{:integer=>"2"}}]
+  end
+
+  context "statement parsing" do
+    let(:stmt_parser) { parser.stmt }
+
+    it "parses do statements" do
+      # expect(stmt_parser).to     parse('do end')
+      expect(stmt_parser).to     parse('do 1 end')
+      expect(stmt_parser).to     parse('do 1;2 end')
+      expect(stmt_parser).to_not parse('do 1')
+    end
+
+    it "parses if statements" do
+      expect(stmt_parser).to     parse('if empty? true end')
+      expect(stmt_parser).to     parse('if empty? then true end')
+      expect(stmt_parser).to     parse('if empty? true else false end')
+      expect(stmt_parser).to     parse('if empty? true elif has_one? 1 else size end')
+      expect(stmt_parser).to     parse('if empty? true elif one? 1 elif two? 2 else false end')
+      expect(stmt_parser).to_not parse('if empty? true')
+      expect(stmt_parser).to_not parse('if empty? true else 1 else size end')
+    end
+
+    it "parses unless statements" do
+      expect(stmt_parser).to     parse('unless empty? true end')
+      expect(stmt_parser).to     parse('unless empty? then true end')
+      expect(stmt_parser).to     parse('unless empty? true else false end')
+      expect(stmt_parser).to_not parse('unless empty? true else 1 else size end')
+    end
+
+    it "parses lambda statements" do
+      # expect(stmt_parser).to     parse('-> end')
+      # expect(stmt_parser).to     parse('()-> end')
+      expect(stmt_parser).to     parse('-> 1 end')
+      expect(stmt_parser).to     parse('()-> 2 end')
+      expect(stmt_parser).to     parse('(a)-> 3 end')
+      expect(stmt_parser).to     parse('(a, b, c)-> a; b; c end')
+      expect(stmt_parser).to     parse('a, b, c-> a; b; c end')
+      expect(stmt_parser).to     parse("a\n, \nb, \nc-> a; b; c end")
+      expect(stmt_parser).to_not parse("-> do_something")
+    end
+
+    it "parses assign statements" do
+      expect(stmt_parser).to     parse('a = b')
+      expect(stmt_parser).to     parse('a = b = c')
+      expect(stmt_parser).to_not parse("1 = a")
+      expect(stmt_parser).to_not parse("a = 1 = 2")
+    end
+
+    it "parses return statements" do
+      expect(stmt_parser).to     parse('return')
+      expect(stmt_parser).to     parse('return a')
+      expect(stmt_parser).to     parse('return a, b, c')
+    end
+
+    it "parses break statements" do
+      expect(stmt_parser).to     parse('break')
+      expect(stmt_parser).to     parse('break')
+      expect(stmt_parser).to_not parse('break a')
+    end
+
+    it "parses continue statements" do
+      expect(stmt_parser).to     parse('continue')
+      expect(stmt_parser).to     parse('continue')
+      expect(stmt_parser).to_not parse('continue a')
+    end
   end
 end
 

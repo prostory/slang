@@ -2,16 +2,22 @@ require 'parslet'
 
 module SLang
   class Parser < Parslet::Parser
-    rule(:space)            { match["\t "] }
-    rule(:spaces?)          { space.repeat  }
-    rule(:blank)            { match["\t\n "].repeat  }
+    rule(:space)            { match('[ \t]').repeat(1) }
+    rule(:space?)           { space.maybe  }
+    rule(:blank)            { match('[ \t\n]').repeat(1) }
+    rule(:blank?)           { blank.maybe }
+    rule(:terms)            { match('[;\n]').repeat(1) }
 
-    def spacesd(s)
-      spaces? >> str(s) >> spaces?
+    rule(:lparen)           { str('(') >> space? }
+    rule(:rparen)           { str(')') >> space? }
+    rule(:comma)            { str(',') >> space? }
+
+    def spaced(s)
+      space? >> str(s) >> space?
     end
 
     def blanked(s)
-      blank >> str(s) >> blank
+      blank? >> str(s) >> blank?
     end
 
     rule(:digit)            { match('[0-9]') }
@@ -24,19 +30,19 @@ module SLang
     rule(:hex)              { str('0x') >> match('[0-9a-fA-F]').repeat(1) }
 
     rule(:int_literal)              do
-      (str('-').maybe >> (bin | oct | dec | hex)).as(:integer) >> spaces?
+      (str('-').maybe >> (bin | oct | dec | hex)).as(:integer) >> space?
     end
 
     rule(:float_literal)            do
-      (str('-').maybe >> digit.repeat(1) >> str('.') >> digit.repeat(1)).as(:float) >> spaces?
+      (str('-').maybe >> digit.repeat(1) >> str('.') >> digit.repeat(1)).as(:float) >> space?
     end
 
     rule(:bool_literal)             do
-      (str('true') | str('false')).as(:bool) >> spaces?
+      (str('true') | str('false')).as(:bool) >> space?
     end
 
     rule(:nil_literal)              do
-      str('nil').as(:nil) >> spaces?
+      str('nil').as(:nil) >> space?
     end
 
     rule(:string_special)   { match['\0\t\n\r"\\\\'] }
@@ -44,7 +50,7 @@ module SLang
     rule(:string_literal)           do
       (str('"') >>
           (escaped_special | string_special.absent? >> any).repeat >>
-          str('"')).as(:string) >> spaces?
+          str('"')).as(:string) >> space?
     end
 
     def args(arg)
@@ -52,23 +58,23 @@ module SLang
     end
 
     rule(:array_literal)            do
-      (str('[') >> blank >> args(expr).maybe >> blank >> str(']')).as(:array) >> spaces?
+      (str('[') >> blank? >> args(expr).maybe >> blank? >> str(']')).as(:array) >> space?
     end
 
     rule(:hash_literal)             do
-      (str('{') >> blank >> args(entry).maybe >> blank >> str('}')).as(:hash) >> spaces?
+      (str('{') >> blank? >> args(entry).maybe >> blank? >> str('}')).as(:hash) >> space?
     end
 
     rule(:ident)                    do
-      (alpha >> (alpha | digit).repeat >> match['?!'].maybe).as(:ident) >> spaces?
+      (alpha >> (alpha | digit).repeat >> match['?!'].maybe).as(:ident) >> space?
     end
 
     rule(:entry)                    do
-      ((ident.as(:key) >> spacesd(':')) | (str('[') >> spaces? >> expr.as(:key) >> spaces? >> str(']') >> spacesd('='))) >> expr.as(:value)
+      ((ident.as(:key) >> spaced(':')) | (str('[') >> space? >> expr.as(:key) >> space? >> str(']') >> spaced('='))) >> expr.as(:value)
     end
 
     rule(:f_arg)                    do
-      ident.as(:name) >> (spacesd(':') >> ident.as(:type)).maybe
+      ident.as(:name) >> (spaced(':') >> ident.as(:type)).maybe
     end
 
     rule(:f_args)                   do
@@ -76,7 +82,7 @@ module SLang
     end
 
     rule(:bparam)                   do
-      (f_args | (str('(') >> blank >> f_args.maybe >> blank >> str(')'))).maybe >> op_rasgn
+      (f_args | (str('(') >> blank? >> f_args.maybe >> blank? >> str(')'))).maybe >> op_rasgn
     end
 
     rule(:literal)                  do
@@ -90,7 +96,7 @@ module SLang
     end
 
     rule(:primary)                  do
-      literal | ident | str('(') >> expr >> str(')')
+      lparen >> expr >> rparen | literal | do_stmt | if_stmt | unless_stmt | lambda_stmt | assign_stmt | ident
     end
 
     rule(:expr)                     do
@@ -98,45 +104,65 @@ module SLang
     end
 
     rule(:do_stmt)                  do
-      (do_keyword >> blank >> stmts >> blank >> end_keyword).as(:do_statement)
+      (do_keyword >> blank? >> stmts >> blank? >> end_keyword).as(:do_statement)
     end
 
     rule(:if_stmt)                  do
-      ((if_keyword >> expr >> keyword_then.maybe >> stmts >>
-          (keyword_elif >> expr >> stmts).repeat >>
-          (keyword_else >> stmts).maybe >> keyword_end) |
-          (stmt >> keyword_if >> expr)).as(:if_statement)
+      (if_keyword >> expr >> then_keyword.maybe >> stmts.as(:then_body) >>
+          (elif_keyword >> expr >> stmts.as(:elif_body)).repeat >>
+          (else_keyword >> stmts.as(:else_body)).maybe >> end_keyword).as(:if_statement)
     end
 
     rule(:unless_stmt)              do
-      ((unless_keyword >> expr >> keyword_then.maybe >> stmts >>
-          (keyword_else >> stmts).maybe >> keyword_end) |
-          (stmt >> unless_keyword >> expr)).as(:unless_statement)
+      (unless_keyword >> expr >> then_keyword.maybe >> stmts.as(:then_body) >>
+          (else_keyword >> stmts.as(:else_body)).maybe >> end_keyword).as(:unless_statement)
     end
 
-    rule(:block)                    do
-      (str('{') >> bparam.maybe >> stmts >> str('}')).as(:block)
+    rule(:lambda_stmt)                   do
+      (bparam >> stmts.as(:body) >> end_keyword).as(:lambda_statement)
     end
 
-    rule(:lambda)                   do
-      (bparam >> stmts >> end_keyword).as(:lambda)
+    rule(:assign_stmt)              do
+      (ident.as(:target) >> blanked('=') >> expr.as(:value)).as(:assign_statement)
     end
 
+    rule(:return_stmt)              do
+      (return_keyword >> blank? >> args(expr).maybe).as(:return_statement)
+    end
 
+    rule(:break_stmt)               do
+      (break_keyword).as(:break_statement)
+    end
+
+    rule(:continue_stmt)            do
+      (continue_keyword).as(:continue_statement)
+    end
+
+    rule(:stmt)                     do
+      return_stmt | break_stmt | continue_stmt | expr
+    end
+
+    rule(:stmt_list)                do
+      stmt >> (terms >> blank? >> stmt).repeat
+    end
 
     rule(:stmts)                    do
-      expr
+      stmt_list.maybe >> terms.repeat >> blank?
+    end
+
+    rule(:module_decl)              do
+      module_keyword >> ident >> blank
     end
 
     def self.keywords(*names)
       names.each do |name|
-        rule("#{name}_keyword") { str(name.to_s) >> spaces? }
+        rule("#{name}_keyword") { str(name.to_s) >> space? }
       end
     end
 
     keywords :break, :case, :class, :const, :continue, :def, :do, :elif, :else,
         :end, :export, :extend, :for, :if, :import, :include, :module, :of,
-        :return, :until, :unless, :while
+        :return, :then, :until, :unless, :while
 
     def self.operators(operators={})
       trailing_chars = Hash.new { |hash,symbol| hash[symbol] = [] }
@@ -157,12 +183,12 @@ module SLang
         trailing = trailing_chars[symbol]
 
         if trailing.empty?
-          rule(name) { str(symbol).as(:operator) >> spaces? }
+          rule(name) { str(symbol).as(:operator) >> space? }
         else
           pattern = "[#{Regexp.escape(trailing.join)}]"
 
           rule(name) {
-            (str(symbol) >> match(pattern).absent?).as(:operator) >> spaces?
+            (str(symbol) >> match(pattern).absent?).as(:operator) >> space?
           }
         end
       end
@@ -203,4 +229,7 @@ module SLang
         :op_rshift => '>>',
         :op_inverse => '~'
   end
+  require 'pp'
+  pp Parser.new.stmts.parse('a = b = 1')
 end
+

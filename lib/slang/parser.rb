@@ -6,7 +6,7 @@ module SLang
     rule(:space?)           { space.maybe  }
     rule(:blank)            { match('[ \t\n]').repeat(1) }
     rule(:blank?)           { blank.maybe }
-    rule(:terms)            { match('[;\n]').repeat(1) }
+    rule(:terms)            { match('[;\n]').repeat(1) >> space? }
 
     rule(:lparen)           { str('(') >> space? }
     rule(:rparen)           { str(')') >> space? }
@@ -96,7 +96,7 @@ module SLang
     end
 
     rule(:primary)                  do
-      lparen >> expr >> rparen | literal | do_stmt | if_stmt | unless_stmt | lambda_stmt | assign_stmt | ident
+      lparen >> expr >> rparen | literal | do_stmt | if_stmt | unless_stmt | case_stmt | lambda_stmt | assign_stmt | ident
     end
 
     rule(:expr)                     do
@@ -108,17 +108,22 @@ module SLang
     end
 
     rule(:if_stmt)                  do
-      (if_keyword >> expr >> then_keyword.maybe >> stmts.as(:then_body) >>
-          (elif_keyword >> expr >> stmts.as(:elif_body)).repeat >>
+      (if_keyword >> expr >> (then_keyword | terms) >> stmts.as(:then_body) >>
+          (elif_keyword >> expr >> (then_keyword | terms) >> stmts.as(:elif_body)).repeat >>
           (else_keyword >> stmts.as(:else_body)).maybe >> end_keyword).as(:if_statement)
     end
 
     rule(:unless_stmt)              do
-      (unless_keyword >> expr >> then_keyword.maybe >> stmts.as(:then_body) >>
+      (unless_keyword >> expr >> (then_keyword | terms) >> stmts.as(:then_body) >>
           (else_keyword >> stmts.as(:else_body)).maybe >> end_keyword).as(:unless_statement)
     end
 
-    rule(:lambda_stmt)                   do
+    rule(:case_stmt)                do
+      (case_keyword >> expr >> (of_keyword >> args(expr) >> (then_keyword | terms) >> stmts.as(:of_body)).repeat(1) >>
+        (else_keyword >> stmts.as(:else_body)).maybe).as(:case_statement)
+    end
+
+    rule(:lambda_stmt)              do
       (bparam >> stmts.as(:body) >> end_keyword).as(:lambda_statement)
     end
 
@@ -138,6 +143,14 @@ module SLang
       (continue_keyword).as(:continue_statement)
     end
 
+    rule(:include_stmt)             do
+      (include_keyword >> ident).as(:include_statement)
+    end
+
+    rule(:extend_stmt)              do
+      (extend_keyword >> ident).as(:include_statement)
+    end
+
     rule(:stmt)                     do
       return_stmt | break_stmt | continue_stmt | expr
     end
@@ -151,7 +164,34 @@ module SLang
     end
 
     rule(:module_decl)              do
-      module_keyword >> ident >> blank
+      (export_keyword.maybe >> module_keyword >> ident.as(:name) >>
+        blank? >> decls.as(:body) >> end_keyword).as(:module_declaration)
+    end
+
+    rule(:class_decl)              do
+      (export_keyword.maybe >> class_keyword >> ident.as(:name) >>
+        (str('>') >> ident.as(:parent)) >> blank? >> decls.as(:body) >> end_keyword).as(:class_declaration)
+    end
+
+    rule(:import_decl)              do
+      (import_keyword >> ident.as(:module)).as(:import_declaration)
+    end
+
+    rule(:def_decal)                do
+      (export_keyword.maybe >> def_keyword >> ident >>
+        str('(') >> blanked? >> f_args >> blanked? >> str(')') >> stmts >> end_keyword).as(:def_declaration)
+    end
+
+    rule(:decal)                    do
+      module_decl | class_decl | import_decl | def_decal | stmts
+    end
+
+    rule(:decal_list)                do
+      decal >> (terms >> blank? >> decal).repeat
+    end
+
+    rule(:decals)                    do
+      decal_list.maybe >> terms.repeat >> blank?
     end
 
     def self.keywords(*names)
@@ -230,6 +270,6 @@ module SLang
         :op_inverse => '~'
   end
   require 'pp'
-  pp Parser.new.stmts.parse('a = b = 1')
+  pp Parser.new.stmt.parse('a = b = if empty? then true else false end')
 end
 

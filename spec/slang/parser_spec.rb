@@ -75,6 +75,15 @@ describe SLang::Parser do
       expect(expr_parser).to     parse('(1)')
       expect(expr_parser).to     parse('(if empty? then false end)')
     end
+    
+    it "parses expressions" do
+	  expect(expr_parser).to     parse('1 + 2')
+      expect(expr_parser).to     parse('1 + 2*3/4')
+      expect(expr_parser).to     parse('(1 + 2)*3/4')
+      expect(expr_parser).to     parse('a && b || c')
+      expect(expr_parser).to     parse('! a || (b && c)')
+      expect(expr_parser).to     parse('(a >> 5)++')
+    end
 
     def self.it_parse(code, type, value = code)
       it "parses #{type} into {#{type} => #{value}}" do
@@ -94,7 +103,7 @@ describe SLang::Parser do
     let(:stmt_parser) { parser.stmt }
 
     it "parses do statements" do
-      # expect(stmt_parser).to     parse('do end')
+      expect(stmt_parser).to     parse('do end')
       expect(stmt_parser).to     parse('do 1 end')
       expect(stmt_parser).to     parse('do 1;2 end')
       expect(stmt_parser).to_not parse('do 1')
@@ -106,6 +115,7 @@ describe SLang::Parser do
       expect(stmt_parser).to     parse('if empty? then true else false end')
       expect(stmt_parser).to     parse('if empty? ; true elif has_one? ; 1 else size end')
       expect(stmt_parser).to     parse('if empty? ; true elif one? ; 1 elif two? then 2 else false end')
+      # expect(stmt_parser).to	 parse('return true if empty?')
       expect(stmt_parser).to_not parse('if empty? ; true')
       expect(stmt_parser).to_not parse('if empty? ; true else 1 else size end')
     end
@@ -119,11 +129,29 @@ describe SLang::Parser do
 
     it "parses case statements" do
       expect(stmt_parser).to     parse('case a of 1; 2 end')
+      expect(stmt_parser).to     parse('case a of 1, 2, 3; a; of 4, 5, 6; b end')
+      expect(stmt_parser).to	 parse("case a \nof 1, 2, 3\n a; b of 4, 5, 6; b end")
+      expect(stmt_parser).to	 parse("case a \nof 1, 2, 3\n a; b else b end")
+      expect(stmt_parser).to_not parse('case a end')
+    end
+    
+    it "parses while statements" do
+      expect(stmt_parser).to     parse('while empty? do 1 end')
+      expect(stmt_parser).to     parse("while empty? \n 1 end")
+      expect(stmt_parser).to	 parse("until empty? do 1 end")
+      expect(stmt_parser).to	 parse("until empty? \n 1 end")
+      expect(stmt_parser).to_not parse('while empty? end')
+    end
+    
+    it "parses do-while statements" do
+      expect(stmt_parser).to     parse('do 1 while empty? end')
+      expect(stmt_parser).to     parse("do 1 until empty? end")
+      expect(stmt_parser).to_not parse('do 1 while empty?')
     end
 
     it "parses lambda statements" do
-      # expect(stmt_parser).to     parse('-> end')
-      # expect(stmt_parser).to     parse('()-> end')
+      expect(stmt_parser).to     parse('-> end')
+      expect(stmt_parser).to     parse('()-> end')
       expect(stmt_parser).to     parse('-> 1 end')
       expect(stmt_parser).to     parse('()-> 2 end')
       expect(stmt_parser).to     parse('(a)-> 3 end')
@@ -156,6 +184,40 @@ describe SLang::Parser do
       expect(stmt_parser).to     parse('continue')
       expect(stmt_parser).to     parse('continue')
       expect(stmt_parser).to_not parse('continue a')
+    end
+  end
+  
+  context "declaration parsing" do
+    let(:decl_parser) { parser.decl }
+
+    it "parses module declaration" do
+      expect(decl_parser).to     parse('module A end')
+      expect(decl_parser).to     parse('module A 1 end')
+      expect(decl_parser).to     parse("module A \n 1;2 end")
+      expect(decl_parser).to     parse("export module A end")
+      expect(decl_parser).to_not parse('module A 1')
+    end
+    
+    it "parses class declaration" do
+      expect(decl_parser).to     parse('class A end')
+      expect(decl_parser).to     parse('class A 1 end')
+      expect(decl_parser).to     parse("class A \n 1;2 end")
+      expect(decl_parser).to     parse("export class A end")
+      expect(decl_parser).to     parse("class A < B end")
+      expect(decl_parser).to_not parse('class A 1')
+    end
+    
+    it "parses import declaration" do
+      expect(decl_parser).to     parse('import A')
+    end
+    
+    it "parses def declaration" do
+      expect(decl_parser).to     parse('def foo end')
+      expect(decl_parser).to     parse('def foo 1 end')
+      expect(decl_parser).to     parse("def foo() 1 end")
+      expect(decl_parser).to     parse("def foo(a, b) a; b end")
+      expect(decl_parser).to     parse("export def foo(a: Integer, b: Float) 1 end")
+      expect(decl_parser).to_not parse('def a 1')
     end
   end
 end

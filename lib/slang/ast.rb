@@ -128,6 +128,9 @@ module SLang
 	class BoolLiteral < Literal
 	end
 
+	class NilLiteral < ASTNode
+	end
+
 	class StringLiteral < Literal
 	end
 

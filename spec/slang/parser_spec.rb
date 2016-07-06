@@ -8,6 +8,7 @@ describe SLang::Parser do
     let(:expr_parser) { parser.expr }
 
     it "parses integers" do
+      expect(expr_parser).to     parse("0")
       expect(expr_parser).to     parse("1")
       expect(expr_parser).to     parse("-123")
       expect(expr_parser).to     parse("0b0101")
@@ -83,6 +84,7 @@ describe SLang::Parser do
       expect(expr_parser).to     parse('a && b || c')
       expect(expr_parser).to     parse('! a || (b && c)')
       expect(expr_parser).to     parse('(a >> 5)++')
+      expect(expr_parser).to     parse('a + 5 ++')
     end
 
     def self.it_parse(code, type, value = code)
@@ -97,6 +99,7 @@ describe SLang::Parser do
     it_parse '"Hello world"', :string
     it_parse '[1, 2, 3]', :array, [{:integer=>"1"}, {:integer=>"2"}, {:integer=>"3"}]
     it_parse '{a: 1, b: 2}', :hash, [{:key=>{:ident=>"a"}, :value=>{:integer=>"1"}}, {:key=>{:ident=>"b"}, :value=>{:integer=>"2"}}]
+    it_parse 'if empty? then false end', :if_statement, {:condition=>{:ident=>"empty?"}, :then_body=>{:bool=>"false"}}
   end
 
   context "statement parsing" do

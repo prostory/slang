@@ -20,6 +20,18 @@ class Float
 	end
 end
 
+class TrueClass
+	def bool
+		BoolLiteral.new(self)
+	end
+end
+
+class FalseClass
+	def bool
+		BoolLiteral.new(self)
+	end
+end
+
 class String
 	def string
 		StringLiteral.new(self)
@@ -28,4 +40,17 @@ class String
 	def new_string
 		Call.new(:new, [StringLiteral.new(self)], Const.new(:String))
 	end
+end
+
+class Array
+	def array
+		ArrayLiteral.new(self)
+	end
+end
+
+class Parslet::Cause
+  def cause
+  end
+  def backtrace
+  end
 end

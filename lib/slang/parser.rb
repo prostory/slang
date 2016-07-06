@@ -23,6 +23,7 @@ module SLang
     rule(:digit)            { match('[0-9]') }
 
     rule(:alpha)            { match('[a-zA-Z_]') }
+    rule(:upper)            { match('[A-Z]') }
 
     rule(:bin)              { str('0b') >> match('[0-1]').repeat(1) }
     rule(:oct)              { str('0o') >> match('[0-7]').repeat(1) }
@@ -30,7 +31,7 @@ module SLang
     rule(:hex)              { str('0x') >> match('[0-9a-fA-F]').repeat(1) }
 
     rule(:int_literal)              do
-      (str('-').maybe >> (bin | oct | dec | hex)).as(:integer) >> space?
+      (str('-').maybe >> (bin | oct | dec | hex | str('0'))).as(:integer) >> space?
     end
 
     rule(:float_literal)            do
@@ -65,9 +66,30 @@ module SLang
       (str('{') >> blank? >> args(entry).maybe >> blank? >> str('}')).as(:hash) >> space?
     end
 
+    def reserved
+      break_keyword.absent? >> case_keyword.absent? >> class_keyword.absent? >> const_keyword.absent? >>
+        continue_keyword.absent? >> def_keyword.absent? >> do_keyword.absent? >> elif_keyword.absent? >>
+        else_keyword.absent? >> end_keyword.absent? >> export_keyword.absent? >> extend_keyword.absent? >>
+        for_keyword.absent? >> if_keyword.absent? >> import_keyword.absent?  >> include_keyword.absent? >>
+        module_keyword.absent? >> of_keyword.absent? >> return_keyword.absent? >> then_keyword.absent? >>
+        until_keyword.absent? >> unless_keyword.absent?  >> while_keyword.absent?
+    end
+
     rule(:ident)                    do
-      (of_keyword.absent? >> end_keyword.absent? >> while_keyword.absent? >> until_keyword.absent? >> 
-      (alpha >> (alpha | digit).repeat >> match['?!'].maybe)).as(:ident) >> space?
+      reserved >>
+        (alpha >> (alpha | digit).repeat >> match['?!'].maybe).as(:ident) >> space?
+    end
+
+    rule(:const)                    do
+      (upper >> (alpha | digit).repeat).as(:const) >> space?
+    end
+
+    rule(:class_var)                do
+      (str('@@') >> alpha >> (alpha | digit).repeat >> match['?!'].maybe).as(:class_var) >> space?
+    end
+
+    rule(:instance_var)             do
+      (str('@') >> alpha >> (alpha | digit).repeat >> match['?!'].maybe).as(:instance_var) >> space?
     end
 
     rule(:entry)                    do
@@ -97,27 +119,32 @@ module SLang
     end
 
     rule(:primary)                  do
-       literal | do_stmt | if_stmt | unless_stmt | case_stmt | while_stmt | do_while_stmt | lambda_stmt | assign_stmt | ident | lparen >> expr >> rparen
+       literal | do_stmt | if_stmt | unless_stmt | case_stmt | while_stmt | do_while_stmt |
+         lambda_stmt | assign_stmt | const | class_var | instance_var | call_stmt | ident | lparen >> expr >> rparen
+    end
+    
+    rule(:prefix_operation)         do
+		  (op_not | op_inverse) >> (unary_operation | primary).as(:operand)
+    end
+    
+    rule(:postfix_operation)        do
+      (prefix_operation | primary).as(:operand) >> (op_inc | op_dec)
+    end
+    
+    rule(:unary_operation)          do
+      prefix_operation | postfix_operation
+    end
+    
+    rule(:binary_operation)         do
+	    (unary_operation | primary).as(:left) >> (op_access | op_rshift_assign | op_lshift_assign | op_add_assign | op_sub_assign | op_mul_assign | op_div_assign |
+        op_mod_assign | op_band_assign | op_xor_assign | op_bor_assign | op_and | op_or | op_le | op_ge | op_lt | op_gt | op_eq |
+        op_ne | op_add | op_sub | op_mul | op_div | op_mod | op_band | op_xor | op_bor | op_lshift | op_rshift) >> expr.as(:right)
     end
 
     rule(:expr)                     do
-       binary_operation(operation_expr, operation_expr) | unary_operation(operation_expr) | operation_expr
+       binary_operation | unary_operation | primary
     end
     
-    def binary_operation(left, right)
-	  left.as(:left) >> (op_rshift_assign | op_lshift_assign | op_add_assign | op_sub_assign | op_mul_assign | op_div_assign |
-		op_mod_assign | op_band_assign | op_xor_assign | op_bor_assign | op_and | op_or | op_le | op_ge | op_lt | op_gt | op_eq | 
-		op_ne | op_add | op_sub | op_mul | op_div | op_mod | op_band | op_xor | op_bor | op_lshift | op_rshift) >> right.as(:right)
-    end
-    
-    def unary_operation(operand)
-	  ((op_not | op_inverse) >> operand.as(:operand)) | (operand.as(:operand) >> (op_inc | op_dec))
-    end
-    
-    rule(:operation_expr)			      do
-	  binary_operation(primary, primary) | unary_operation(primary) | primary
-    end
-
     rule(:do_stmt)                  do
       (do_keyword >> stmts.as(:body) >> end_keyword).as(:do_statement)
     end
@@ -140,19 +167,27 @@ module SLang
     end
     
     rule(:while_stmt)				        do
-	    ((while_keyword | until_keyword) >> expr.as(:condition) >> (do_keyword | terms) >> stmts.as(:body) >> end_keyword).as(:while_statement)
+	    ((while_keyword | until_keyword) >> expr.as(:condition) >> (terms | (do_keyword >> blank?)) >> stmts.as(:body) >> end_keyword).as(:while_statement)
     end
     
     rule(:do_while_stmt)			      do
-	    (do_keyword >> stmts.as(:body) >> (while_keyword | until_keyword) >> expr.as(:condition) >> end_keyword).as(:do_while_statement)
+	    (do_keyword >> blank? >> stmts.as(:body) >> (while_keyword | until_keyword) >> expr.as(:condition) >> end_keyword).as(:do_while_statement)
     end
 
     rule(:lambda_stmt)              do
       (bparam >> stmts.as(:body) >> end_keyword).as(:lambda_statement)
     end
+    
+    rule(:call_args)                do
+      (lparen >> blank? >> args(expr).maybe.as(:args) >> blank? >> rparen) | args(expr).as(:args)
+    end
+
+    rule(:call_stmt)                do
+       (ident.as(:name) >> call_args).as(:call_statement)
+    end
 
     rule(:assign_stmt)              do
-      (ident.as(:target) >> blanked('=') >> expr.as(:value)).as(:assign_statement)
+      (ident.as(:target) >> spaced('=') >> expr.as(:value)).as(:assign_statement)
     end
 
     rule(:return_stmt)              do
@@ -192,12 +227,12 @@ module SLang
     end
 
     rule(:module_decl)              do
-      (export_keyword.maybe >> module_keyword >> ident.as(:name) >>
+      (export_keyword.maybe >> module_keyword >> const.as(:name) >>
         blank? >> decls.as(:body) >> end_keyword).as(:module_declaration)
     end
 
     rule(:class_decl)               do
-      (export_keyword.maybe >> class_keyword >> ident.as(:name) >>
+      (export_keyword.maybe >> class_keyword >> const.as(:name) >>
         (spaced('<') >> ident.as(:parent)).maybe >> blank? >> decls.as(:body) >> end_keyword).as(:class_declaration)
     end
 
@@ -263,7 +298,8 @@ module SLang
       end
     end
 
-    operators :op_rshift_assign => '>>=',
+    operators :op_access => ".",
+        :op_rshift_assign => '>>=',
         :op_lshift_assign => '<<=',
         :op_add_assign => '+=',
         :op_sub_assign => '-=',
@@ -297,7 +333,7 @@ module SLang
         :op_rshift => '>>',
         :op_inverse => '~'
         
-     root :stmts
+     root :decls
   end
   
   def self.parse(str)
@@ -308,6 +344,28 @@ module SLang
   end
   
   require 'pp'
-  parse("1 + 3 * 4/5")
+  parse("a + b")
+  parse("!a")
+  parse("!a + b")
+  parse("a + !b")
+  parse("a++")
+  parse("a + b++")
+  parse("a++ + b")
+  parse("foo")
+  parse("foo a")
+  parse("foo()")
+  parse("foo a, b")
+  parse("foo(a, b) + bar(a, b + c)")
+  parse("a.foo")
+  parse("a.foo.b")
+  parse("(a(1))")
+  parse("a(1)")
+  parse("a(1).foo(2).b(3)")
+  parse("1.times")
+  parse("1.2.to_i")
+  parse("a(1, 2).foo")
+  parse("a 1, 2.foo")
+  parse("if empty? then false end")
+  parse("i = 0; while i < 10 ; i += 1 end")
 end
 

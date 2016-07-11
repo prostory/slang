@@ -112,9 +112,7 @@ module SLang
       end
 
       def visit_string_literal(node)
-        stream << '"'
         stream << node.value.to_s
-        stream << '"'
       end
 
       def visit_array_literal(node)

@@ -31,11 +31,11 @@ module SLang
     rule(:hex)              { str('0x') >> match('[0-9a-fA-F]').repeat(1) }
 
     rule(:int_literal)              do
-      (str('-').maybe >> (bin | oct | dec | hex | str('0'))).as(:integer) >> space?
+      (bin | oct | dec | hex | str('0')).as(:integer) >> space?
     end
 
     rule(:float_literal)            do
-      (str('-').maybe >> digit.repeat(1) >> str('.') >> digit.repeat(1)).as(:float) >> space?
+      (digit.repeat(1) >> str('.') >> digit.repeat(1)).as(:float) >> space?
     end
 
     rule(:bool_literal)             do
@@ -67,7 +67,7 @@ module SLang
     end
 
     def reserved
-      break_keyword.absent? >> case_keyword.absent? >> class_keyword.absent? >> const_keyword.absent? >>
+      begin_keyword.absent? >> break_keyword.absent? >> case_keyword.absent? >> class_keyword.absent? >> const_keyword.absent? >>
         continue_keyword.absent? >> def_keyword.absent? >> do_keyword.absent? >> elif_keyword.absent? >>
         else_keyword.absent? >> end_keyword.absent? >> export_keyword.absent? >> extend_keyword.absent? >>
         for_keyword.absent? >> if_keyword.absent? >> import_keyword.absent?  >> include_keyword.absent? >>
@@ -78,6 +78,16 @@ module SLang
     rule(:ident)                    do
       reserved >>
         (alpha >> (alpha | digit).repeat >> match['?!'].maybe).as(:ident) >> space?
+    end
+
+    rule(:name)                     do
+      reserved >>
+        (alpha >> (alpha | digit).repeat >> match['?!'].maybe).as(:name) >> space?
+    end
+
+    rule(:opt_name)                 do
+      ((reserved >>
+        (alpha >> (alpha | digit).repeat >> match['?!'].maybe)) | operators_name).as(:name) >> space?
     end
 
     rule(:const)                    do
@@ -97,15 +107,15 @@ module SLang
     end
 
     rule(:f_arg)                    do
-      ident.as(:name) >> (spaced(':') >> ident.as(:type)).maybe
+      (name >> (spaced(':') >> ident.as(:type)).maybe).as(:parameter)
     end
 
     rule(:f_args)                   do
-      f_arg >> (blanked(',') >> f_arg).repeat
+      (f_arg >> (blanked(',') >> f_arg).repeat).as(:params)
     end
 
     rule(:bparam)                   do
-      (f_args | (str('(') >> blank? >> f_args.maybe >> blank? >> str(')'))).maybe >> op_rasgn
+      (f_args | (str('(') >> blank? >> f_args.maybe >> blank? >> str(')') >> space?)).maybe >> op_rasgn
     end
 
     rule(:literal)                  do
@@ -119,8 +129,8 @@ module SLang
     end
 
     rule(:primary)                  do
-       literal | do_stmt | if_stmt | unless_stmt | case_stmt | while_stmt | do_while_stmt |
-         lambda_stmt | assign_stmt | const | class_var | instance_var | call_stmt | ident | lparen >> expr >> rparen
+       literal | if_stmt | unless_stmt | case_stmt | while_stmt | until_stmt | do_while_stmt | do_until_stmt | block_stmt |
+         lambda_stmt | assign_stmt | include_stmt | extend_stmt | const | class_var | instance_var | call_stmt | ident | lparen >> expr >> rparen
     end
     
     rule(:prefix_operation)         do
@@ -132,27 +142,38 @@ module SLang
     end
     
     rule(:unary_operation)          do
-      prefix_operation | postfix_operation
+      ((prefix_operation | postfix_operation)).as(:unary_operation)
     end
     
     rule(:binary_operation)         do
-	    (unary_operation | primary).as(:left) >> (op_access | op_rshift_assign | op_lshift_assign | op_add_assign | op_sub_assign | op_mul_assign | op_div_assign |
+	    ((unary_operation | primary).as(:left) >> (op_access | op_rshift_assign | op_lshift_assign | op_add_assign | op_sub_assign | op_mul_assign | op_div_assign |
         op_mod_assign | op_band_assign | op_xor_assign | op_bor_assign | op_and | op_or | op_le | op_ge | op_lt | op_gt | op_eq |
-        op_ne | op_add | op_sub | op_mul | op_div | op_mod | op_band | op_xor | op_bor | op_lshift | op_rshift) >> expr.as(:right)
+        op_ne | op_add | op_sub | op_mul | op_div | op_mod | op_band | op_xor | op_bor | op_lshift | op_rshift) >> expr.as(:right)).as(:binary_operation)
+    end
+
+    rule(:negative_expr)            do
+      (str('-') >> expr).as(:negative_expr)
     end
 
     rule(:expr)                     do
-       binary_operation | unary_operation | primary
+      negative_expr | binary_operation | unary_operation | primary
     end
     
-    rule(:do_stmt)                  do
-      (do_keyword >> stmts.as(:body) >> end_keyword).as(:do_statement)
+    rule(:block_stmt)               do
+      (begin_keyword >> stmts.as(:body) >> end_keyword).as(:block_statement)
+    end
+    
+    rule(:do_stmt)				          do
+	    (do_keyword >> stmts.as(:body) >> end_keyword).as(:do_statement)
+	  end
+	
+    rule(:if_stmt)                  do
+      (if_keyword >> expr.as(:condition) >> (then_keyword | terms) >> stmts.as(:then_body) >> elif_stmt.repeat >>
+          (else_keyword >> stmts.as(:else_body)).maybe >> end_keyword).as(:if_statement)
     end
 
-    rule(:if_stmt)                  do
-      (if_keyword >> expr.as(:condition) >> (then_keyword | terms) >> stmts.as(:then_body) >>
-          (elif_keyword >> expr.as(:condition) >> (then_keyword | terms) >> stmts.as(:elif_body)).repeat >>
-          (else_keyword >> stmts.as(:else_body)).maybe >> end_keyword).as(:if_statement)
+    rule(:elif_stmt)                do
+      (elif_keyword >> expr.as(:condition) >> (then_keyword | terms) >> stmts.as(:body)).as(:elif_statement)
     end
 
     rule(:unless_stmt)              do
@@ -161,17 +182,28 @@ module SLang
     end
 
     rule(:case_stmt)                do
-      (case_keyword >> expr.as(:case) >> blank? >> (of_keyword >> args(expr).as(:match) >> 
-		      (then_keyword | terms) >> stmts.as(:of_body)).repeat(1) >>
+      (case_keyword >> expr >> blank? >> of_stmt.repeat(1) >>
           (else_keyword >> stmts.as(:else_body)).maybe >> end_keyword).as(:case_statement)
+    end
+
+    rule(:of_stmt)                  do
+      of_keyword >> args(expr).as(:match) >> (then_keyword | terms) >> stmts.as(:of_body)
     end
     
     rule(:while_stmt)				        do
-	    ((while_keyword | until_keyword) >> expr.as(:condition) >> (terms | (do_keyword >> blank?)) >> stmts.as(:body) >> end_keyword).as(:while_statement)
+	    (while_keyword >> expr.as(:condition) >> (do_keyword | terms) >> stmts.as(:body) >> end_keyword).as(:while_statement)
+    end
+
+    rule(:until_stmt)				        do
+      (until_keyword >> expr.as(:condition) >> (do_keyword | terms) >> stmts.as(:body) >> end_keyword).as(:until_statement)
     end
     
     rule(:do_while_stmt)			      do
-	    (do_keyword >> blank? >> stmts.as(:body) >> (while_keyword | until_keyword) >> expr.as(:condition) >> end_keyword).as(:do_while_statement)
+	    (do_keyword >> blank? >> stmts.as(:body) >> while_keyword >> expr.as(:condition) >> end_keyword).as(:do_while_statement)
+    end
+
+    rule(:do_until_stmt)			      do
+      (do_keyword >> blank? >> stmts.as(:body) >> until_keyword >> expr.as(:condition) >> end_keyword).as(:do_until_statement)
     end
 
     rule(:lambda_stmt)              do
@@ -183,7 +215,7 @@ module SLang
     end
 
     rule(:call_stmt)                do
-       (ident.as(:name) >> call_args).as(:call_statement)
+       (name >> call_args).as(:call_statement)
     end
 
     rule(:assign_stmt)              do
@@ -191,7 +223,7 @@ module SLang
     end
 
     rule(:return_stmt)              do
-      (return_keyword >> blank? >> args(expr).maybe).as(:return_statement)
+      (return_keyword >> blank? >> args(expr).maybe.as(:args)).as(:return_statement)
     end
 
     rule(:break_stmt)               do
@@ -203,11 +235,11 @@ module SLang
     end
 
     rule(:include_stmt)             do
-      (include_keyword >> ident).as(:include_statement)
+      (include_keyword >> args(const).as(:args)).as(:include_statement)
     end
 
     rule(:extend_stmt)              do
-      (extend_keyword >> ident).as(:include_statement)
+      (extend_keyword >> args(const).as(:args)).as(:extend_statement)
     end
     
     rule(:null_stmt)				        do
@@ -227,13 +259,13 @@ module SLang
     end
 
     rule(:module_decl)              do
-      (export_keyword.maybe >> module_keyword >> const.as(:name) >>
+      (export_keyword.maybe >> module_keyword >> name >>
         blank? >> decls.as(:body) >> end_keyword).as(:module_declaration)
     end
 
     rule(:class_decl)               do
-      (export_keyword.maybe >> class_keyword >> const.as(:name) >>
-        (spaced('<') >> ident.as(:parent)).maybe >> blank? >> decls.as(:body) >> end_keyword).as(:class_declaration)
+      (export_keyword.maybe >> class_keyword >> name >>
+        (spaced('<') >> name.as(:parent)).maybe >> blank? >> decls.as(:body) >> end_keyword).as(:class_declaration)
     end
 
     rule(:import_decl)              do
@@ -241,13 +273,23 @@ module SLang
     end
 
     rule(:def_decl)                 do
-      (export_keyword.maybe >> def_keyword >> ident.as(:name) >>
-        (f_args.as(:args) |(lparen >> f_args.as(:args).maybe >> rparen)).maybe >> 
+      (export_keyword.maybe >> def_keyword >> opt_name >>
+        (f_args |(lparen >> f_args.maybe >> rparen)).maybe >> terms >>
         stmts.as(:body) >> end_keyword).as(:def_declaration)
     end
 
+    rule(:external_decl)            do
+      (external_keyword >> opt_name >>
+        (f_args |(lparen >> f_args.maybe >> rparen)).maybe >> terms).as(:external_declaration)
+    end
+
+    rule(:operator_decl)            do
+      (operator_keyword >> opt_name >>
+        (f_args |(lparen >> f_args.maybe >> rparen)).maybe >> terms).as(:operator_declaration)
+    end
+
     rule(:decl)                     do
-      module_decl | class_decl | import_decl | def_decl | stmts
+      module_decl | class_decl | import_decl | def_decl | external_decl | operator_decl | stmts
     end
 
     rule(:decl_list)                do
@@ -264,8 +306,8 @@ module SLang
       end
     end
 
-    keywords :break, :case, :class, :const, :continue, :def, :do, :elif, :else,
-        :end, :export, :extend, :for, :if, :import, :include, :module, :of,
+    keywords :begin, :break, :case, :class, :const, :continue, :def, :do, :elif, :else,
+        :end, :export, :extend, :external, :for, :if, :import, :include, :module, :of, :operator,
         :return, :then, :until, :unless, :while
 
     def self.operators(operators={})
@@ -295,6 +337,14 @@ module SLang
             (str(symbol) >> match(pattern).absent?).as(:operator) >> space?
           }
         end
+      end
+
+      define_method :operators_name do
+        ops = operators.values
+        ops.delete_if { |op| op == '.' }
+        name = str(ops[0])
+        ops[1..-1].each { |op| name |= str(op) }
+        name
       end
     end
 
@@ -335,37 +385,33 @@ module SLang
         
      root :decls
   end
-  
-  def self.parse(str)
-    parser = Parser.new
-    pp parser.parse(str)
-  rescue Parslet::ParseFailed => failure
-    puts failure.cause.ascii_tree
-  end
-  
-  require 'pp'
-  parse("a + b")
-  parse("!a")
-  parse("!a + b")
-  parse("a + !b")
-  parse("a++")
-  parse("a + b++")
-  parse("a++ + b")
-  parse("foo")
-  parse("foo a")
-  parse("foo()")
-  parse("foo a, b")
-  parse("foo(a, b) + bar(a, b + c)")
-  parse("a.foo")
-  parse("a.foo.b")
-  parse("(a(1))")
-  parse("a(1)")
-  parse("a(1).foo(2).b(3)")
-  parse("1.times")
-  parse("1.2.to_i")
-  parse("a(1, 2).foo")
-  parse("a 1, 2.foo")
-  parse("if empty? then false end")
-  parse("i = 0; while i < 10 ; i += 1 end")
+  #
+  # require 'pp'
+  # parse("a + b")
+  # parse("!a")
+  # parse("!a + b")
+  # parse("a + !b")
+  # parse("a++")
+  # parse("a + b++")
+  # parse("a++ + b")
+  # parse("foo")
+  # parse("foo a")
+  # parse("foo()")
+  # parse("foo a, b")
+  # parse("foo(a, b) + bar(a, b + c)")
+  # parse("a.foo")
+  # parse("a.foo.b")
+  # parse("(a(1))")
+  # parse("a(1)")
+  # parse("a(1).foo(2).b(3)")
+  # parse("1.times")
+  # parse("1.2.to_i")
+  # parse("a(1, 2).foo")
+  # parse("a 1, 2.foo")
+  # parse("if empty? then false end")
+  # parse("begin 1 end")
+  # parse("while empty? do 1 end")
+  # parse("i = 0; while i < 10 ; i += 1 end")
+  # parse("i = 0; while i < 10 do i += 1 end")
 end
 

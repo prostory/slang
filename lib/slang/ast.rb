@@ -40,7 +40,18 @@ module SLang
 	        def end_visit_#{name}(node)
 	        end
 	      )
-		end
+    end
+
+    def to_args(obj)
+      case obj
+      when nil
+        []
+      when Array
+        obj
+      else
+        [obj]
+      end
+    end
 
 		def accept_children(visitor) end
 	end
@@ -58,7 +69,8 @@ module SLang
 				new obj
 			when Expressions, Do
 				new obj.children
-			else new [obj]
+      else
+        new [obj]
 			end
 		end
 
@@ -94,7 +106,11 @@ module SLang
 
 		def ==(other)
 			other.class == self.class && other.children == children
-		end
+    end
+
+    def to_s
+      "(#{children.join ' '})"
+    end
 
 		def clone
 			expresstions = self.class.new children.map(&:clone)
@@ -115,7 +131,11 @@ module SLang
 
 		def ==(other)
 			other.class == self.class && other.value == value
-		end
+    end
+
+    def to_s
+      value.to_s
+    end
 
 		def clone
 			self.class.new value
@@ -132,6 +152,9 @@ module SLang
 	end
 
 	class StringLiteral < Literal
+    def to_s
+      '"' + value + '"'
+    end
 	end
 
 	class ArrayLiteral < ASTNode
@@ -162,7 +185,7 @@ module SLang
 		attr_accessor :body
 
 		def initialize(name, body = nil)
-			@name = name
+			@name = name.to_sym
 			@body = Expressions.from body
 			@body.parent = self
 		end
@@ -177,7 +200,11 @@ module SLang
 
 		def ==(other)
 			other.class == self.class && other.name == name && other.body == body
-		end
+    end
+
+    def to_s
+      "(module #{name} #{body})"
+    end
 
 		def clone
 			self.class.new name, body.clone
@@ -188,7 +215,7 @@ module SLang
 		attr_accessor :modules
 
 		def initialize(modules = [])
-			@modules = modules
+			@modules = modules.map(&:to_sym)
 		end
 
 		def ==(other)
@@ -205,7 +232,7 @@ module SLang
 
 		def initialize(name, body = nil, superclass = nil)
 			super name, body
-			@superclass = superclass
+			@superclass = superclass.to_sym if superclass
 		end
 
 		def ==(other)
@@ -222,13 +249,17 @@ module SLang
 		attr_accessor :type
 
 		def initialize(name, type = :Any)
-			@name = name
+			@name = name.to_sym if name
 			@type = type || :Any
 		end
 
 		def ==(other)
 			other.class == self.class && other.name == name && other.type == type
-		end
+    end
+
+    def to_s
+      name.to_s
+    end
 
 		def clone
 			self.class.new name, type
@@ -266,8 +297,8 @@ module SLang
 		attr_accessor :args
 
 		def initialize(name, args = [], obj = nil)
-			@name = name
-			@args = args
+			@name = name.to_sym
+			@args = to_args(args)
 			@args.each {|arg| arg.parent = self}
 			@obj = obj
 		end
@@ -278,7 +309,11 @@ module SLang
 
 		def ==(other)
 			other.class == self.class && other.name == name && other.args == args && other.obj == obj
-		end
+    end
+
+    def to_s
+      "(#{name} #{obj} #{args.join ' '})"
+    end
 
 		def clone
 			call = self.class.new name, args.map(&:clone), obj
@@ -296,8 +331,8 @@ module SLang
 		attr_accessor :sequence
 
 		def initialize(name, params = [], body = [], return_type = :Any, receiver = nil)
-			@name = name
-			@params = params
+			@name = name.to_sym
+			@params = to_args(params)
 			@params.each {|param| param.parent = self}
 			@body = Expressions.from body
 			@body.parent = self
@@ -305,7 +340,12 @@ module SLang
 			@receiver = receiver
 			@receiver.parent = self if receiver
 			@sequence = 0
-		end
+    end
+
+    def receiver=(receiver)
+      @receiver = receiver
+      @receiver.parent = self if receiver
+    end
 
 		def accept_children(visitor)
 			params.map { |param| param.accept visitor }
@@ -315,7 +355,11 @@ module SLang
 		def ==(other)
 			other.class == self.class && other.name == name && other.params == params &&
 				other.body == body && other.return_type == return_type && other.receiver == receiver
-		end
+    end
+
+    def to_s
+      "(def #{name} (#{params.join ' '}) #{body})"
+    end
 
 		def clone
 			function = self.class.new name, params.map(&:clone), body.clone, return_type, receiver
@@ -328,7 +372,11 @@ module SLang
 	class Lambda < Function
 		def initialize(params = [], body = [], return_type = :Any, receiver = nil)
 			super :lambda, params, body, return_type, receiver
-		end
+    end
+
+    def to_s
+      "(def (#{params.join ' '}) #{body})"
+    end
 
 		def clone
 			lambda = self.class.new params, body, return_type, receiver
@@ -375,7 +423,17 @@ module SLang
 			@then.parent = self
 			@else = Expressions.from a_else
 			@else.parent = self
-		end
+    end
+
+    def then=(a_then)
+      @then = Expressions.from a_then
+      @then.parent = self
+    end
+
+    def else=(a_else)
+      @else = Expressions.from a_else
+      @else.parent = self
+    end
 
 		def accept_children(visitor)
 			@cond.accept visitor
@@ -386,7 +444,11 @@ module SLang
 		def ==(other)
 			other.class == self.class && other.cond == cond && other.then == self.then &&
 				other.else == self.else
-		end
+    end
+
+    def to_s
+      "(#{cond} #{@then} #{@else})"
+    end
 
 		def clone
 			self.class.new cond.clone, @then.clone, @else.clone
@@ -422,7 +484,7 @@ module SLang
 		attr_accessor :values
 
 		def initialize(values)
-			@values = values
+			@values = to_args(values)
 			@values.each {|value| value.parent = self}
 		end
 

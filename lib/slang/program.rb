@@ -1,13 +1,16 @@
 require_relative '../tcc/tcc'
 
+require_relative 'parser'
+require_relative 'transform'
+
 module SLang
   class Program
     def initialize
       parse_opt
     end
 
-    def to_clang(prog = [])
-      core_lib = [:do,
+    def core_lib
+      stdlib = [:do,
               [:external, :calloc, [:Integer, :Integer], :Pointer],
               [:class, :Object, nil,
                [:static, :__alloc__, [], [:calloc, nil, [[:sizeof, :self], 1]]],
@@ -85,8 +88,8 @@ module SLang
                [:external, :len, :strlen, [], :Integer],
                [:external, :dup, :strdup, [], :String],
                [:external, :cat, :strcat, [:String], :String],
-               [:external, :printf, [:VarList], :Integer],
               ],
+                [:external, :printf, [:String, :VarList], :Integer],
               [:class, :String, nil,
                [:include, :StringHelper],
                [:static, :new, [:const_str], [:dup, :const_str]],
@@ -100,16 +103,29 @@ module SLang
                [:fun, :[]=, [:index, :value], [:ary_set, :self, :index, :value]]
               ]
       ]
-      main_prog = [:fun, :main, [], core_lib << prog, :Integer]
-      CLang::Context.new.gen_code(BaseParser.parse(main_prog))
+      BaseParser.parse(stdlib)
+    end
+
+    def parse(code)
+      parser = Parser.new
+      Transform.new.apply parser.parse(code)
+    rescue Parslet::ParseFailed => failure
+      puts failure.cause.ascii_tree
+    end
+
+    def compile(source)
+      context = CLang::Context.new
+      code = parse(source)
+      main_prog = Function.new(:main, [], [core_lib].push(*code), :Integer)
+      context.gen_code(main_prog)
     end
 
     def error_func(opaque, msg)
       raise msg
     end
 
-    def run(prog = nil)
-      code = to_clang(prog)
+    def run(source = 'return 0')
+      code = compile(source)
       output code
       if run?
         state = TCC::State.new

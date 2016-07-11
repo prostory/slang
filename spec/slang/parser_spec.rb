@@ -94,7 +94,7 @@ describe SLang::Parser do
     end
 
     it_parse '1234', :integer
-    it_parse '-0.123', :float
+    it_parse '0.123', :float
     it_parse 'true', :bool
     it_parse '"Hello world"', :string
     it_parse '[1, 2, 3]', :array, [{:integer=>"1"}, {:integer=>"2"}, {:integer=>"3"}]
@@ -105,11 +105,11 @@ describe SLang::Parser do
   context "statement parsing" do
     let(:stmt_parser) { parser.stmt }
 
-    it "parses do statements" do
-      expect(stmt_parser).to     parse('do end')
-      expect(stmt_parser).to     parse('do 1 end')
-      expect(stmt_parser).to     parse('do 1;2 end')
-      expect(stmt_parser).to_not parse('do 1')
+    it "parses block statements" do
+      expect(stmt_parser).to     parse('begin end')
+      expect(stmt_parser).to     parse('begin 1 end')
+      expect(stmt_parser).to     parse('begin 1;2 end')
+      expect(stmt_parser).to_not parse('begin 1')
     end
 
     it "parses if statements" do
@@ -215,11 +215,11 @@ describe SLang::Parser do
     end
     
     it "parses def declaration" do
-      expect(decl_parser).to     parse('def foo end')
-      expect(decl_parser).to     parse('def foo 1 end')
-      expect(decl_parser).to     parse("def foo() 1 end")
-      expect(decl_parser).to     parse("def foo(a, b) a; b end")
-      expect(decl_parser).to     parse("export def foo(a: Integer, b: Float) 1 end")
+      expect(decl_parser).to     parse('def foo; end')
+      expect(decl_parser).to     parse('def foo; 1 end')
+      expect(decl_parser).to     parse("def foo(); 1 end")
+      expect(decl_parser).to     parse("def foo(a, b); a; b end")
+      expect(decl_parser).to     parse("export def foo(a: Integer, b: Float); 1 end")
       expect(decl_parser).to_not parse('def a 1')
     end
   end

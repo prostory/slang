@@ -84,7 +84,7 @@ module SLang
                [:fun, :not, [:n], [:!, :self, [:n]]],
               ],
               [:module, :StringHelper,
-               [:external, :echo, :puts, [], :Integer],
+               [:external, :display, :puts, [], :Integer],
                [:external, :len, :strlen, [], :Integer],
                [:external, :dup, :strdup, [], :String],
                [:external, :cat, :strcat, [:String], :String],
@@ -116,7 +116,7 @@ module SLang
     def compile(source)
       context = CLang::Context.new
       code = parse(source)
-      main_prog = Function.new(:main, [], [core_lib].push(*code), :Integer)
+      main_prog = Function.new(:main, [], code.unshift(core_lib), :Integer)
       context.gen_code(main_prog)
     end
 

@@ -114,5 +114,6 @@ module SLang
     rule(:def_declaration       => subtree(:t)) { Function.new(t[:name], t[:params], t[:body]) }
     rule(:external_declaration  => subtree(:t)) { External.new(t[:name], nil, t[:params]) }
     rule(:operator_declaration  => subtree(:t)) { Operator.new(t[:name], nil, t[:params]) }
+    rule(:declarations          => subtree(:t)) { Expressions.from(t[:body])}
   end
 end

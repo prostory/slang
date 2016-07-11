@@ -81,7 +81,12 @@ module SLang
 
 		def each(&block)
 			children.each(&block)
-		end
+    end
+
+    def unshift(child)
+      child.parent = self
+      children.unshift child
+    end
 
 		def [](i)
 			children[i]

@@ -297,7 +297,7 @@ module SLang
     end
 
     rule(:decls)                    do
-      decl_list.maybe >> terms.maybe
+      (decl_list.as(:body).maybe >> terms.maybe).as(:declarations)
     end
 
     def self.keywords(*names)

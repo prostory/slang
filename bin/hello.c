@@ -32,7 +32,6 @@ extern Integer puts(String);
 extern Integer printf(String, ...);
 Integer main(Void)
 {
-    ;
     Integer a;
     a = 2;
     Integer b;

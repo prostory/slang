@@ -116,7 +116,7 @@ module SLang
     def compile(source)
       context = CLang::Context.new
       code = parse(source)
-      main_prog = Function.new(:main, [], code.unshift(core_lib), :Integer)
+      main_prog = Function.new(:main, [], core_lib.children.push(*code), :Integer)
       context.gen_code(main_prog)
     end
 

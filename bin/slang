@@ -4,4 +4,4 @@ require_relative '../lib/slang'
 
 include SLang
 
-puts Program.new.run 'a = 2; b = 3; "hello".display; printf("2 + 3.5 = %f\n", 2 + 3.5);return a << b'
+Program.new.run

@@ -125,6 +125,7 @@ module SLang
 
       def visit_expressions(node)
         node.children.each do |exp|
+          next if exp.type.is_a? LambdaType
           indent if exp.has_code?
           exp.accept self
           if exp.has_code?

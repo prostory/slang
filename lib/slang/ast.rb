@@ -157,9 +157,6 @@ module SLang
 	end
 
 	class StringLiteral < Literal
-    def to_s
-      '"' + value + '"'
-    end
 	end
 
 	class ArrayLiteral < ASTNode
@@ -244,6 +241,10 @@ module SLang
 			super && other.superclass == superclass
 		end
 
+		def to_s
+			"(class #{name} #{superclass} #{body})"
+		end
+
 		def clone
 			self.class.new name, body.clone, superclass
 		end
@@ -284,12 +285,16 @@ module SLang
 		attr_accessor :name
 
 		def initialize(name)
-			@name = name
+			@name = name.to_sym
 		end
 
 		def ==(other)
 			other.class == self.class && other.name == name
-		end
+    end
+
+    def to_s
+      name.to_s
+    end
 
 		def clone
 			self.class.new name

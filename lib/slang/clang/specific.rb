@@ -23,6 +23,8 @@ module SLang
       symbols[:&] = '__band__'
       symbols[:|] = '__bor__'
       symbols[:^] = '__xor__'
+      symbols['+='.to_sym] = '__add_asgn__'
+      symbols['-='.to_sym] = '__sub_asgn__'
       symbols[:[]=] = '__set__'
       symbols[:[]] = '__get__'
 

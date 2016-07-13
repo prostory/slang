@@ -3,6 +3,8 @@ require_relative '../tcc/tcc'
 require_relative 'parser'
 require_relative 'transform'
 
+require 'pp'
+
 module SLang
   class Program
     def initialize
@@ -12,6 +14,8 @@ module SLang
     def core_lib
       stdlib = [:do,
               [:external, :calloc, [:Integer, :Integer], :Pointer],
+              [:external, :puts, [:String], :Integer],
+              [:external, :printf, [:String, :VarList], :Integer],
               [:class, :Object, nil,
                [:static, :__alloc__, [], [:calloc, nil, [[:sizeof, :self], 1]]],
                [:static, :new, [[:args, :VarList]], [[:set, :obj, [:__alloc__, :self, []]], [:__init__, :obj, [:args]], [:ret, :obj]]],
@@ -84,12 +88,10 @@ module SLang
                [:fun, :not, [:n], [:!, :self, [:n]]],
               ],
               [:module, :StringHelper,
-               [:external, :display, :puts, [], :Integer],
                [:external, :len, :strlen, [], :Integer],
                [:external, :dup, :strdup, [], :String],
                [:external, :cat, :strcat, [:String], :String],
               ],
-                [:external, :printf, [:String, :VarList], :Integer],
               [:class, :String, nil,
                [:include, :StringHelper],
                [:static, :new, [:const_str], [:dup, :const_str]],
@@ -106,9 +108,11 @@ module SLang
       BaseParser.parse(stdlib)
     end
 
-    def parse(code)
+    def parse(source)
       parser = Parser.new
-      Transform.new.apply parser.parse(code)
+      input = parser.parse(source)
+      pp input
+      Transform.new.apply input
     rescue Parslet::ParseFailed => failure
       puts failure.cause.ascii_tree
     end
@@ -124,7 +128,8 @@ module SLang
       raise msg
     end
 
-    def run(source = 'return 0')
+    def run
+      source = ARGF.read || 'return 0'
       code = compile(source)
       output code
       if run?
@@ -140,16 +145,31 @@ module SLang
       require 'optparse'
 
       @options = {}
-      @run = true
+      @run = false
       OptionParser.new do |opts|
-        opts.on('-o ', 'Output filename') do |output|
+        opts.banner = "Usage: slang [options] file1[, file2...]"
+        opts.separator ""
+        opts.separator "Specific options:"
+        
+        opts.on('-o file', '--output', 'Output filename') do |output|
           @options[:output_filename] = output
         end
-        opts.on('-e ', 'Execute Code') do |code|
+        opts.on('-e code', '--execute', 'Execute Code') do |code|
           @options[:code] = code
         end
-        opts.on('-r', 'Run program') do
+        opts.on('-r', '--run', 'Run program') do
           @run = true
+        end
+        
+        opts.separator ""
+        opts.separator "Common options:"
+        opts.on_tail('-h', '--help', 'Show this message') do
+          puts opts
+          exit
+        end
+        opts.on_tail('-v', '--version', 'Show version') do
+          puts SLang::VERSION
+          exit
         end
       end.parse!
 

@@ -155,10 +155,10 @@ module SLang
     end
 
     def visit_call(node)
-      node.obj ||= Variable.new(:self, context.scope.type) if context.scope.type
-
-      unless node.obj.type == Type.kernel
+      if node.obj
         node.obj.accept self
+      else
+        node.obj = Variable.new(:self, context.scope.type) if context.scope.type
       end
 
       types = node.args.each {|arg| arg.accept self}.map(&:type)
@@ -222,7 +222,9 @@ module SLang
       instance.owner = call.obj.type if call.obj
       instance.body.type = Type.void
 
-      context.new_scope(function, call.obj && call.obj.type) do
+      scope_type = call.obj ? call.obj.type : Type.kernel
+
+      context.new_scope(function, scope_type) do
         if call.obj
           self_var = Parameter.new(:self, call.obj.type)
           context.define_variable self_var

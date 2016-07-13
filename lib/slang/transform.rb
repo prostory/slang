@@ -11,22 +11,25 @@ module SLang
     end
     rule(:array             => subtree(:t)) { ArrayLiteral.new t }
     rule(:const             => simple(:t))  { Const.new(t) }
-    rule(:class_var         => simple(:t))  { ClassVar.new(t.gsub(/^@@/, '')) }
-    rule(:instance_var      => simple(:t))  { Member.new(t.gsub(/^@/, '')) }
+    rule(:class_var         => simple(:t))  { ClassVar.new(t.to_s.gsub(/^@@/, '')) }
+    rule(:instance_var      => simple(:t))  { Member.new(t.to_s.gsub(/^@/, '')) }
     rule(:ident             => simple(:t))  { Variable.new(t) }
     rule(:unary_operation   => subtree(:t)) { Call.new(t[:operator], [], t[:operand]) }
+    rule(:array_set_expr    => subtree(:t)) { ArraySet.new(t[:target], t[:index], t[:value]) }
+    rule(:array_get_expr    => subtree(:t)) { ArrayGet.new(t[:target], t[:index]) }
     rule(:binary_operation  => subtree(:t))       do
-      if t[:operator] == '.'
-        if t[:right].is_a?(Variable)
-          t[:right] = Call.new(t[:right].name)
-        end
-        t[:right].obj = t[:left]
-        t[:right]
-      else
-        Call.new(t[:operator], [t[:right]], t[:left])
-      end
+      #puts t
+      Call.new(t[:operator], [t[:right]], t[:left])
     end
     rule(:negative_expr     => subtree(:t)) { Call.new('-',[t], NumberLiteral.new(0)) }
+    rule(:access_expr       => subtree(:t))       do
+      if t[:name].is_a? Call
+        t[:name].obj = t[:obj]
+      else
+        t[:name] = Call.new(t[:name], [], t[:obj])
+      end
+      t[:name]
+    end
     rule(:if_statement      => subtree(:t))       do
       if t.is_a?(Array)
         if t.length > 1
@@ -76,7 +79,10 @@ module SLang
     rule(:until_statement   => subtree(:t)) { While.new('!'.call([], t[:condition]), t[:body]) }
     #rule(:do_while_statement)
     #rule(:do_until_statement)
-    rule(:parameter         => subtree(:t)) { Parameter.new(t[:name], t[:type]) }
+    rule(:parameter         => subtree(:t))     do
+      type = t[:type].to_sym if t[:type]
+      Parameter.new(t[:name], type)
+    end
     rule(:lambda_statement  => subtree(:t)) { Lambda.new(t[:params], t[:body]) }
     rule(:call_statement    => subtree(:t)) { Call.new(t[:name], t[:args]) }
     rule(:assign_statement  => subtree(:t)) { Assign.new(t[:target], t[:value]) }
@@ -99,8 +105,8 @@ module SLang
     end
     rule(:class_declaration => subtree(:t))     do
       body = t[:body]
-      parent = t[:parent]
-      clazz = ClassDef.new(t[:name], t[:body], parent && parent[:name])
+      parent = t[:parent] ? t[:parent][:name] : :Object
+      clazz = ClassDef.new(t[:name], t[:body], parent)
       if body.kind_of? Array
         body.each do |child|
           child.receiver = clazz if child.is_a? Function
@@ -111,8 +117,11 @@ module SLang
       clazz
     end
     # rule(:import_declaration)
-    rule(:def_declaration       => subtree(:t)) { Function.new(t[:name], t[:params], t[:body]) }
-    rule(:external_declaration  => subtree(:t)) { External.new(t[:name], nil, t[:params]) }
-    rule(:operator_declaration  => subtree(:t)) { Operator.new(t[:name], nil, t[:params]) }
+    rule(:def_declaration       => subtree(:t)) do
+      return_type = t[:return_type].to_sym if t[:return_type]
+      Function.new(t[:name], t[:params], t[:body], return_type)
+    end
+    rule(:external_declaration  => subtree(:t)) { External.new(t[:name], nil, t[:params], t[:return_type].to_sym) }
+    rule(:operator_declaration  => subtree(:t)) { Operator.new(t[:name], nil, t[:params], t[:return_type].to_sym) }
   end
 end

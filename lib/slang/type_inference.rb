@@ -316,7 +316,7 @@ module SLang
 
     def end_visit_if(node)
       if node.else.any?
-        node.type = Type.union([node.then.type, node.else.type])
+        node.type = Type.merge(node.then.type, node.else.type)
       else
         node.type = node.then.type
       end

@@ -17,8 +17,6 @@ module SLang
   end
 
   class Transform < Parslet::Transform
-
-
     rule(:integer           => simple(:t))  { NumberLiteral.new(t.to_i) }
     rule(:float             => simple(:t))  { NumberLiteral.new(t.to_f) }
     rule(:bool              => simple(:t))  { BoolLiteral.new(t == 'true') }

@@ -65,7 +65,7 @@ describe SLang::Parser do
     it "parses hashs" do
       expect(expr_parser).to     parse('{}')
       expect(expr_parser).to     parse('{a: 1, b: 2}')
-      expect(expr_parser).to     parse('{[1] = "hello", ["hello"] = 2 }')
+      expect(expr_parser).to     parse('{1 => "hello", "hello" => 2 }')
       expect(expr_parser).to     parse("{a: 1, b: false, c: d, }")
       expect(expr_parser).to_not parse('{1}')
       expect(expr_parser).to_not parse("{1:2 }")
@@ -99,7 +99,7 @@ describe SLang::Parser do
     it_parse '"Hello world"', :string
     it_parse '[1, 2, 3]', :array, [{:integer=>"1"}, {:integer=>"2"}, {:integer=>"3"}]
     it_parse '{a: 1, b: 2}', :hash, [{:key=>{:ident=>"a"}, :value=>{:integer=>"1"}}, {:key=>{:ident=>"b"}, :value=>{:integer=>"2"}}]
-    it_parse 'if empty? then false end', :if_statement, {:condition=>{:ident=>"empty?"}, :then_body=>{:bool=>"false"}}
+    it_parse 'if empty? then false end', :if_stmt, {:condition=>{:call_stmt=>"empty?"}, :then_body=>{:stmts=>{:bool=>"false"}}}
   end
 
   context "statement parsing" do
@@ -160,7 +160,7 @@ describe SLang::Parser do
       expect(stmt_parser).to     parse('(a)-> 3 end')
       expect(stmt_parser).to     parse('(a, b, c)-> a; b; c end')
       expect(stmt_parser).to     parse('a, b, c-> a; b; c end')
-      expect(stmt_parser).to     parse("a\n, \nb, \nc-> a; b; c end")
+      expect(stmt_parser).to     parse("a,\nb,\nc-> a; b; c end")
       expect(stmt_parser).to_not parse("-> do_something")
     end
 
@@ -179,14 +179,10 @@ describe SLang::Parser do
 
     it "parses break statements" do
       expect(stmt_parser).to     parse('break')
-      expect(stmt_parser).to     parse('break')
-      expect(stmt_parser).to_not parse('break a')
     end
 
     it "parses continue statements" do
       expect(stmt_parser).to     parse('continue')
-      expect(stmt_parser).to     parse('continue')
-      expect(stmt_parser).to_not parse('continue a')
     end
   end
   

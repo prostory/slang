@@ -1,20 +1,23 @@
-require 'parslet'
+require_relative 'parslet_helper'
+require 'pp'
 
 module SLang
   class Parser < Parslet::Parser
-    rule(:space)            { match('[ \t]').repeat(1) }
-    rule(:space?)           { space.maybe  }
-    rule(:blank)            { match('[ \t\n]').repeat(1) }
+    rule(:newline)          { str("\n") }
+    rule(:comment)          { str('#') >> (newline.absent? >> any).repeat }
+    rule(:blank)            { (match('[ \t\n]')| (comment >> newline)).repeat(1) }
     rule(:blank?)           { blank.maybe }
-    rule(:terms)            { (match('[;\n]') >> space?).repeat(1) }
+    rule(:eol)              { (match('[;\n]') >> space?).repeat(1) }
+    rule(:terms)            { ((match('[;\n]') | (comment >> newline)) >> space?).repeat(1) }
 
     rule(:lparen)           { str('(') >> space? }
     rule(:rparen)           { str(')') >> space? }
+    rule(:lbrack)           { str('[') >> space? }
+    rule(:rbrack)           { str(']') >> space? }
+    rule(:lbrace)           { str('{') >> space? }
+    rule(:rbrace)           { str('}') >> space? }
     rule(:comma)            { str(',') >> space? }
-
-    def spaced(s)
-      space? >> str(s) >> space?
-    end
+    rule(:colon)            { str(':') >> space? }
 
     def blanked(s)
       blank? >> str(s) >> blank?
@@ -30,362 +33,283 @@ module SLang
     rule(:dec)              { match('[1-9]') >> digit.repeat }
     rule(:hex)              { str('0x') >> match('[0-9a-fA-F]').repeat(1) }
 
-    rule(:int_literal)              do
-      (bin | oct | dec | hex | str('0')).as(:integer) >> space?
+    rule(:integer)          { (bin | oct | dec | hex | str('0')).as(:integer) >> space? }
+    rule(:float)                do
+      (digit.repeat(1) >> str('.') >> digit.repeat(1) >>
+        (match('[Ee]') >> match['+-'].maybe >> digit.repeat(1)).maybe).as(:float) >> space?
     end
-
-    rule(:float_literal)            do
-      (digit.repeat(1) >> str('.') >> digit.repeat(1)).as(:float) >> space?
-    end
-
-    rule(:bool_literal)             do
-      (str('true') | str('false')).as(:bool) >> space?
-    end
-
-    rule(:nil_literal)              do
-      str('nil').as(:nil) >> space?
-    end
-
+    rule(:bool)             { (str('true') | str('false')).as(:bool) >> space? }
+    rule(:null)             { str('nil').as(:nil) >> space? }
     rule(:string_special)   { match['\0\t\n\r"\\\\'] }
     rule(:escaped_special)  { str("\\") >> match['0tnr"\\\\'] }
-    rule(:string_literal)           do
+    rule(:string)               do
       (str('"') >>
-          (escaped_special | string_special.absent? >> any).repeat >>
-          str('"')).as(:string) >> space?
+        (escaped_special | string_special.absent? >> any).repeat >>
+        str('"')).as(:string) >> space?
     end
 
     def args(arg)
-      (arg) >> (blanked(',') >> (arg)).repeat >> str(',').maybe
+      (arg) >> (blanked(',') >> (arg)).repeat >> blanked(',').maybe
     end
 
-    rule(:array_literal)            do
-      (str('[') >> blank? >> args(expr).maybe >> blank? >> str(']')).as(:array) >> space?
+    rule(:array)                do
+      (blanked('[') >> args(expr).maybe >> blank? >> str(']')).as(:array) >> space?
     end
 
-    rule(:hash_literal)             do
-      (str('{') >> blank? >> args(entry).maybe >> blank? >> str('}')).as(:hash) >> space?
+    rule(:hash)                 do
+      (blanked('{') >> args(entry).maybe >> blank? >> str('}')).as(:hash) >> space?
     end
 
-    def reserved
-      begin_keyword.absent? >> break_keyword.absent? >> case_keyword.absent? >> class_keyword.absent? >> const_keyword.absent? >>
-        continue_keyword.absent? >> def_keyword.absent? >> do_keyword.absent? >> elif_keyword.absent? >>
-        else_keyword.absent? >> end_keyword.absent? >> export_keyword.absent? >> extend_keyword.absent? >>
-        for_keyword.absent? >> if_keyword.absent? >> import_keyword.absent?  >> include_keyword.absent? >>
-        module_keyword.absent? >> of_keyword.absent? >> return_keyword.absent? >> then_keyword.absent? >>
-        until_keyword.absent? >> unless_keyword.absent?  >> while_keyword.absent?
+    rule(:entry)                do
+      ((ident.as(:key) >> colon) | (expr.as(:key) >> spaced('=>'))) >> expr.as(:value)
     end
-
-    rule(:ident)                    do
-      reserved >>
-        (alpha >> (alpha | digit).repeat >> match['?!'].maybe).as(:ident) >> space?
-    end
-
-    rule(:name)                     do
-      reserved >>
-        (alpha >> (alpha | digit).repeat >> match['?!'].maybe).as(:name) >> space?
-    end
-
-    rule(:target)                   do
-
-    end
-
-    rule(:opt_name)                 do
-      ((reserved >>
-        (alpha >> (alpha | digit).repeat >> match['?!'].maybe)) | operators_name).as(:name) >> space?
-    end
-
+    
     def type(name = nil)
       name ||= :type
       (upper >> (alpha | digit).repeat).as(name) >> space?
     end
+    
+    rule(:param)                do
+      (name >> (spaced(':') >> type).maybe).as(:param)
+    end
 
-    rule(:const)                    do
+    rule(:params)               do
+      (param >> (blanked(',') >> param).repeat).as(:params)
+    end
+    
+    def return_type
+      spaced(':') >> type(:return_type)
+    end
+
+    rule(:bparam)               do
+      (params | (lparen >> params.maybe >> rparen)).maybe >> return_type.maybe >> op_rasgn
+    end
+
+    rule(:lambda)               do
+      ((bparam | op_rasgn) >> blank? >> stmts.as(:body) >> end_keyword).as(:lambda)
+    end
+
+    rule(:literal)          { float | integer | bool | null | string | array | hash | lambda }
+
+    rule(:ident)                do
+      reserved >>
+        (alpha >> (alpha | digit).repeat >> match['?!'].maybe).as(:ident) >> space?
+    end
+
+    rule(:name)                 do
+      reserved >>
+        (alpha >> (alpha | digit).repeat >> (match['?!'] | (space?.ignore >> str('=')).maybe)).as(:name)
+    end
+
+    rule(:opt_name)			        do
+      name | operators_name.as(:name)
+    end
+
+    rule(:const)                do
       (upper >> (alpha | digit).repeat).as(:const) >> space?
     end
 
-    rule(:class_var)                do
-      (str('@@') >> alpha >> (alpha | digit).repeat >> match['?!'].maybe).as(:class_var) >> space?
+    rule(:special_call)         do
+      (alpha >> (alpha | digit).repeat >> match['?!']).as(:call_stmt) >> space?
     end
 
-    rule(:instance_var)             do
-      (str('@') >> alpha >> (alpha | digit).repeat >> match['?!'].maybe).as(:instance_var) >> space?
+    rule(:variable)             do
+      reserved >> (alpha >> (alpha | digit).repeat).as(:variable) >> space?
     end
 
-    rule(:entry)                    do
-      ((ident.as(:key) >> spaced(':')) | (str('[') >> space? >> expr.as(:key) >> space? >> str(']') >> spaced('='))) >> expr.as(:value)
+    rule(:instance_var)         do
+      (str('@') >> alpha >> (alpha | digit).repeat).as(:instance_var) >> space?
     end
 
-    rule(:f_arg)                    do
-      (name >> (spaced(':') >> type).maybe).as(:parameter)
+    rule(:class_var)            do
+      (str('@@') >> alpha >> (alpha | digit).repeat).as(:class_var) >> space?
     end
 
-    rule(:f_args)                   do
-      (f_arg >> (blanked(',') >> f_arg).repeat).as(:params)
+    rule(:var)              { const | variable | instance_var | class_var }
+
+    rule(:primary)          { literal | if_stmt | unless_stmt | case_stmt | while_stmt | until_stmt | do_while_stmt | do_until_stmt | block_stmt |
+      assign_stmt | include_stmt | extend_stmt | call_stmt | negative_expr | special_call | var | lparen >> expr >> rparen }
+
+    rule(:factor)           { array_set_expr | array_get_expr | access_expr | unary_operation | primary }
+
+    rule(:expr)             { binary_operation | factor }
+
+    rule(:prefix_operation)     do
+      (op_not | op_inverse) >> factor.as(:operand)
     end
 
-    rule(:bparam)                   do
-      (f_args | (str('(') >> blank? >> f_args.maybe >> blank? >> str(')') >> space?)).maybe >> op_rasgn
-    end
-
-    rule(:literal)                  do
-      float_literal |
-          int_literal |
-          bool_literal |
-          nil_literal |
-          string_literal |
-          array_literal |
-          hash_literal
-    end
-
-    rule(:primary)                  do
-       literal | if_stmt | unless_stmt | case_stmt | while_stmt | until_stmt | do_while_stmt | do_until_stmt | block_stmt |
-         lambda_stmt | assign_stmt | include_stmt | extend_stmt | const | class_var | instance_var | call_stmt | ident | lparen >> expr >> rparen
-    end
-    
-    rule(:prefix_operation)         do
-		  (op_not | op_inverse) >> (unary_operation | primary).as(:operand)
-    end
-    
-    rule(:postfix_operation)        do
+    rule(:postfix_operation)    do
       (prefix_operation | primary).as(:operand) >> (op_inc | op_dec)
     end
-    
-    rule(:unary_operation)          do
+
+    rule(:unary_operation)      do
       ((prefix_operation | postfix_operation)).as(:unary_operation)
     end
-    
-    rule(:binary_operation)         do
-	    (factor.as(:left) >> (op_rshift_assign | op_lshift_assign | op_add_assign | op_sub_assign | op_mul_assign | op_div_assign |
+
+    rule(:binary_operation)     do
+      (factor.as(:left) >> (op_rshift_assign | op_lshift_assign | op_add_assign | op_sub_assign | op_mul_assign | op_div_assign |
         op_mod_assign | op_band_assign | op_xor_assign | op_bor_assign | op_and | op_or | op_le | op_ge | op_lt | op_gt | op_eq |
         op_ne | op_add | op_sub | op_mul | op_div | op_mod | op_band | op_xor | op_bor | op_lshift | op_rshift) >> expr.as(:right)).as(:binary_operation)
     end
+    rule(:negative_expr)    { (str('-') >> factor).as(:negative_expr) }
 
-    rule(:access_expr0)             do
-      (primary.as(:obj) >> str('.') >> (call_stmt.as(:name) | opt_name)).as(:access_expr)
+    rule(:access_expr)          do
+      (primary.as(:obj) >> access_expr0).as(:access_expr)
     end
 
-    rule(:access_expr)              do
-      (access_expr0.as(:obj) >> str('.') >> (call_stmt.as(:name) | opt_name)).as(:access_expr) | access_expr0
+    rule(:access_expr0)         do
+      (str('.') >> (call_stmt.as(:name) | opt_name) >> access_expr0.maybe).as(:call)
     end
 
-    rule(:negative_expr)            do
-      (str('-') >> expr).as(:negative_expr)
+    rule(:pick_expr)            do
+      (access_expr | primary).as(:target) >> pick_expr0
     end
 
-    rule(:array_set_expr)           do
-      ((ident | instance_var | class_var).as(:target) >> str('[') >> space? >> expr.as(:index) >> spaced(']') >> spaced('=') >> expr.as(:value)).as(:array_set_expr)
+    rule(:pick_expr0)           do
+      (lbrack >> expr.as(:index) >> rbrack >> pick_expr0.maybe).as(:pick)
     end
 
-    rule(:array_get_expr)           do
-      ((ident | instance_var | class_var).as(:target) >> str('[') >> space? >> expr.as(:index) >> spaced(']')).as(:array_get_expr)
+    rule(:array_set_expr)       do
+      (pick_expr >> spaced('=') >> expr.as(:value)).as(:array_set_expr)
     end
 
-    rule(:factor)                   do
-      array_get_expr | access_expr | negative_expr | unary_operation | primary
-    end
-
-    rule(:expr)                     do
-      array_set_expr | binary_operation | factor
+    rule(:array_get_expr)       do
+      pick_expr.as(:array_get_expr)
     end
     
-    rule(:block_stmt)               do
-      (begin_keyword >> stmts.as(:body) >> end_keyword).as(:block_statement)
+    rule(:block_stmt)           do
+      (begin_keyword >> stmts.as(:body) >> end_keyword).as(:block_stmt)
     end
-    
-    rule(:do_stmt)				          do
-	    (do_keyword >> stmts.as(:body) >> end_keyword).as(:do_statement)
-	  end
-	
-    rule(:if_stmt)                  do
+
+    rule(:if_stmt)              do
       (if_keyword >> expr.as(:condition) >> (then_keyword | terms) >> stmts.as(:then_body) >> elif_stmt.repeat >>
-          (else_keyword >> stmts.as(:else_body)).maybe >> end_keyword).as(:if_statement)
+          (else_keyword >> stmts.as(:else_body)).maybe >> end_keyword).as(:if_stmt)
     end
 
-    rule(:elif_stmt)                do
-      (elif_keyword >> expr.as(:condition) >> (then_keyword | terms) >> stmts_body).as(:elif_statement)
+    rule(:elif_stmt)            do
+      (elif_keyword >> expr.as(:condition) >> (then_keyword | terms) >> stmts.as(:body)).as(:elif_stmt)
     end
 
-    rule(:unless_stmt)              do
+    rule(:unless_stmt)          do
       (unless_keyword >> expr.as(:condition) >> (then_keyword | terms) >> stmts.as(:then_body) >>
-          (else_keyword >> stmts.as(:else_body)).maybe >> end_keyword).as(:unless_statement)
+          (else_keyword >> stmts.as(:else_body)).maybe >> end_keyword).as(:unless_stmt)
     end
 
-    rule(:case_stmt)                do
+    rule(:case_stmt)            do
       (case_keyword >> expr >> blank? >> of_stmt.repeat(1) >>
-          (else_keyword >> stmts.as(:else_body)).maybe >> end_keyword).as(:case_statement)
+          (else_keyword >> stmts.as(:else_body)).maybe >> end_keyword).as(:case_stmt)
     end
 
-    rule(:of_stmt)                  do
+    rule(:of_stmt)              do
       of_keyword >> args(expr).as(:match) >> (then_keyword | terms) >> stmts.as(:of_body)
     end
     
-    rule(:while_stmt)				        do
-	    (while_keyword >> expr.as(:condition) >> (do_keyword | terms) >> stmts_body >> end_keyword).as(:while_statement)
+    rule(:while_stmt)				    do
+	    (while_keyword >> expr.as(:condition) >> (do_keyword | terms) >> stmts.as(:body) >> end_keyword).as(:while_stmt)
     end
 
-    rule(:until_stmt)				        do
-      (until_keyword >> expr.as(:condition) >> (do_keyword | terms) >> stmts_body >> end_keyword).as(:until_statement)
+    rule(:until_stmt)				    do
+      (until_keyword >> expr.as(:condition) >> (do_keyword | terms) >> stmts.as(:body) >> end_keyword).as(:until_stmt)
     end
     
-    rule(:do_while_stmt)			      do
-	    (do_keyword >> blank? >> stmts_body >> while_keyword >> expr.as(:condition) >> end_keyword).as(:do_while_statement)
+    rule(:do_while_stmt)			  do
+	    (do_keyword >> blank? >> stmts.as(:body) >> while_keyword >> expr.as(:condition) >> end_keyword).as(:do_while_stmt)
     end
 
-    rule(:do_until_stmt)			      do
-      (do_keyword >> blank? >> stmts_body >> until_keyword >> expr.as(:condition) >> end_keyword).as(:do_until_statement)
-    end
-
-    rule(:lambda_stmt)              do
-      (bparam >> stmts_body >> end_keyword).as(:lambda_statement)
+    rule(:do_until_stmt)			  do
+      (do_keyword >> blank? >> stmts.as(:body) >> until_keyword >> expr.as(:condition) >> end_keyword).as(:do_until_stmt)
     end
     
-    rule(:call_args)                do
-      (lparen >> blank? >> args(expr).maybe.as(:args) >> blank? >> rparen) | args(expr).as(:args)
+    rule(:call_args)            do
+      (str('(') >> blank? >> args(expr).maybe.as(:args) >> blank? >> str(')')) | space >> args(expr).as(:args)
     end
 
-    rule(:call_stmt)                do
-       (name >> call_args).as(:call_statement)
+    rule(:call_stmt)            do
+       (name >> call_args).as(:call_stmt)
     end
 
-    rule(:assign_stmt)              do
-      ((ident | instance_var | class_var).as(:target) >> spaced('=') >> expr.as(:value)).as(:assign_statement)
+    rule(:assign_stmt)          do
+      (var.as(:target) >> spaced('=') >> expr.as(:value)).as(:assign_stmt)
     end
 
-    rule(:return_stmt)              do
-      (return_keyword >> blank? >> args(expr).maybe.as(:args)).as(:return_statement)
+    rule(:return_stmt)          do
+      (return_keyword >> args(expr).maybe.as(:args)).as(:return_stmt)
     end
 
-    rule(:break_stmt)               do
-      (break_keyword).as(:break_statement)
+    rule(:break_stmt)           do
+      (break_keyword).as(:break_stmt)
     end
 
-    rule(:continue_stmt)            do
-      (continue_keyword).as(:continue_statement)
+    rule(:continue_stmt)        do
+      (continue_keyword).as(:continue_stmt)
     end
 
-    rule(:include_stmt)             do
-      (include_keyword >> args(const).as(:args)).as(:include_statement)
+    rule(:include_stmt)         do
+      (include_keyword >> args(const).as(:args)).as(:include_stmt)
     end
 
-    rule(:extend_stmt)              do
-      (extend_keyword >> args(const).as(:args)).as(:extend_statement)
-    end
-    
-    rule(:null_stmt)				        do
-	    terms | space
+    rule(:extend_stmt)          do
+      (extend_keyword >> args(const).as(:args)).as(:extend_stmt)
     end
 
-    rule(:stmt)                     do
-      return_stmt | break_stmt | continue_stmt | null_stmt | expr 
+    rule(:null_stmt)            do
+      space | (space? >> comment)
     end
 
-    rule(:stmt_list)                do
-      stmt >> (terms >> stmt).repeat
+    rule(:stmt)                 do
+      return_stmt | break_stmt | continue_stmt | null_stmt | expr
     end
 
-    rule(:stmts_body)               do
-      stmt_list.maybe.as(:body) >> terms.maybe
+    rule(:stmts)                do
+      (stmt.maybe >> (eol >> stmt.maybe).repeat).as(:stmts)
     end
 
-    rule(:stmts)                    do
-      stmt_list.maybe >> terms.maybe
+    rule(:module_decl)          do
+      (export_keyword.maybe >> module_keyword >> const.as(:name) >>
+        blank? >> decls.as(:body) >> end_keyword).as(:module_decl)
     end
 
-    rule(:module_decl)              do
-      (export_keyword.maybe >> module_keyword >> name >>
-        blank? >> decls_body >> end_keyword).as(:module_declaration)
+    rule(:class_decl)           do
+      (export_keyword.maybe >> class_keyword >> const.as(:name) >>
+        (spaced('<') >> const.as(:parent)).maybe >> blank? >> decls.as(:body) >> end_keyword).as(:class_decl)
     end
 
-    rule(:class_decl)               do
-      (export_keyword.maybe >> class_keyword >> name >>
-        (spaced('<') >> name.as(:parent)).maybe >> blank? >> decls_body >> end_keyword).as(:class_declaration)
+    rule(:import_decl)          do
+      (import_keyword >> ident.as(:path)).as(:import_decl)
     end
 
-    rule(:import_decl)              do
-      (import_keyword >> ident.as(:path)).as(:import_declaration)
+    rule(:def_params)				    do
+      (space >> params | (space? >> lparen >> params.maybe >> rparen)).maybe
     end
 
-    def return_type
-      str(':') >> type(:return_type)
+    rule(:fun_params)				    do
+      space? >> lparen >> args(type(:type).as(:param)).as(:params).maybe >> rparen
     end
 
-    rule(:def_decl)                 do
+    rule(:def_decl)             do
       (export_keyword.maybe >> def_keyword >> opt_name >>
-        (f_args |(lparen >> f_args.maybe >> rparen)).maybe >> return_type.maybe >> terms >> stmts_body >> end_keyword).as(:def_declaration)
+        def_params >> return_type.maybe >> terms >> stmts.as(:body) >> end_keyword).as(:def_decl)
     end
 
-    rule(:external_decl)            do
-      (external_keyword >> opt_name >>
-        (f_args |(lparen >> f_args.maybe >> rparen)).maybe >> return_type >> terms).as(:external_declaration)
+    rule(:external_decl)        do
+      (external_keyword >> name >> fun_params >> return_type).as(:external_decl)
     end
 
-    rule(:operator_decl)            do
-      (operator_keyword >> opt_name >>
-        (f_args |(lparen >> f_args.maybe >> rparen)).maybe >> return_type >> terms).as(:operator_declaration)
+    rule(:operator_decl)        do
+      (operator_keyword >> operators_name.as(:name) >> fun_params >> return_type).as(:operator_decl)
     end
 
-    rule(:decl)                     do
+    rule(:decl)                 do
       module_decl | class_decl | import_decl | def_decl | external_decl | operator_decl | stmt
     end
 
-    rule(:decl_list)                do
-      decl >> (terms >> decl).repeat
-    end
-
-    rule(:decls_body)               do
-      decl_list.maybe.as(:body) >> terms.maybe
-    end
-
-    rule(:decls)                    do
-      decl_list.maybe >> terms.maybe
-    end
-
-    def self.keywords(*names)
-      names.each do |name|
-        rule("#{name}_keyword") { str(name.to_s) >> space? }
-      end
+    rule(:decls)                do
+      (decl.maybe >> (eol >> decl.maybe).repeat).as(:decls)
     end
 
     keywords :begin, :break, :case, :class, :const, :continue, :def, :do, :elif, :else,
         :end, :export, :extend, :external, :for, :if, :import, :include, :module, :of, :operator,
         :return, :then, :until, :unless, :while
-
-    def self.operators(operators={})
-      trailing_chars = Hash.new { |hash,symbol| hash[symbol] = [] }
-
-      operators.each_value do |symbol|
-        operators.each_value do |op|
-          if op[0,symbol.length] == symbol
-            char = op[symbol.length,1]
-
-            unless (char.nil? || char.empty?)
-              trailing_chars[symbol] << char
-            end
-          end
-        end
-      end
-
-      operators.each do |name,symbol|
-        trailing = trailing_chars[symbol]
-
-        if trailing.empty?
-          rule(name) { str(symbol).as(:operator) >> space? }
-        else
-          pattern = "[#{Regexp.escape(trailing.join)}]"
-
-          rule(name) {
-            (str(symbol) >> match(pattern).absent?).as(:operator) >> space?
-          }
-        end
-      end
-
-      define_method :operators_name do
-        ops = operators.values
-        name = str(ops[0])
-        ops[1..-1].each { |op| name |= str(op) }
-        name
-      end
-    end
 
     operators :op_rshift_assign => '>>=',
         :op_lshift_assign => '<<=',
@@ -419,37 +343,12 @@ module SLang
         :op_xor => '^',
         :op_lshift => '<<',
         :op_rshift => '>>',
-        :op_inverse => '~'
-        
+        :op_inverse => '~',
+        :op_ary_set => '[]=',
+        :op_ary_get => '[]'
+
      root :decls
   end
-  #
-  # require 'pp'
-  # parse("a + b")
-  # parse("!a")
-  # parse("!a + b")
-  # parse("a + !b")
-  # parse("a++")
-  # parse("a + b++")
-  # parse("a++ + b")
-  # parse("foo")
-  # parse("foo a")
-  # parse("foo()")
-  # parse("foo a, b")
-  # parse("foo(a, b) + bar(a, b + c)")
-  # parse("a.foo")
-  # parse("a.foo.b")
-  # parse("(a(1))")
-  # parse("a(1)")
-  # parse("a(1).foo(2).b(3)")
-  # parse("1.times")
-  # parse("1.2.to_i")
-  # parse("a(1, 2).foo")
-  # parse("a 1, 2.foo")
-  # parse("if empty? then false end")
-  # parse("begin 1 end")
-  # parse("while empty? do 1 end")
-  # parse("i = 0; while i < 10 ; i += 1 end")
-  # parse("i = 0; while i < 10 do i += 1 end")
+
 end
 

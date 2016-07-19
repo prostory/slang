@@ -111,7 +111,7 @@ module SLang
     def parse(source)
       parser = Parser.new
       input = parser.parse(source)
-      pp input
+      #pp input
       Transform.new.apply input
     rescue Parslet::ParseFailed => failure
       puts failure.cause.ascii_tree

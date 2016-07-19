@@ -32,6 +32,12 @@ class FalseClass
 	end
 end
 
+class Symbol
+  def param
+    Parameter.new(nil, self)
+  end
+end
+
 class String
 	def string
 		StringLiteral.new(self)
@@ -77,12 +83,12 @@ class String
     Function.new(self, params, body, nil, receiver)
   end
 
-  def external(params = [], receiver = nil)
-    External.new(self, nil, params, nil, receiver)
+  def external(params = [], return_type = :Any, receiver = nil)
+    External.new(self, nil, params, return_type, receiver)
   end
 
-  def operator(params = [], receiver = nil)
-    Operator.new(self, nil, params, nil, receiver)
+  def operator(params = [], return_type = :Any, receiver = nil)
+    Operator.new(self, nil, params, return_type, receiver)
   end
 end
 

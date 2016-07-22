@@ -149,16 +149,19 @@ module SLang
       end
 
       def visit_do(node)
-        stream << '{'
-        node.children.each do |exp|
-          next if exp.type.is_a? LambdaType
-          indent if exp.has_code?
-          exp.accept self
-          if exp.has_code?
-            stream << ';' if exp.has_terminator?
-            stream << "\n"
+        stream << "{\n"
+        with_indent do
+          node.children.each do |exp|
+            next if exp.type.is_a? LambdaType
+            indent if exp.has_code?
+            exp.accept self
+            if exp.has_code?
+              stream << ';' if exp.has_terminator?
+              stream << "\n"
+            end
           end
         end
+        indent
         stream << '}'
         false
       end

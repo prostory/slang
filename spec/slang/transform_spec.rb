@@ -67,6 +67,16 @@ describe SLang::Transform do
       expect(xform.apply(input).last).to eq('*'.call([5.int], 2.int))
     end
 
+    it "transforms a empty block statement" do
+      input = parser.parse('begin end')
+      expect(xform.apply(input)).to eq(Expressions.new)
+    end
+
+    it "transforms a block statement" do
+      input = parser.parse('begin i += 1 end')
+      expect(xform.apply(input)).to eq(Expressions.new(['+='.call([1.int], 'i'.var)]))
+    end
+
     it "transforms a if statement" do
       input = parser.parse('if i < 0 then i else -i end')
       expect(xform.apply(input).last).to eq(If.new('<'.call([0.int], 'i'.var), 'i'.var, '-'.call(['i'.var], 0.int)))

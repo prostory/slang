@@ -101,8 +101,8 @@ module SLang
     end
     rule(:while_stmt   => subtree(:t)) { While.new(t[:condition], t[:body]) }
     rule(:until_stmt   => subtree(:t)) { While.new(Call.new(:!, [], t[:condition]), t[:body]) }
-    #rule(:do_while_statement)
-    #rule(:do_until_statement)
+    rule(:do_while_stmt=> subtree(:t)) { DoWhile.new(t[:condition], t[:body]) }
+    rule(:do_until_stmt=> subtree(:t)) { DoWhile.new(Call.new(:!, [], t[:condition]), t[:body]) }
     rule(:param         => subtree(:t))     do
       type = t[:type].to_sym if t[:type]
       Parameter.new(t[:name], type)

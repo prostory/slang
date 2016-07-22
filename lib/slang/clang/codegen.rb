@@ -92,6 +92,12 @@ module SLang
     end
   end
 
+  class DoWhile
+    def has_terminator?
+      true
+    end
+  end
+
   module CLang
     class CodeGenVisitor < Visitor
       attr_accessor :context
@@ -260,6 +266,16 @@ module SLang
         with_indent {node.body.accept self}
         indent
         stream << '}'
+        false
+      end
+
+      def visit_do_while(node)
+        stream << "do {\n"
+        with_indent {node.body.accept self}
+        indent
+        stream << '} while ('
+        node.cond.accept self
+        stream << ')'
         false
       end
 

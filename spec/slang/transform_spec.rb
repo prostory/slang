@@ -64,7 +64,7 @@ describe SLang::Transform do
       input = parser.parse('2 * i + 5')
       expect(xform.apply(input).last).to eq('+'.call([5.int], '*'.call(['i'.var], 2.int)))
       input = parser.parse('1++*5')
-      expect(xform.apply(input).last).to eq('*'.call([5.int], '++'.call([], 1.int)))
+      expect(xform.apply(input).last).to eq('*'.call([5.int], 2.int))
     end
 
     it "transforms a if statement" do
@@ -101,6 +101,16 @@ describe SLang::Transform do
     it "transforms a until statement" do
       input = parser.parse('until i < 10 do i-- end')
       expect(xform.apply(input).last).to eq(While.new('!'.call([], '<'.call([10.int], 'i'.var)), '--'.call([], 'i'.var)))
+    end
+
+    it "transforms a do while statement" do
+      input = parser.parse('do i++ while i < 10 end')
+      expect(xform.apply(input).last).to eq(DoWhile.new('<'.call([10.int], 'i'.var), '++'.call([], 'i'.var)))
+    end
+
+    it "transforms a do until statement" do
+      input = parser.parse('do i++ until i < 10 end')
+      expect(xform.apply(input).last).to eq(DoWhile.new('!'.call([], '<'.call([10.int], 'i'.var)), '++'.call([], 'i'.var)))
     end
 
     it "transforms a lambda statement" do

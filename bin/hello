@@ -205,6 +205,16 @@ Integer main(Void)
         i = (i + 1);
     }
     printf("i = %d\n", i);
+    i = 0;
+    do {
+        puts("Hello");
+        i = (i + 1);
+    } while ((i < 10));
+    i = 0;
+    do {
+        puts("Hello");
+        i = (i + 1);
+    } while (!((i == 10)));
     printf("1 * (5 + 4) / (6 - 3) + 4 = %d\n", ((1 * ((5 + 4) / (6 - 3))) + 4));
     (i += (5 - (6 * 3)));
     printf("i++*5 = %d\n", ((i++) * 5));

@@ -559,6 +559,9 @@ module SLang
 		end
 	end
 
+	class DoWhile < While
+	end
+
 	class Return < ASTNode
 		attr_accessor :values
 

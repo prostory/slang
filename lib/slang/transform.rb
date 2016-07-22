@@ -17,9 +17,9 @@ module SLang
   end
 
   class Transform < Parslet::Transform
-    rule(:integer           => simple(:t))  { NumberLiteral.new(t.to_i) }
-    rule(:float             => simple(:t))  { NumberLiteral.new(t.to_f) }
-    rule(:bool              => simple(:t))  { BoolLiteral.new(t == 'true') }
+    rule(:integer           => simple(:t))  { NumberLiteral.new(t.to_s.to_i(0)) }
+    rule(:float             => simple(:t))  { NumberLiteral.new(t.to_s.to_f) }
+    rule(:bool              => simple(:t))  { BoolLiteral.new(t.to_s == 'true') }
     rule(:nil               => simple(:t))  { NilLiteral.new }
     rule(:string            => simple(:t))        do
       StringLiteral.new t.to_s
@@ -29,11 +29,24 @@ module SLang
     rule(:class_var         => simple(:t))  { ClassVar.new(t.to_s.gsub(/^@@/, '')) }
     rule(:instance_var      => simple(:t))  { Member.new(t.to_s.gsub(/^@/, '')) }
     rule(:variable          => simple(:t))  { Variable.new(t) }
-    rule(:unary_operation   => subtree(:t)) { Call.new(t[:operator], [], t[:operand]) }
+    rule(:unary_operation   => subtree(:t)) do
+      if t[:operand].is_a?(NumberLiteral) && (t[:operator] == '++' || t[:operator] == '--')
+        NumberLiteral.new(t[:operand].value + 1)
+      else
+        Call.new(t[:operator], [], t[:operand])
+      end
+    end
     rule(:array_set_expr    => subtree(:t)) { ArraySet.new(t[:target], t[:index], t[:value]) }
     rule(:array_get_expr    => subtree(:t)) { ArrayGet.new(t[:target], t[:index]) }
     rule(:binary_operation  => subtree(:t))       do
-      #puts t
+      if t[:right].is_a? Call
+        call = t[:right]
+        if Parser.operator?(call.name) && Parser.high_priority?(t[:operator].to_sym, call.name)
+          t[:left] = Call.new(t[:operator], [call.obj], t[:left])
+          t[:right] = call.args.first
+          t[:operator] = call.name
+        end
+      end
       Call.new(t[:operator], [t[:right]], t[:left])
     end
     rule(:negative_expr     => subtree(:t)) { Call.new('-',[t], NumberLiteral.new(0)) }
@@ -87,7 +100,7 @@ module SLang
       result
     end
     rule(:while_stmt   => subtree(:t)) { While.new(t[:condition], t[:body]) }
-    rule(:until_stmt   => subtree(:t)) { While.new('!'.call([], t[:condition]), t[:body]) }
+    rule(:until_stmt   => subtree(:t)) { While.new(Call.new(:!, [], t[:condition]), t[:body]) }
     #rule(:do_while_statement)
     #rule(:do_until_statement)
     rule(:param         => subtree(:t))     do

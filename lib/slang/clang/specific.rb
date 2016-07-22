@@ -29,7 +29,14 @@ module SLang
       symbols[:[]] = '__get__'
 
       def self.convert(s)
-        symbols[s.to_sym] || s
+        case s[s.length-1]
+        when '?'
+          s.slice(0..-2) + '__mark__'
+        when '!'
+          s.slice(0..-2) + '__stress__'
+        else
+          symbols[s.to_sym] || s
+        end
       end
     end
   end

@@ -43,20 +43,17 @@ extern String __init__2(Greeter * self, String name);
 extern Greeter * new3(Greeter_Class * self, String var0);
 extern Integer printf(String, ...);
 extern Integer say_hello4(Greeter * self);
-extern Integer foo5(Greeter * self);
 extern Integer lambda0(Integer n);
-extern Void times6(Integer self);
-extern Point * __alloc__7(Point_Class * self);
-extern Float __init__8(Point * self, Float x, Float y);
-extern Point * new9(Point_Class * self, Float var0, Float var1);
-extern Float x10(Point * self);
-extern Float y11(Point * self);
-extern Point * __add__12(Point * self, Point * p);
+extern Void times5(Integer self);
+extern Point * __alloc__6(Point_Class * self);
+extern Float __init__7(Point * self, Float x, Float y);
+extern Point * new8(Point_Class * self, Float var0, Float var1);
+extern Float x9(Point * self);
+extern Float y10(Point * self);
+extern Point * __add__11(Point * self, Point * p);
+extern Point * __sub__12(Point * self, Point * p);
 extern Float to_f13(Float self);
-extern Integer display14(Point * self);
-extern Point * __sub__15(Point * self, Point * p);
-extern Point * __mul__16(Point * self, Integer n);
-extern Float __sub_asgn__17(Point * self, Point * p);
+extern Integer dump14(Point * self);
 Greeter * __alloc__1(Greeter_Class * self)
 {
     return calloc(sizeof(Greeter), 1);
@@ -76,15 +73,11 @@ Integer say_hello4(Greeter * self)
 {
     return printf("Hello, %s\n", self->name);
 }
-Integer foo5(Greeter * self)
-{
-    return puts("a");
-}
 Integer lambda0(Integer n)
 {
-    return printf("Say hello %d times\n", n);
+    return printf("Say hello %d times.\n", n);
 }
-Void times6(Integer self)
+Void times5(Integer self)
 {
     Integer i;
     i = 1;
@@ -94,77 +87,125 @@ Void times6(Integer self)
         i = (i + 1);
     }
 }
-Point * __alloc__7(Point_Class * self)
+Point * __alloc__6(Point_Class * self)
 {
     return calloc(sizeof(Point), 1);
 }
-Float __init__8(Point * self, Float x, Float y)
+Float __init__7(Point * self, Float x, Float y)
 {
     self->x = x;
     return self->y = y;
 }
-Point * new9(Point_Class * self, Float var0, Float var1)
+Point * new8(Point_Class * self, Float var0, Float var1)
 {
     Pointer obj;
-    obj = __alloc__7(self);
-    __init__8(obj, var0, var1);
+    obj = __alloc__6(self);
+    __init__7(obj, var0, var1);
     return obj;
 }
-Float x10(Point * self)
+Float x9(Point * self)
 {
     return self->x;
 }
-Float y11(Point * self)
+Float y10(Point * self)
 {
     return self->y;
 }
-Point * __add__12(Point * self, Point * p)
+Point * __add__11(Point * self, Point * p)
 {
-    return new9(&Point_class, (self->x + x10(p)), (self->y + y11(p)));
+    return new8(&Point_class, (self->x + x9(p)), (self->y + y10(p)));
+}
+Point * __sub__12(Point * self, Point * p)
+{
+    return new8(&Point_class, (self->x - x9(p)), (self->y - y10(p)));
 }
 Float to_f13(Float self)
 {
     return self;
 }
-Integer display14(Point * self)
+Integer dump14(Point * self)
 {
     return printf("(%.2f, %.2f)\n", to_f13(self->x), to_f13(self->y));
-}
-Point * __sub__15(Point * self, Point * p)
-{
-    return new9(&Point_class, (self->x - x10(p)), (self->y - y11(p)));
-}
-Point * __mul__16(Point * self, Integer n)
-{
-    return new9(&Point_class, (self->x * n), (self->y * n));
-}
-Float __sub_asgn__17(Point * self, Point * p)
-{
-    (self->x -= x10(p));
-    return (self->y -= y11(p));
 }
 Integer main(Void)
 {
     puts("Hello World");
-    Pointer a;
-    a = new3(&Greeter_class, "SLang");
-    say_hello4(a);
-    foo5(a);
-    times6(10);
-    lambda0(100);
+    Pointer g;
+    g = new3(&Greeter_class, "SLang");
+    say_hello4(g);
+    times5(10);
     Pointer p1;
-    p1 = new9(&Point_class, 1.1, 2.3);
+    p1 = new8(&Point_class, 1.2, 2.3);
     Pointer p2;
-    p2 = new9(&Point_class, 2.2, 3.5);
+    p2 = new8(&Point_class, 2.2, 6.4);
     Pointer p3;
-    p3 = __add__12(p1, p2);
-    display14(p3);
+    p3 = __add__11(p1, p2);
     Pointer p4;
-    p4 = __sub__15(p1, p2);
-    display14(p4);
-    Pointer p5;
-    p5 = __mul__16(p1, 3);
-    display14(p5);
-    __sub_asgn__17(p5, p4);
-    display14(p5);
+    p4 = __sub__12(p1, p2);
+    dump14(p3);
+    dump14(p4);
+    dump14(__add__11(p3, p4));
+    Integer i;
+    i = 1;
+    if ((i > 0))
+    {
+        puts("i > 0");
+    }
+    else
+    {
+        puts("i < 0");
+    }
+    i = 5;
+    if ((i == 1))
+    {
+        puts("i = 1 or 2 or 3");
+    }
+    else
+    {
+        if ((i == 2))
+        {
+            puts("i = 1 or 2 or 3");
+        }
+        else
+        {
+            if ((i == 3))
+            {
+                puts("i = 1 or 2 or 3");
+            }
+            else
+            {
+                if ((i == 4))
+                {
+                    puts("i = 4 or 5 or 6");
+                }
+                else
+                {
+                    if ((i == 5))
+                    {
+                        puts("i = 4 or 5 or 6");
+                    }
+                    else
+                    {
+                        if ((i == 6))
+                        {
+                            puts("i = 4 or 5 or 6");
+                        }
+                        else
+                        {
+                            puts("i = other");
+                        }
+                    }
+                }
+            }
+        }
+    }
+    while ((i < 10))
+    {
+        puts("Hello");
+        i = (i + 1);
+    }
+    printf("i = %d\n", i);
+    printf("1 * (5 + 4) / (6 - 3) + 4 = %d\n", ((1 * ((5 + 4) / (6 - 3))) + 4));
+    (i += (5 - (6 * 3)));
+    printf("i++*5 = %d\n", ((i++) * 5));
 }

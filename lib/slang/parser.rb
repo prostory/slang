@@ -221,7 +221,7 @@ module SLang
     end
     
     rule(:call_args)            do
-      (str('(') >> blank? >> args(expr).maybe.as(:args) >> blank? >> str(')')) | space >> args(expr).as(:args)
+      (spaced('(') >> blank? >> args(expr).maybe.as(:args) >> blank? >> spaced(')')) | space >> args(expr).as(:args)
     end
 
     rule(:call_stmt)            do
@@ -311,41 +311,41 @@ module SLang
         :end, :export, :extend, :external, :for, :if, :import, :include, :module, :of, :operator,
         :return, :then, :until, :unless, :while
 
-    operators :op_rshift_assign => '>>=',
-        :op_lshift_assign => '<<=',
-        :op_add_assign => '+=',
-        :op_sub_assign => '-=',
-        :op_mul_assign => '*=',
-        :op_div_assign => '/=',
-        :op_mod_assign => '%=',
-        :op_band_assign => '&=',
-        :op_xor_assign => '^=',
-        :op_bor_assign => '|=',
-        :op_inc => '++',
-        :op_dec => '--',
-        :op_rasgn => '->',
-        :op_and => '&&',
-        :op_or => '||',
-        :op_le => '<=',
-        :op_ge => '>=',
-        :op_eq => '==',
-        :op_ne => '!=',
-        :op_add => '+',
-        :op_sub => '-',
-        :op_mul => '*',
-        :op_div => '/',
-        :op_mod => '%',
-        :op_lt => '<',
-        :op_gt => '>',
-        :op_not => '!',
-        :op_bor => '|',
-        :op_band => '&',
-        :op_xor => '^',
-        :op_lshift => '<<',
-        :op_rshift => '>>',
-        :op_inverse => '~',
-        :op_ary_set => '[]=',
-        :op_ary_get => '[]'
+    operators :op_rshift_assign => ['>>=', 14],
+        :op_lshift_assign => ['<<=', 14],
+        :op_add_assign => ['+=', 14],
+        :op_sub_assign => ['-=', 14],
+        :op_mul_assign => ['*=', 14],
+        :op_div_assign => ['/=', 14],
+        :op_mod_assign => ['%=', 14],
+        :op_band_assign => ['&=', 14],
+        :op_xor_assign => ['^=', 14],
+        :op_bor_assign => ['|=', 14],
+        :op_inc => ['++', 1],
+        :op_dec => ['--', 1],
+        :op_rasgn => ['->', 1],
+        :op_and => ['&&', 11],
+        :op_or => ['||', 12],
+        :op_le => ['<=', 6],
+        :op_ge => ['>=', 6],
+        :op_eq => ['==', 7],
+        :op_ne => ['!=', 7],
+        :op_add => ['+', 4],
+        :op_sub => ['-', 4],
+        :op_mul => ['*', 3],
+        :op_div => ['/', 3],
+        :op_mod => ['%', 3],
+        :op_lt => ['<', 6],
+        :op_gt => ['>', 6],
+        :op_not => ['!', 2],
+        :op_bor => ['|', 10],
+        :op_band => ['&', 8],
+        :op_xor => ['^', 9],
+        :op_lshift => ['<<', 5],
+        :op_rshift => ['>>', 5],
+        :op_inverse => ['~', 2],
+        :op_ary_set => ['[]=', 14],
+        :op_ary_get => ['[]', 1]
 
      root :decls
   end

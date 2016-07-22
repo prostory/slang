@@ -4,9 +4,9 @@ module SLang
 
     attr_accessor :name
 
-    def initialize(name)
+    def initialize(name, instances = [])
       @name = name
-      @instances = []
+      @instances = instances || []
     end
 
     def <<(instance)
@@ -28,6 +28,10 @@ module SLang
 
     def latest
       @instances.last
+    end
+
+    def clone
+      self.class.new name, @instances.clone
     end
 
     def to_s

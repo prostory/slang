@@ -61,6 +61,10 @@ describe SLang::Transform do
     it "transforms a binary operation" do
       input = parser.parse('1 +i')
       expect(xform.apply(input).last).to eq('+'.call(['i'.var], 1.int))
+      input = parser.parse('2 * i + 5')
+      expect(xform.apply(input).last).to eq('+'.call([5.int], '*'.call(['i'.var], 2.int)))
+      input = parser.parse('1++*5')
+      expect(xform.apply(input).last).to eq('*'.call([5.int], '++'.call([], 1.int)))
     end
 
     it "transforms a if statement" do

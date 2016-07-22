@@ -82,7 +82,7 @@ module SLang
               [:class, :Bool, nil,
                [:operator, :'&&', [:Bool], :Bool],
                [:operator, :'||', [:Bool], :Bool],
-               [:operator, :!, [:Bool], :Bool],
+               [:operator, :!, [], :Bool],
                [:fun, :or, [:n], [:'||', :self, [:n]]],
                [:fun, :and, [:n], [:'&&', :self, [:n]]],
                [:fun, :not, [:n], [:!, :self, [:n]]],

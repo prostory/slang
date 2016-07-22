@@ -53,7 +53,13 @@ module SLang
       end
     end
 
-		def accept_children(visitor) end
+		def accept_children(visitor)
+
+		end
+
+		def replace(old, new)
+
+		end
 	end
 
 	class Expressions < ASTNode
@@ -99,6 +105,14 @@ module SLang
 
 		def last
 			children.last
+		end
+
+		def replace(old, new)
+			children.each_with_index do |child, idx|
+				if old == child
+					children[idx] = new
+				end
+			end
 		end
 
 		def empty?
@@ -171,6 +185,14 @@ module SLang
 			elements.map { |element| element.accept(visitor) }
 		end
 
+		def replace(old, new)
+			elements.each_with_index do |child, idx|
+				if old == child
+					elements[idx] = new
+				end
+			end
+		end
+
 		def ==(other)
 			other.class == self.class && other.elements == elements
 		end
@@ -198,6 +220,10 @@ module SLang
 
 		def accept_children(visitor)
 			body.accept visitor
+		end
+
+		def replace(old, new)
+			@body = new if @body == old
 		end
 
 		def ==(other)
@@ -317,6 +343,14 @@ module SLang
 			args.map { |arg| arg.accept visitor }
 		end
 
+		def replace(old, new)
+			args.each_with_index do |child, idx|
+				if old == child
+					args[idx] = new
+				end
+			end
+		end
+
 		def ==(other)
 			other.class == self.class && other.name == name && other.args == args && other.obj == obj
     end
@@ -362,6 +396,21 @@ module SLang
 			body.accept visitor
 		end
 
+		def replace(old, new)
+			case old
+			when @body
+				@body = new
+			when @receiver
+				@receiver = new
+			end
+
+			params.each_with_index do |child, idx|
+				if old == child
+					params[idx] = new
+				end
+			end
+		end
+
 		def ==(other)
 			other.class == self.class && other.name == name && other.params == params &&
 				other.body == body && other.return_type == return_type && other.receiver == receiver
@@ -399,7 +448,7 @@ module SLang
 	class External < Function
 		attr_accessor :output_name
 
-		def initialize(name, output_name, params = [], return_type = :Any, receiver = nil)
+		def initialize(name, output_name, params = [], return_type = :Void, receiver = nil)
 			super name, params, [], return_type, receiver
 			@output_name = output_name || name
 		end
@@ -451,6 +500,17 @@ module SLang
 			@else.accept visitor if @else
 		end
 
+		def replace(old, new)
+			case old
+			when @cond
+				@cond = new
+			when @then
+				@then = new
+			when @else
+				@else = new
+			end
+		end
+
 		def ==(other)
 			other.class == self.class && other.cond == cond && other.then == self.then &&
 				other.else == self.else
@@ -481,6 +541,15 @@ module SLang
 			body.accept visitor
 		end
 
+		def replace(old, new)
+			case old
+			when @cond
+				@cond = new
+			when @body
+				@body = new
+			end
+		end
+
 		def ==(other)
 			other.class == self.class && other.cond == cond && other.body == self.body
 		end
@@ -500,6 +569,14 @@ module SLang
 
 		def accept_children(visitor)
 			@values.each {|v| v.accept visitor}
+		end
+
+		def replace(old, new)
+			values.each_with_index do |child, idx|
+				if old == child
+					values[idx] = new
+				end
+			end
 		end
 
 		def ==(other)
@@ -525,6 +602,15 @@ module SLang
 		def accept_children(visitor)
 			target.accept visitor
 			value.accept visitor
+		end
+
+		def replace(old, new)
+			case old
+			when target
+				@target = new
+			when value
+				@value = new
+			end
 		end
 
 		def ==(other)
@@ -553,6 +639,10 @@ module SLang
 			value.accept visitor
 		end
 
+		def replace(old, new)
+			value = new if old == value
+		end
+
 		def ==(other)
 			other.class == self.class && other.value == value
 		end
@@ -574,6 +664,10 @@ module SLang
 			value.accept visitor
 		end
 
+		def replace(old, new)
+			value = new if old == value
+		end
+
 		def ==(other)
 			other.class == self.class && other.value == value
 		end
@@ -589,6 +683,10 @@ module SLang
 		def initialize(size)
 			@size = size
 			@size.parent = self
+		end
+
+		def replace(old, new)
+			size = new if old == size
 		end
 
 		def ==(other)
@@ -624,6 +722,17 @@ module SLang
 			value.accept visitor
 		end
 
+		def replace(old, new)
+			case old
+			when target
+				target = new
+			when index
+				index = new
+			when value
+				value = new
+			end
+		end
+
 		def ==(other)
 			other.class == self.class && other.target == target && other.index == index &&
 				other.value == value
@@ -650,6 +759,15 @@ module SLang
 		def accept_children(visitor)
 			target.accept visitor
 			index.accept visitor
+		end
+
+		def replace(old, new)
+			case old
+			when target
+				target = new
+			when index
+				index = new
+			end
 		end
 
 		def ==(other)

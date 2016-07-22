@@ -85,6 +85,7 @@ describe SLang::Parser do
       expect(expr_parser).to     parse('! a || (b && c)')
       expect(expr_parser).to     parse('(a >> 5)++')
       expect(expr_parser).to     parse('a + 5 ++')
+      expect(expr_parser).to     parse('a(b) < 5')
     end
 
     def self.it_parse(code, type, value = code)

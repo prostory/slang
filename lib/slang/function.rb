@@ -87,14 +87,18 @@ module SLang
       prototype = self.class.new
       functions.each do |sig, fun|
         new_fun = fun.clone
-        new_fun.template = fun.template
+        new_fun.template = fun.template.clone
         prototype.functions[sig] = new_fun
       end
       prototype
     end
 
     def to_s
-      functions.map{|sig, fun| "#{fun.name}(#{sig})"}.join ';'
+      functions.map do |sig, fun|
+        s = if fun.receiver then "#{fun.receiver.name}." else "" end
+        s << "#{fun.name}(#{sig})"
+        s
+      end.join ';'
     end
   end
 

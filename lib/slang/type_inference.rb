@@ -94,7 +94,13 @@ module SLang
     end
 
     def visit_variable(node)
-      var = context.lookup_variable(node.name) or raise "Bug: variable '#{node.name}' is not defined!"
+      var = context.lookup_variable(node.name)
+      if var.nil?
+        call = Call.new(node.name)
+        visit_call(call)
+        node.parent.replace(node, call)
+        return
+      end
       node.type = var.type
       node.optional = var.optional
       node.defined = true
@@ -108,7 +114,11 @@ module SLang
     end
 
     def visit_member(node)
-      var = context.lookup_member(node.name) or raise "Bug: instance variable '#{node.name}' is not defined!"
+      var = context.lookup_member(node.name)
+      if var.nil?
+        puts ""
+      end
+      raise "Bug: instance variable '#{node.name}' for #{context.scope.type} is not defined!" if var.nil?
       node.type = var.type
       node.optional = var.optional
       var << node
@@ -125,7 +135,14 @@ module SLang
 
 
     def visit_const(node)
-      node.type = Type.types[node.name].class_type or raise "uninitialized constant '#{node.name}'"
+      type = Type.types[node.name]
+      if type.nil?
+        call = Call.new(node.name)
+        visit_call(call)
+        node.parent.replace(node, call)
+        return
+      end
+      node.type = type.class_type or raise "uninitialized constant '#{node.name}'"
       false
     end
 
@@ -159,6 +176,7 @@ module SLang
         node.obj.accept self
       else
         node.obj = Variable.new(:self, context.scope.type) if context.scope.type
+        node.obj.defined = true
       end
 
       types = node.args.each {|arg| arg.accept self}.map(&:type)
@@ -259,6 +277,8 @@ module SLang
         instance.body.accept self
 
         instance.body.type = new_type if new_type
+
+        puts instance if instance.body.type.nil?
 
         unless instance.body.type.child_of? instance.return_type
           raise "can't cast #{instance.body.type} to #{instance.return_type}"

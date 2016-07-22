@@ -46,23 +46,34 @@ module SLang
       end
     end
 
-    def self.operators(operators={})
-      @@trailing_chars ||= Hash.new { |hash,symbol| hash[symbol] = [] }
+    def self.operator?(op)
+      @@operators.has_key? op
+    end
 
-      operators.each_value do |symbol|
+    def self.high_priority?(op1, op2)
+      @@operators[op1] < @@operators[op2]
+    end
+
+    def self.operators(operators={})
+      @@operators = {}
+      trailing_chars = Hash.new { |hash,symbol| hash[symbol] = [] }
+
+      operators.each_value do |s|
         operators.each_value do |op|
-          if op[0,symbol.length] == symbol
-            char = op[symbol.length,1]
+          symbol = s.first
+          if op.first[0,symbol.length] == symbol
+            char = op.first[symbol.length,1]
 
             unless (char.nil? || char.empty?)
-              @@trailing_chars[symbol] << char
+              trailing_chars[symbol] << char
             end
           end
         end
       end
 
-      operators.each do |name,symbol|
-        trailing = @@trailing_chars[symbol]
+      operators.each do |name, op|
+        symbol = op.first
+        trailing = trailing_chars[symbol]
 
         if trailing.empty?
           rule(name) { str(symbol).as(:operator) >> space? }
@@ -73,12 +84,13 @@ module SLang
             (str(symbol) >> match(pattern).absent?).as(:operator) >> space?
           }
         end
+        @@operators[op.first.to_sym] = op.last
       end
 
       rule(:operators_name) do
         ops = operators.values
-        name = str(ops[0])
-        ops[1..-1].each { |op| name |= str(op) }
+        name = str(ops[0].first)
+        ops[1..-1].each { |op| name |= str(op.first) }
         name
       end
     end

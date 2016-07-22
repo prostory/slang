@@ -108,7 +108,7 @@ module SLang
       end
 
       def visit_bool_literal(node)
-        stream << node.value ? 'True' : 'False'
+        stream << (node.value ? 'True' : 'False')
       end
 
       def visit_string_literal(node)
@@ -139,9 +139,17 @@ module SLang
       def visit_call(node)
         if node.target_fun.is_a? Operator
           op = node.target_fun.mangled_name.to_s
+
+          if op == '!'
+            stream << op
+          end
+
           stream << '('
           if node.obj
             node.obj.accept self
+          end
+          if op == '++'
+            stream << op
           end
           node.args.each_with_index do |arg, i|
             stream << " #{op} " if i > 0 || node.obj

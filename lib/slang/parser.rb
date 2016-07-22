@@ -256,8 +256,18 @@ module SLang
       space | (space? >> comment)
     end
 
+    rule(:single_if_stmt)       do
+      ((return_stmt | break_stmt | continue_stmt | expr).as(:body) >>
+        if_keyword >> expr.as(:condition)).as(:single_if_stmt)
+    end
+
+    rule(:single_unless_stmt)   do
+      ((return_stmt | break_stmt | continue_stmt | expr).as(:body) >>
+        unless_keyword >> expr.as(:condition)).as(:single_unless_stmt)
+    end
+
     rule(:stmt)                 do
-      return_stmt | break_stmt | continue_stmt | null_stmt | expr
+      single_if_stmt | single_unless_stmt | return_stmt | break_stmt | continue_stmt | null_stmt | expr
     end
 
     rule(:stmts)                do

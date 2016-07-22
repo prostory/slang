@@ -84,6 +84,16 @@ describe SLang::Transform do
       expect(xform.apply(input).last).to eq(If.new('!'.call([], '<'.call([0.int], 'i'.var)), 'i'.var))
     end
 
+    it "transforms a single if statement" do
+      input = parser.parse('i if i < 0')
+      expect(xform.apply(input).last).to eq(If.new('<'.call([0.int], 'i'.var), 'i'.var))
+    end
+
+    it "transforms a single unless statement" do
+      input = parser.parse('i unless i < 0')
+      expect(xform.apply(input).last).to eq(If.new('!'.call([], '<'.call([0.int], 'i'.var)), 'i'.var))
+    end
+
     it "transforms a case of statement" do
       input = parser.parse('case a of 1, 2; 3 of 3; 4 else 5 end')
       expect(xform.apply(input).last).to eq(If.new('=='.call([1.int], 'a'.var), 3.int,

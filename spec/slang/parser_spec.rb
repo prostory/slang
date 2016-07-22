@@ -119,7 +119,7 @@ describe SLang::Parser do
       expect(stmt_parser).to     parse('if empty? then true else false end')
       expect(stmt_parser).to     parse('if empty? ; true elif has_one? ; 1 else size end')
       expect(stmt_parser).to     parse('if empty? ; true elif one? ; 1 elif two? then 2 else false end')
-      # expect(stmt_parser).to	 parse('return true if empty?')
+      expect(stmt_parser).to	   parse('return true if empty?')
       expect(stmt_parser).to_not parse('if empty? ; true')
       expect(stmt_parser).to_not parse('if empty? ; true else 1 else size end')
     end
@@ -128,6 +128,7 @@ describe SLang::Parser do
       expect(stmt_parser).to     parse('unless empty? ; true end')
       expect(stmt_parser).to     parse('unless empty? then true end')
       expect(stmt_parser).to     parse('unless empty? ; true else false end')
+      expect(stmt_parser).to	   parse('return true unless empty?')
       expect(stmt_parser).to_not parse('unless empty? true else 1 else size end')
     end
 

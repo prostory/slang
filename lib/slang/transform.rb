@@ -70,7 +70,9 @@ module SLang
       end
     end
     rule(:elif_stmt    => subtree(:t)) { If.new(t[:condition], t[:body]) }
-    rule(:unless_stmt  => subtree(:t)) { If.new('!'.call([], t[:condition]), t[:then_body], t[:else_body]) }
+    rule(:unless_stmt  => subtree(:t)) { If.new(Call.new('!', [], t[:condition]), t[:then_body], t[:else_body]) }
+    rule(:single_if_stmt => subtree(:t)) { If.new(t[:condition], t[:body]) }
+    rule(:single_unless_stmt => subtree(:t)) { If.new(Call.new('!', [], t[:condition]), t[:body]) }
     rule(:case_stmt    => subtree(:t))       do
       var = t.first
       i = 1

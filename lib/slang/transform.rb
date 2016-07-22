@@ -1,4 +1,6 @@
 require 'parslet'
+require_relative 'ast'
+require_relative 'parser'
 
 module SLang
   class Parslet::Context
@@ -50,11 +52,9 @@ module SLang
       Call.new(t[:operator], [t[:right]], t[:left])
     end
     rule(:negative_expr     => subtree(:t)) { Call.new('-',[t], NumberLiteral.new(0)) }
-    rule(:access_expr       => subtree(:t))       do
-      transform_call(t[:call], t[:obj])
-    end
-
-    rule(:if_stmt      => subtree(:t))       do
+    rule(:access_expr       => subtree(:t)) { transform_call(t[:call], t[:obj]) }
+    rule(:block_stmt        => subtree(:t)) { Do.from(t[:body]) }
+    rule(:if_stmt           => subtree(:t))       do
       if t.is_a?(Array)
         if t.length > 1
           i = 1
@@ -69,11 +69,11 @@ module SLang
         If.new(t[:condition], t[:then_body], t[:else_body])
       end
     end
-    rule(:elif_stmt    => subtree(:t)) { If.new(t[:condition], t[:body]) }
-    rule(:unless_stmt  => subtree(:t)) { If.new(Call.new('!', [], t[:condition]), t[:then_body], t[:else_body]) }
-    rule(:single_if_stmt => subtree(:t)) { If.new(t[:condition], t[:body]) }
-    rule(:single_unless_stmt => subtree(:t)) { If.new(Call.new('!', [], t[:condition]), t[:body]) }
-    rule(:case_stmt    => subtree(:t))       do
+    rule(:elif_stmt         => subtree(:t)) { If.new(t[:condition], t[:body]) }
+    rule(:unless_stmt       => subtree(:t)) { If.new(Call.new('!', [], t[:condition]), t[:then_body], t[:else_body]) }
+    rule(:single_if_stmt    => subtree(:t)) { If.new(t[:condition], t[:body]) }
+    rule(:single_unless_stmt=> subtree(:t)) { If.new(Call.new('!', [], t[:condition]), t[:body]) }
+    rule(:case_stmt         => subtree(:t))       do
       var = t.first
       i = 1
       result = nil
@@ -101,23 +101,23 @@ module SLang
       end
       result
     end
-    rule(:while_stmt   => subtree(:t)) { While.new(t[:condition], t[:body]) }
-    rule(:until_stmt   => subtree(:t)) { While.new(Call.new(:!, [], t[:condition]), t[:body]) }
-    rule(:do_while_stmt=> subtree(:t)) { DoWhile.new(t[:condition], t[:body]) }
-    rule(:do_until_stmt=> subtree(:t)) { DoWhile.new(Call.new(:!, [], t[:condition]), t[:body]) }
-    rule(:param         => subtree(:t))     do
+    rule(:while_stmt        => subtree(:t)) { While.new(t[:condition], t[:body]) }
+    rule(:until_stmt        => subtree(:t)) { While.new(Call.new(:!, [], t[:condition]), t[:body]) }
+    rule(:do_while_stmt     => subtree(:t)) { DoWhile.new(t[:condition], t[:body]) }
+    rule(:do_until_stmt     => subtree(:t)) { DoWhile.new(Call.new(:!, [], t[:condition]), t[:body]) }
+    rule(:param             => subtree(:t))     do
       type = t[:type].to_sym if t[:type]
       Parameter.new(t[:name], type)
     end
-    rule(:lambda  => subtree(:t)) { Lambda.new(t[:params], t[:body]) }
-    rule(:call_stmt    => subtree(:t)) { Call.new(t[:name], t[:args]) }
-    rule(:assign_stmt  => subtree(:t)) { Assign.new(t[:target], t[:value]) }
-    rule(:return_stmt  => subtree(:t)) { Return.new(t[:args]) }
+    rule(:lambda            => subtree(:t)) { Lambda.new(t[:params], t[:body]) }
+    rule(:call_stmt         => subtree(:t)) { Call.new(t[:name], t[:args]) }
+    rule(:assign_stmt       => subtree(:t)) { Assign.new(t[:target], t[:value]) }
+    rule(:return_stmt       => subtree(:t)) { Return.new(t[:args]) }
     #rule(:break_stmt   => subtree(:t)) { }
     #rule(:continue_stmt)
-    rule(:include_stmt => subtree(:t)) { Include.new(t[:args].map(&:name)) }
+    rule(:include_stmt      => subtree(:t)) { Include.new(t[:args].map(&:name)) }
     #rule(:extend_stmt)
-    rule(:module_decl => subtree(:t))     do
+    rule(:module_decl       => subtree(:t))     do
       body = t[:body]
       mod = Module.new(t[:name].name, body)
       if body.kind_of? Expressions
@@ -129,7 +129,7 @@ module SLang
       end
       mod
     end
-    rule(:class_decl => subtree(:t))     do
+    rule(:class_decl        => subtree(:t))     do
       body = t[:body]
       parent = t[:parent] ? t[:parent].name : :Object
       clazz = ClassDef.new(t[:name].name, t[:body], parent)
@@ -143,17 +143,38 @@ module SLang
       clazz
     end
     # rule(:import_decl)
-    rule(:def_decl       => subtree(:t)) do
+    rule(:def_decl          => subtree(:t))     do
       return_type = t[:return_type].to_sym if t[:return_type]
       Function.new(t[:name], t[:params], t[:body], return_type)
     end
-    rule(:external_decl  => subtree(:t)) do
+    rule(:external_decl     => subtree(:t))     do
       External.new(t[:name], nil, t[:params], t[:return_type].to_sym)
     end
-    rule(:operator_decl  => subtree(:t)) do
+    rule(:operator_decl     => subtree(:t))     do
       Operator.new(t[:name], nil, t[:params], t[:return_type].to_sym)
     end
-    rule(:stmts          => subtree(:t)) { Expressions.from(t) }
-    rule(:decls          => subtree(:t)) { Expressions.from(t) }
+    rule(:stmts             => subtree(:t))     do
+      if t.is_a?(String) && t.empty?
+        Expressions.from(nil)
+      else
+        Expressions.from(t)
+      end
+    end
+    rule(:decls             => subtree(:t))     do
+      if t.is_a?(String) && t.empty?
+        Expressions.from(nil)
+      else
+        Expressions.from(t)
+      end
+    end
+  end
+
+  def self.parse(source)
+    parser = Parser.new
+    input = parser.parse(source)
+    #pp input
+    Transform.new.apply input
+  rescue Parslet::ParseFailed => failure
+    puts failure.cause.ascii_tree
   end
 end

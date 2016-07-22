@@ -9,6 +9,12 @@ module SLang
     end
   end
 
+  class Expressions
+    def has_terminator?
+      false
+    end
+  end
+
   class Module
     def has_code?
       false
@@ -139,6 +145,21 @@ module SLang
             stream << "\n"
           end
         end
+        false
+      end
+
+      def visit_do(node)
+        stream << '{'
+        node.children.each do |exp|
+          next if exp.type.is_a? LambdaType
+          indent if exp.has_code?
+          exp.accept self
+          if exp.has_code?
+            stream << ';' if exp.has_terminator?
+            stream << "\n"
+          end
+        end
+        stream << '}'
         false
       end
 

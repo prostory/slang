@@ -29,6 +29,17 @@ module SLang
       @calls << call
     end
 
+    def add_recursive_call(call)
+      @recursive_calls ||= []
+      @recursive_calls << call
+      call.unreached = true
+      call.unreachable = true
+    end
+
+    def recursive_calls
+      @recursive_calls
+    end
+
     def signature
       Signature.new(params.map(&:type))
     end
@@ -39,6 +50,19 @@ module SLang
 
     def has_var_list?
       params.any? && params.last.var_list?
+    end
+
+    def chain
+      @chain || []
+    end
+
+    def set_chain(chain)
+      @chain = chain || []
+      @chain << self
+    end
+
+    def closed_loop?
+      chain[0..-2].find {|fun| fun == self} != nil
     end
   end
 

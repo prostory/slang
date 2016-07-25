@@ -5,10 +5,24 @@ module SLang
   class ASTNode
     attr_accessor :type
     attr_accessor :optional
+    attr_accessor :unreached
+
+    def return
+      Return.new(self)
+    end
   end
 
   class Call
     attr_accessor :target_fun
+    attr_accessor :unreachable
+
+    def unreached?
+      return true if unreachable
+      return true if unreached
+      return true if obj && obj.unreached
+      return true if args.find {|arg| arg.unreached }
+      return false
+    end
 
     def target_fun=(fun)
       fun.add_call self
@@ -42,6 +56,29 @@ module SLang
 
     def var_list?
       type && (type == :VarList || (type.is_a?(BaseType) && type.name == :VarList))
+    end
+  end
+
+  class If
+    def self.return(body)
+      unless body.last.nil? || body.last.is_a?(Return)
+        ret = Return.new([body.last])
+        ret.type = body.type
+        body.children.pop
+        body << ret
+      end
+    end
+
+    def return
+      self.class.return(@then)
+      self.class.return(@else) if @else
+      self
+    end
+  end
+
+  class While
+    def return
+      self
     end
   end
 
@@ -115,9 +152,6 @@ module SLang
 
     def visit_member(node)
       var = context.lookup_member(node.name)
-      if var.nil?
-        puts ""
-      end
       raise "Bug: instance variable '#{node.name}' for #{context.scope.type} is not defined!" if var.nil?
       node.type = var.type
       node.optional = var.optional
@@ -190,6 +224,11 @@ module SLang
         end
       end
 
+      if node.unreached?
+        node.type = Type.any if node.type.nil?
+        return
+      end
+
       var = context.lookup_variable(node.name)
       if var && var.type.is_a?(LambdaType) && node.name == var.name
         untyped_fun = var.type.lookup_function(node.signature)
@@ -198,13 +237,25 @@ module SLang
       untyped_fun = context.lookup_function(node.name, node.signature, node.obj) if untyped_fun.nil?
 
       if untyped_fun.nil?
-        error = "undefined function '#{node.name}' (#{types.map(&:to_s).join ', '}), #{node.source_code}"
+        error = "undefined function '#{node.name}'(#{types.map(&:to_s).join ', '}), #{node.source_code}"
         error << " for #{node.obj.type.name}" if node.obj
         raise error
       end
 
       types.unshift node.obj.type if node.obj && untyped_fun.receiver
       node.obj = nil if untyped_fun.receiver.nil?
+      if context.scope.func
+        untyped_fun.set_chain context.scope.func.chain
+      else
+        untyped_fun.set_chain []
+      end
+
+      if untyped_fun.closed_loop?
+        untyped_fun.add_recursive_call node
+        node.type = Type.any
+        untyped_fun.chain.pop
+        return
+      end
 
       typed_fun = untyped_fun[Signature.new(types)]
 
@@ -217,6 +268,7 @@ module SLang
         end
         node.target_fun = typed_fun
         node.type = typed_fun.body.type
+        untyped_fun.chain.pop
         return
       end
 
@@ -226,11 +278,36 @@ module SLang
         node.target_fun = typed_fun
         node.type = typed_fun.body.type
       else
+        if untyped_fun.recursive_calls
+          untyped_fun.recursive_calls.each do |call|
+            call.target_fun = new_fun
+            call.type = new_fun.body.type
+            call.obj = nil if untyped_fun.receiver.nil?
+          end
+
+          if untyped_fun.recursive_calls.find {|call| call.unreached} != nil
+            untyped_fun.recursive_calls.each do |call|
+              call.unreached = false
+            end
+
+            new_fun = typed_function(untyped_fun, node)
+
+            untyped_fun.recursive_calls.each do |call|
+              call.target_fun = new_fun
+              call.type = new_fun.body.type
+              call.obj = nil if untyped_fun.receiver.nil?
+            end
+            untyped_fun.recursive_calls.clear
+          end
+        end
+
         untyped_fun << new_fun
 
         node.target_fun = new_fun
         node.type = new_fun.body.type
       end
+
+      untyped_fun.chain.pop
 
       false
     end
@@ -278,15 +355,13 @@ module SLang
 
         instance.body.type = new_type if new_type
 
-        puts instance if instance.body.type.nil?
-
         unless instance.body.type.child_of? instance.return_type
           raise "can't cast #{instance.body.type} to #{instance.return_type}"
         end
 
         unless instance.body.type == Type.void
           unless instance.body.last.nil? || instance.body.last.is_a?(Return)
-            ret = Return.new([instance.body.last])
+            ret = instance.body.last.return
             ret.type = instance.body.type
             instance.body.children.pop
             instance.body << ret

@@ -88,7 +88,7 @@ do
 	puts "Hello"
 	i = i + 1
 while i < 10 end
-i = 0
+i = 5
 do puts "Hello"; i = i + 1 until i == 10 end unless i == 5
 
 puts "Hello i = 10" if i == 10

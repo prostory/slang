@@ -337,6 +337,7 @@ module SLang
 			@args = to_args(args)
 			@args.each {|arg| arg.parent = self}
 			@obj = obj
+			@obj.parent = self if obj
 		end
 
 		def accept_children(visitor)
@@ -356,11 +357,11 @@ module SLang
     end
 
     def to_s
-      "(#{name} #{obj} #{args.join ' '})"
+      "(#{name}:#{obj} #{args.join ' '})"
     end
 
 		def clone
-			call = self.class.new name, args.map(&:clone), obj
+			call = self.class.new name, args, obj
 			call.source_code = source_code
 			call
 		end

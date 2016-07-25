@@ -218,7 +218,7 @@ module SLang
 
     def self.merge(*types)
       return Type.int if types.empty?
-      uniq_types = types.uniq
+      uniq_types = types.delete_if{|t| t == Type.any }.map{|t| t.base_type }.uniq
       return uniq_types.last if uniq_types.size == 1
       union = union_type.new_instance
       union.add_types uniq_types

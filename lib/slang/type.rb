@@ -184,6 +184,10 @@ module SLang
       ancestors.include? type
     end
 
+    def union_type?
+      self.kind_of? UnionType
+    end
+
     def is_any?
       self.name == :Any
     end

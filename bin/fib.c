@@ -31,6 +31,14 @@ static StringHelper_Class StringHelper_class;
 extern Integer fib1(Integer n);
 extern Integer printf(String, ...);
 extern Void foo2(Void);
+extern String strdup(String);
+extern String new3(String_Class * self, String const_str);
+extern Integer strlen(String);
+extern String realloc(String, Integer);
+extern String strcat(String, String);
+extern String __lsh__4(String self, String s);
+extern Integer puts(String);
+extern String to_s5(Bool self);
 Integer fib1(Integer n)
 {
     if ((n < 2))
@@ -44,15 +52,54 @@ Integer fib1(Integer n)
 }
 Void foo2(Void)
 {
-    Integer i;
-    i = 0;
-    while ((i < 10))
+    Integer i0;
+    i0 = 0;
+    while ((i0 < 10))
     {
-        i = (i + 1);
+        i0 = (i0 + 1);
+    }
+}
+String new3(String_Class * self, String const_str)
+{
+    return strdup(const_str);
+}
+String __lsh__4(String self, String s)
+{
+    Integer len0;
+    len0 = ((strlen(self) + strlen(s)) + 1);
+    self = realloc(self, len0);
+    return strcat(self, s);
+}
+String to_s5(Bool self)
+{
+    if (self)
+    {
+        return "true";
+    }
+    else
+    {
+        return "false";
     }
 }
 Integer main(Void)
 {
+    Integer i0;
+    Float i1;
+    String i2;
+    Bool i3;
     printf("fib(6) = %d\n", fib1(6));
     foo2();
+    i0 = 0;
+    printf("i = %d\n", i0);
+    i1 = (i0 + 1.0);
+    i1 = (1 + i1);
+    printf("i = %.2f\n", i1);
+    i2 = new3(&String_class, "Hello ");
+    i2 = __lsh__4(i2, "World");
+    puts(i2);
+    i3 = True;
+    puts(to_s5(i3));
+    i3 = False;
+    puts(to_s5(i3));
+    return 0;
 }

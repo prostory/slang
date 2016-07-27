@@ -39,12 +39,13 @@ module SLang
   end
 
   class Variable
-    attr_accessor :defined
     attr_accessor :instances
+    attr_accessor :sequence
 
     def <<(instance)
       @instances ||= []
       @instances << instance
+      instance.sequence = sequence
     end
 
     def optional=(is_optional)
@@ -140,7 +141,6 @@ module SLang
       end
       node.type = var.type
       node.optional = var.optional
-      node.defined = true
       var << node
       false
     end
@@ -210,7 +210,6 @@ module SLang
         node.obj.accept self
       else
         node.obj = Variable.new(:self, context.scope.type) if context.scope.type
-        node.obj.defined = true
       end
 
       types = node.args.each {|arg| arg.accept self}.map(&:type)
@@ -218,7 +217,6 @@ module SLang
       if node.has_var_list?
         node.args.pop
         types.last.vars.each do |var|
-          var.defined = true
           node.args << var
           types << var.type
         end
@@ -376,7 +374,7 @@ module SLang
       node.return_type = Type.types[node.return_type]
       context.add_function node
       if node.name == :main
-        node.body.accept self
+        visit_call(Call.new(:main))
         node.body.type = node.return_type
         node << node
       end
@@ -435,27 +433,36 @@ module SLang
 
       case node.target
       when Member, ClassVar
-        old_var = context.lookup_member(node.target.name)
+        var = context.lookup_member(node.target.name)
       else
-        old_var = context.lookup_variable(node.target.name)
+        var = context.lookup_variable(node.target.name)
       end
-
-      if old_var
-        unless old_var.type.base_type == node.type.base_type
-          if !old_var.is_a?(ClassVar) || old_var.target == node.target.target
-            unless old_var.type == Type.types[:UnionType]
-              Type.union_type(old_var.type)
-            end
-            Type.union_type(node.value.type)
-            old_var.optional = true
-            node.target.optional = true
-          end
+      #
+      # if old_var
+      #   unless old_var.type.base_type == node.type.base_type
+      #     if !old_var.is_a?(ClassVar) || old_var.target == node.target.target
+      #       unless old_var.type.union_type?
+      #         Type.union_type(old_var.type)
+      #       end
+      #       Type.union_type(node.value.type)
+      #       old_var.optional = true
+      #     end
+      #   end
+      #   node.target.optional = old_var.optional
+      #   unless node.target.is_a?(Member) || node.target.is_a?(ClassVar)
+      #     node.target.defined = true
+      #   end
+      # end
+      if var.nil? || var.type != node.type
+        if var.nil?
+          node.target.sequence = 0
+        else
+          node.target.sequence = var.sequence + 1
         end
-        unless node.target.is_a?(Member) || node.target.is_a?(ClassVar)
-          node.target.defined = true
-        end
+        context.define_variable node.target
+      else
+        var << node.target
       end
-      context.define_variable node.target
 
       false
     end

@@ -5,6 +5,7 @@ module SLang
     attr_accessor :instances
     attr_accessor :template
     attr_accessor :calls
+    attr_accessor :variables
 
     def template
       if @template.nil?
@@ -16,6 +17,7 @@ module SLang
 
     def <<(instance)
       @instances ||= {}
+      instance.variables = variables
       @instances[instance.signature] = instance
       FunctionInstance.add_instance instance
     end
@@ -63,6 +65,19 @@ module SLang
 
     def closed_loop?
       chain[0..-2].find {|fun| fun == self} != nil
+    end
+
+    def calls
+      @calls || []
+    end
+
+    def add_variable(var)
+      @variables ||= []
+      @variables << var
+    end
+
+    def variables
+      @variables || []
     end
   end
 

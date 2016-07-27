@@ -26,6 +26,9 @@ module SLang
         else
           @vars[var.name] = var
         end
+        if @func && var.instance_of?(Variable)
+          @func.add_variable var
+        end
       end
     end
   end

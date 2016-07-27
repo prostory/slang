@@ -104,6 +104,12 @@ module SLang
     end
   end
 
+  class Variable
+    def mangled_name
+      "#{name}#{sequence}"
+    end
+  end
+
   module CLang
     class CodeGenVisitor < Visitor
       attr_accessor :context
@@ -204,12 +210,7 @@ module SLang
       end
 
       def visit_variable(node)
-        unless node.defined
-          stream << "#{node.type.define_variable(node.name)};\n"
-          indent
-        end
-
-        stream << "#{node.name}"
+        stream << "#{node.mangled_name}"
         stream << ".#{Type.union_type.member(node.type)}" if node.optional
         false
       end
@@ -394,10 +395,22 @@ module SLang
         define_parameters(node)
         stream << ")\n{\n"
         with_indent do
+          define_variables(node)
           node.body.accept self
         end
         indent
         stream << "}\n"
+      end
+
+      def define_variables(node)
+        node.variables.each do |var|
+          indent
+          if var.optional
+            stream << "#{Type.union_type.define_variable(var.mangled_name)};\n"
+          else
+            stream << "#{var.type.define_variable(var.mangled_name)};\n"
+          end
+        end
       end
 
       def define_parameters(node)

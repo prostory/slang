@@ -91,6 +91,7 @@ module SLang
                [:external, :len, :strlen, [], :Integer],
                [:external, :dup, :strdup, [], :String],
                [:external, :cat, :strcat, [:String], :String],
+               [:external, :grow, :realloc, [:Integer], :String]
               ],
               [:class, :String, nil,
                [:include, :StringHelper],
@@ -120,7 +121,7 @@ module SLang
     def compile(source)
       context = CLang::Context.new
       code = parse(source)
-      main_prog = Function.new(:main, [], core_lib.children.push(*code), :Integer)
+      main_prog = Function.new(:main, [], core_lib.children.push(*code) << Return.new([NumberLiteral.new(0)]), :Integer)
       context.gen_code(main_prog)
     end
 

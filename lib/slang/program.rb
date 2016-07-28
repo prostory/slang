@@ -22,6 +22,7 @@ module SLang
                [:fun, :__init__, [], []]
               ],
               [:class, :Integer, nil,
+               [:operator, :-, [], :Integer],
                [:operator, :+, [:Integer], :Integer],
                [:operator, :-, [:Integer], :Integer],
                [:operator, :*, [:Integer], :Integer],
@@ -54,6 +55,7 @@ module SLang
                [:fun, :times, [:fn], [[:set, :i, 1], [:while, [:<=, :i, [:self]], [[:fn, nil, [:i]], [:set, :i, [:+, :i, [1]]]]]]]
               ],
               [:class, :Float, nil,
+               [:operator, :-, [], :Float],
                [:operator, :+, [:Integer], :Float],
                [:operator, :-, [:Integer], :Float],
                [:operator, :*, [:Integer], :Float],

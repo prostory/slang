@@ -71,6 +71,10 @@ module SLang
       @calls || []
     end
 
+    def clear_variables
+      @variables = []
+    end
+
     def add_variable(var)
       @variables ||= []
       @variables << var

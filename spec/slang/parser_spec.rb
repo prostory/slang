@@ -76,9 +76,17 @@ describe SLang::Parser do
       expect(expr_parser).to     parse('(1)')
       expect(expr_parser).to     parse('(if empty? then false end)')
     end
+
+    it "parses access expressions" do
+      expect(expr_parser).to     parse('1.b.c')
+      expect(expr_parser).to     parse('a.b.c')
+      expect(expr_parser).to     parse('a(b).c(d).e')
+    end
     
     it "parses expressions" do
-	  expect(expr_parser).to     parse('1 + 2')
+      expect(expr_parser).to     parse('1.b + 2.c')
+      expect(expr_parser).to     parse('a.b(d) + b.c(e)')
+	    expect(expr_parser).to     parse('1 + 2')
       expect(expr_parser).to     parse('1 + 2*3/4')
       expect(expr_parser).to     parse('(1 + 2)*3/4')
       expect(expr_parser).to     parse('a && b || c')
@@ -105,6 +113,12 @@ describe SLang::Parser do
 
   context "statement parsing" do
     let(:stmt_parser) { parser.stmt }
+
+    it "parses cast statements" do
+      expect(stmt_parser).to     parse('cast(Integer, a)')
+      expect(stmt_parser).to     parse('cast(Float, 1)')
+      expect(stmt_parser).to_not parse('cast Float')
+    end
 
     it "parses block statements" do
       expect(stmt_parser).to     parse('begin end')

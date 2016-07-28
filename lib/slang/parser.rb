@@ -128,7 +128,7 @@ module SLang
     rule(:var)              { const | variable | instance_var | class_var }
 
     rule(:primary)          { literal | if_stmt | unless_stmt | case_stmt | while_stmt | until_stmt | do_while_stmt | do_until_stmt | block_stmt |
-      assign_stmt | include_stmt | extend_stmt | call_stmt | negative_expr | special_call | var | lparen >> expr >> rparen }
+      assign_stmt | include_stmt | extend_stmt | cast_stmt | call_stmt | negative_expr | special_call | var | lparen >> expr >> rparen }
 
     rule(:factor)           { array_set_expr | array_get_expr | access_expr | unary_operation | primary }
 
@@ -158,7 +158,7 @@ module SLang
     end
 
     rule(:access_expr0)         do
-      (str('.') >> (call_stmt.as(:name) | opt_name) >> access_expr0.maybe).as(:call)
+      (str('.') >> opt_name >> (call_args | space).maybe >> access_expr0.maybe).as(:call)
     end
 
     rule(:pick_expr)            do
@@ -175,6 +175,10 @@ module SLang
 
     rule(:array_get_expr)       do
       pick_expr.as(:array_get_expr)
+    end
+
+    rule(:cast_stmt)            do
+      (cast_keyword >> lparen >> const.as(:type) >> comma >> expr.as(:value) >> rparen).as(:cast_stmt)
     end
     
     rule(:block_stmt)           do
@@ -317,7 +321,7 @@ module SLang
       (decl.maybe >> (eol >> decl.maybe).repeat).as(:decls)
     end
 
-    keywords :begin, :break, :case, :class, :const, :continue, :def, :do, :elif, :else,
+    keywords :begin, :break, :case, :cast, :class, :const, :continue, :def, :do, :elif, :else,
         :end, :export, :extend, :external, :for, :if, :import, :include, :module, :of, :operator,
         :return, :then, :until, :unless, :while
 

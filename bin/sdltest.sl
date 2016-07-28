@@ -145,4 +145,3 @@ class Game
 end
 
 Game.new(800, 600).start
-return 0

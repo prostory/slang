@@ -4,11 +4,36 @@ require_relative 'clang/context'
 module SLang
   class ASTNode
     attr_accessor :type
-    attr_accessor :optional
     attr_accessor :unreached
 
+    def self.return(body)
+      unless body.last.nil?
+        body << body.children.pop.return
+      end
+    end
+
+    def self.assign(target, body)
+      unless body.last.nil?
+        body << body.children.pop.assign(target.clone)
+      end
+    end
+
     def return
-      Return.new(self)
+      Return.new([self])
+    end
+
+    def assign(target)
+      Assign.new(target, self)
+    end
+  end
+
+  class Expressions
+    def return
+      self.class.return self
+    end
+
+    def assign(target)
+      self.class.assign target, self
     end
   end
 
@@ -41,6 +66,7 @@ module SLang
   class Variable
     attr_accessor :instances
     attr_accessor :sequence
+    attr_accessor :optional_type
 
     def <<(instance)
       @instances ||= []
@@ -48,11 +74,13 @@ module SLang
       instance.sequence = sequence
     end
 
-    def optional=(is_optional)
-      unless optional == is_optional
-        @optional = is_optional
-        @instances.each {|instance| instance.optional = is_optional} if @instances
-      end
+    def sequence
+      @sequence || 0
+    end
+
+    def set_optional_type(type)
+      @optional_type = @type
+      @instances.each {|var| var.optional_type = var.type } if @instances
     end
 
     def var_list?
@@ -61,24 +89,35 @@ module SLang
   end
 
   class If
-    def self.return(body)
-      unless body.last.nil? || body.last.is_a?(Return)
-        ret = Return.new([body.last])
-        ret.type = body.type
-        body.children.pop
-        body << ret
-      end
+    def return
+      @then.return
+      @else.return if @else
+      self
     end
 
-    def return
-      self.class.return(@then)
-      self.class.return(@else) if @else
+    def assign(target)
+      @then.assign target
+      @else.assign target if @else
       self
     end
   end
 
   class While
     def return
+      self
+    end
+
+    def assign(target)
+      self
+    end
+  end
+
+  class Return
+    def return
+      self
+    end
+
+    def assign(target)
       self
     end
   end
@@ -117,6 +156,11 @@ module SLang
       false
     end
 
+    def visit_nil_literal(node)
+      node.type = Type.nil
+      false
+    end
+
     def visit_string_literal(node)
       node.type = Type.string
       false
@@ -140,7 +184,6 @@ module SLang
         return
       end
       node.type = var.type
-      node.optional = var.optional
       var << node
       false
     end
@@ -154,7 +197,6 @@ module SLang
       var = context.lookup_member(node.name)
       raise "Bug: instance variable '#{node.name}' for #{context.scope.type} is not defined!" if var.nil?
       node.type = var.type
-      node.optional = var.optional
       var << node
       false
     end
@@ -162,7 +204,6 @@ module SLang
     def visit_class_var(node)
       var = context.lookup_member(node.name) or raise "Bug: class variable '#{node.name}' is not defined!"
       node.type = var.type
-      node.optional = var.optional
       var << node
       false
     end
@@ -318,6 +359,7 @@ module SLang
       scope_type = call.obj ? call.obj.type : Type.kernel
 
       context.new_scope(function, scope_type) do
+        function.clear_variables
         if call.obj
           self_var = Parameter.new(:self, call.obj.type)
           context.define_variable self_var
@@ -407,12 +449,19 @@ module SLang
       visit_external node
     end
 
-    def end_visit_if(node)
+    def visit_if(node)
+      node.cond.accept self
+      with_branch do
+        node.then.accept self
+        node.else.accept self if node.else
+      end
+
       if node.else.any?
         node.type = Type.merge(node.then.type, node.else.type)
       else
         node.type = node.then.type
       end
+      false
     end
 
     def end_visit_while(node)
@@ -428,6 +477,12 @@ module SLang
     end
 
     def visit_assign(node)
+      if node.value.is_a? If
+        assign_if = node.value.assign(node.target)
+        node.parent.replace(node, assign_if)
+        assign_if.accept self
+        return false
+      end
       node.value.accept self
       node.type = node.target.type = node.value.type
 
@@ -437,26 +492,19 @@ module SLang
       else
         var = context.lookup_variable(node.target.name)
       end
-      #
-      # if old_var
-      #   unless old_var.type.base_type == node.type.base_type
-      #     if !old_var.is_a?(ClassVar) || old_var.target == node.target.target
-      #       unless old_var.type.union_type?
-      #         Type.union_type(old_var.type)
-      #       end
-      #       Type.union_type(node.value.type)
-      #       old_var.optional = true
-      #     end
-      #   end
-      #   node.target.optional = old_var.optional
-      #   unless node.target.is_a?(Member) || node.target.is_a?(ClassVar)
-      #     node.target.defined = true
-      #   end
-      # end
+
       if var.nil? || var.type != node.type
-        if var.nil?
-          node.target.sequence = 0
-        else
+        if var
+          if @branch
+            type = Type.merge(var.type, node.type)
+            if type.union_type?
+              var.set_optional_type type unless var.type.union_type?
+              var.type = type
+              node.target.optional_type = node.type
+              var << node.target
+              return false
+            end
+          end
           node.target.sequence = var.sequence + 1
         end
         context.define_variable node.target
@@ -509,6 +557,12 @@ module SLang
       raise "can't set to the #{node.target.type}" unless node.target.type.is_a? ArrayType
       raise "array index can not be #{node.index.type}" unless node.index.type == Type.int
       node.type = node.target.type.elements_type
+    end
+
+    def with_branch
+      @branch = true
+      yield
+      @branch = false
     end
   end
 end

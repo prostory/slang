@@ -50,7 +50,7 @@ describe SLang::Transform do
 
     it "transforms a negative expression" do
       input = parser.parse('-i')
-      expect(xform.apply(input).last).to eq('-'.call(['i'.var], 0.int))
+      expect(xform.apply(input).last).to eq('-'.call([], 'i'.var))
     end
 
     it "transforms a unary operation" do
@@ -67,6 +67,11 @@ describe SLang::Transform do
       expect(xform.apply(input).last).to eq('*'.call([5.int], 2.int))
     end
 
+    it "transforms a cast statement" do
+      input = parser.parse('cast(Float, a)')
+      expect(xform.apply(input).last).to eq(Cast.new('Float'.const, 'a'.var))
+    end
+
     it "transforms a empty block statement" do
       input = parser.parse('begin end')
       expect(xform.apply(input)).to eq(Expressions.new)
@@ -79,14 +84,14 @@ describe SLang::Transform do
 
     it "transforms a if statement" do
       input = parser.parse('if i < 0 then i else -i end')
-      expect(xform.apply(input).last).to eq(If.new('<'.call([0.int], 'i'.var), 'i'.var, '-'.call(['i'.var], 0.int)))
+      expect(xform.apply(input).last).to eq(If.new('<'.call([0.int], 'i'.var), 'i'.var, '-'.call([], 'i'.var)))
     end
 
     it "transforms a if statement witch has else if subtree" do
       input = parser.parse('if i < 0 then i elif i == 0 then i + 1 elif i > 5 then i - 4 else -i end')
       expect(xform.apply(input).last).to eq(If.new('<'.call([0.int], 'i'.var), 'i'.var,
                                               If.new('=='.call([0.int], 'i'.var), '+'.call([1.int], 'i'.var),
-                                              If.new('>'.call([5.int], 'i'.var), '-'.call([4.int], 'i'.var), '-'.call(['i'.var], 0.int)))))
+                                              If.new('>'.call([5.int], 'i'.var), '-'.call([4.int], 'i'.var), '-'.call([], 'i'.var)))))
     end
 
     it "transforms a unless statement" do

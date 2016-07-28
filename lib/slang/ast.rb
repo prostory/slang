@@ -350,6 +350,7 @@ module SLang
 					args[idx] = new
 				end
 			end
+			@obj = new if obj == old
 		end
 
 		def ==(other)
@@ -361,7 +362,7 @@ module SLang
     end
 
 		def clone
-			call = self.class.new name, args, obj
+			call = self.class.new name, args.map(&:clone), obj&&obj.clone
 			call.source_code = source_code
 			call
 		end
@@ -615,6 +616,10 @@ module SLang
 			when value
 				@value = new
 			end
+		end
+
+		def to_s
+			"(set #{target} #{value})"
 		end
 
 		def ==(other)

@@ -11,6 +11,9 @@ static Integer_Class Integer_class;
 typedef double Float;
 typedef struct { char unused; } Float_Class;
 static Float_Class Float_class;
+typedef void * Nil;
+typedef struct { char unused; } Nil_Class;
+static Nil_Class Nil_class;
 typedef char * String;
 typedef struct { char unused; } String_Class;
 static String_Class String_class;
@@ -122,7 +125,7 @@ Rect * init8(Game * self)
         printf("SDL_CreateWindow failed: %s\n", SDL_GetError());
         exit(1);
     }
-    self->renderer = SDL_CreateRenderer(self->window, (0 - 1), 2);
+    self->renderer = SDL_CreateRenderer(self->window, -(1), 2);
     if (nil__mark__4(self->renderer))
     {
         printf("SDL_CreateRenderer failed: %s\n", SDL_GetError());
@@ -153,6 +156,7 @@ Integer type12(Event * self)
 }
 Void render13(Game * self)
 {
+    Integer i;
     SDL_SetRenderDrawColor(self->renderer, 255, 255, 255, 255);
     SDL_RenderClear(self->renderer);
     SDL_SetRenderDrawColor(self->renderer, 255, 0, 0, 255);
@@ -162,7 +166,6 @@ Void render13(Game * self)
     SDL_SetRenderDrawColor(self->renderer, 0, 0, 255, 255);
     SDL_RenderDrawLine(self->renderer, 0, (self->height / 2), self->width, (self->height / 2));
     SDL_SetRenderDrawColor(self->renderer, 255, 255, 0, 255);
-    Integer i;
     i = 0;
     while ((i < self->height))
     {
@@ -182,8 +185,8 @@ Void quit14(Game * self)
 }
 Void start15(Game * self)
 {
-    init8(self);
     Pointer e;
+    init8(self);
     e = new11(&Event_class);
     while (!(self->quit))
     {

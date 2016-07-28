@@ -64,7 +64,7 @@ module SLang
         return 'char unused;'
       end
 
-      "#{members.map{|n, v| "#{v.optional ? Type.union_type : v.type.reference} #{n};"}.join ' '}"
+      "#{members.map{|n, v| "#{v.type.reference} #{n};"}.join ' '}"
     end
 
     def reference
@@ -105,6 +105,10 @@ module SLang
 
     def display_members
       members.map {|t| "#{t.base_type} #{member(t)};"}.join ' '
+    end
+
+    def base_type
+      self
     end
 
     def member(t)
@@ -174,6 +178,7 @@ module SLang
       base(:void, :Void)
       base(:int, :Integer)
       base(:double, :Float)
+      base('void *', :Nil)
       base('char *', :String)
       base('void *', :Pointer)
       enum({False: 0, True: 1}, :Bool)

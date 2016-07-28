@@ -106,7 +106,7 @@ module SLang
 
   class Variable
     def mangled_name
-      "#{name}#{sequence}"
+      sequence > 0 ? "#{name}#{sequence}" : name
     end
   end
 
@@ -115,10 +115,11 @@ module SLang
       attr_accessor :context
       attr_accessor :stream
 
-      def initialize(context, stream = '')
+      def initialize(context, indent_legnth = 4, stream = '')
         @indent = 0
         @context = context
         @stream = stream
+        @indent_length = indent_legnth
       end
 
       def visit_number_literal(node)
@@ -127,6 +128,10 @@ module SLang
 
       def visit_bool_literal(node)
         stream << (node.value ? 'True' : 'False')
+      end
+
+      def visit_nil_literal(node)
+        stream << '0'
       end
 
       def visit_string_literal(node)
@@ -175,9 +180,10 @@ module SLang
       def visit_call(node)
         if node.target_fun.is_a? Operator
           op = node.target_fun.mangled_name.to_s
-
-          if op == '!'
-            stream << op
+          if node.args.empty?
+            if op == '!' || op == '-'
+              stream << op
+            end
           end
 
           stream << '('
@@ -211,7 +217,7 @@ module SLang
 
       def visit_variable(node)
         stream << "#{node.mangled_name}"
-        stream << ".#{Type.union_type.member(node.type)}" if node.optional
+        stream << ".#{Type.union_type.member(node.optional_type)}" if node.optional_type
         false
       end
 
@@ -233,7 +239,7 @@ module SLang
 
       def visit_member(node)
         stream << "self->#{node.name}"
-        stream << ".#{Type.union_type.member(node.type)}" if node.optional
+        stream << ".#{Type.union_type.member(node.optional_type)}" if node.optional_type
         false
       end
 
@@ -404,10 +410,8 @@ module SLang
 
       def define_variables(node)
         node.variables.each do |var|
-          indent
-          if var.optional
-            stream << "#{Type.union_type.define_variable(var.mangled_name)};\n"
-          else
+          if var.instances
+            indent
             stream << "#{var.type.define_variable(var.mangled_name)};\n"
           end
         end
@@ -437,7 +441,7 @@ module SLang
       end
 
       def indent
-        stream << ('    ' * @indent)
+        stream << (' ' * @indent_length * @indent)
       end
 
       def to_s

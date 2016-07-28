@@ -5,11 +5,7 @@ require_relative 'parser'
 module SLang
   class Parslet::Context
     def transform_call(t, obj)
-      if t[:name].kind_of? Call
-        t[:name].obj = obj
-      else
-        t[:name] = Call.new(t[:name], [], obj)
-      end
+      t[:name] = Call.new(t[:name], t[:args], obj)
 
       if t[:call]
         t[:call] = transform_call(t[:call], t[:name])
@@ -51,8 +47,9 @@ module SLang
       end
       Call.new(t[:operator], [t[:right]], t[:left])
     end
-    rule(:negative_expr     => subtree(:t)) { Call.new('-',[t], NumberLiteral.new(0)) }
+    rule(:negative_expr     => subtree(:t)) { Call.new('-', [], t) }
     rule(:access_expr       => subtree(:t)) { transform_call(t[:call], t[:obj]) }
+    rule(:cast_stmt         => subtree(:t)) { Cast.new(t[:type], t[:value])}
     rule(:block_stmt        => subtree(:t)) { Do.from(t[:body]) }
     rule(:if_stmt           => subtree(:t))       do
       if t.is_a?(Array)

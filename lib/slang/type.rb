@@ -46,6 +46,10 @@ module SLang
       types[:Bool]
     end
 
+    def self.nil
+      types[:Nil]
+    end
+
     def self.string
       types[:String]
     end
@@ -336,7 +340,11 @@ module SLang
     end
 
     def <<(type)
-      members << type unless has_type? type
+      if type.union_type?
+        type.members.each { |t| self << t }
+      else
+        members << type unless has_type? type
+      end
     end
 
     def add_types(types)

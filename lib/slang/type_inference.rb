@@ -329,7 +329,7 @@ module SLang
               call.unreached = false
             end
 
-            new_fun = typed_function(untyped_fun, node)
+            new_fun = typed_instance(new_fun, untyped_fun, node)
 
             untyped_fun.recursive_calls.each do |call|
               call.target_fun = new_fun
@@ -353,6 +353,10 @@ module SLang
 
     def typed_function(function, call)
       instance = function.clone
+      typed_instance(instance, function, call)
+    end
+
+    def typed_instance(instance, function, call)
       instance.owner = call.obj.type if call.obj
       instance.body.type = Type.void
 

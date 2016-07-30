@@ -81,12 +81,17 @@ module SLang
     attr_accessor :template
     attr_accessor :ancestors
     attr_accessor :class_type
+    attr_accessor :type_id
+
+    @@sequence = 0
 
     def initialize(obj, parent = nil)
       @functions = {}
       @ancestors = [obj]
       @template = TypeTemplate.new(obj.name)
       extend(parent) if parent
+      @type_id = @@sequence
+      @@sequence += 1
     end
 
     def class_type
@@ -142,6 +147,10 @@ module SLang
       @functions = []
       @sequence = 0
       @prototype = prototype || TypePrototype.new(self, parent)
+    end
+
+    def type_id
+      prototype.type_id
     end
 
     def new_instance

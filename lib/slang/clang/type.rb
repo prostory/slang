@@ -201,17 +201,17 @@ module SLang
     end
 
     def self.union(members)
-      type = types[:Options] || UnionType.new(:Options)
+      type = types[:UnionType] || UnionType.new(:UnionType)
       type.add_types members
-      types[:Options] = type
+      types[:UnionType] = type
       type
     end
 
     def self.union_type(type = nil)
-      types[:Options] ||= UnionType.new(:Options)
-      return types[:Options] unless type
-      types[:Options] << type
-      types[:Options]
+      types[:UnionType] ||= UnionType.new(:UnionType)
+      return types[:UnionType] unless type
+      types[:UnionType] << type
+      types[:UnionType]
     end
 
     def self.enum(members, name)

@@ -110,6 +110,12 @@ module SLang
     end
   end
 
+  class Member
+    def mangled_name
+      "self->#{name}"
+    end
+  end
+
   module CLang
     class CodeGenVisitor < Visitor
       attr_accessor :context
@@ -238,9 +244,7 @@ module SLang
       end
 
       def visit_member(node)
-        stream << "self->#{node.name}"
-        stream << ".#{Type.union_type.member(node.optional_type)}" if node.optional_type
-        false
+        visit_variable(node)
       end
 
       def visit_class_var(node)
@@ -317,18 +321,20 @@ module SLang
       end
 
       def visit_assign(node)
+        value = node.value
         if node.value.kind_of? Assign
           node.value.accept self
           stream << ";\n"
           indent
-          node.target.accept self
-          stream << ' = '
-          node.value.target.accept self
-          return false
+          value = node.value.target
         end
+        # if node.target.optional_type
+        #   stream << "#{node.target.mangled_name}.type = #{node.target.optional_type.type_id};\n"
+        #   indent
+        # end
         node.target.accept self
         stream << ' = '
-        node.value.accept self
+        value.accept self
         false
       end
 
@@ -368,7 +374,7 @@ module SLang
         stream << ')['
         node.index.accept self
         stream << ']'
-        stream << ".#{elements_type.member(node.value.type)}" if elements_type.is_a? UnionType
+        stream << ".#{elements_type.member(node.value.type)}" if elements_type.union_type?
         stream << ' = '
         node.value.accept self
         stream << ''
@@ -420,10 +426,8 @@ module SLang
 
       def define_variables(node)
         node.variables.each do |var|
-          if var.instances
-            indent
-            stream << "#{var.type.define_variable(var.mangled_name)};\n"
-          end
+          indent
+          stream << "#{var.type.define_variable(var.mangled_name)};\n"
         end
       end
 

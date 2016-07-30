@@ -89,7 +89,7 @@ module SLang
       @sequence || 0
     end
 
-    def set_optional_type(type)
+    def init_optional_type
       @optional_type = @type
       @instances.each {|var| var.optional_type = var.type } if @instances
     end
@@ -239,6 +239,7 @@ module SLang
     def visit_class_def(node)
       superclass = Type.types[node.superclass] or raise "uninitialized constant '#{node.superclass}'" if node.superclass
       type = Type.object_type node.name, superclass
+      node << ClassFun.new(:type_id, [], [NumberLiteral.new(type.type_id)], :Integer, node)
       context.new_scope(nil, type) do
         node.accept_children self
       end
@@ -507,6 +508,7 @@ module SLang
         node.parent.replace(node, node.value)
         return false
       end
+
       node.type = node.target.type = node.value.type
 
       case node.target
@@ -525,7 +527,7 @@ module SLang
           if @branch
             type = Type.merge(var.type, node.type)
             if type.union_type?
-              var.set_optional_type type unless var.type.union_type?
+              var.init_optional_type unless var.type.union_type?
               var.type = type
               node.target.optional_type = node.type
               var << node.target

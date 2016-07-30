@@ -192,8 +192,12 @@ module SLang
       self.kind_of? UnionType
     end
 
-    def is_any?
-      self.name == :Any
+    def any_type?
+      self == Type.any
+    end
+
+    def nil_type?
+      self == Type.nil
     end
 
     def seq

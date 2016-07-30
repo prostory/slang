@@ -23,6 +23,7 @@ def bar(n)
 end
 
 printf "fib(6) = %d\n", fib(6)
+printf "fib(6.5) = %.2f\n", fib(6.5)
 foo
 bar 10
 

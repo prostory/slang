@@ -317,13 +317,23 @@ module SLang
       end
 
       def visit_assign(node)
+        if node.value.kind_of? Assign
+          node.value.accept self
+          stream << ";\n"
+          indent
+          node.target.accept self
+          stream << ' = '
+          node.value.target.accept self
+          return false
+        end
         node.target.accept self
         stream << ' = '
         node.value.accept self
+        false
       end
 
       def visit_cast(node)
-        if node.value.type.is_a? UnionType
+        if node.value.type.union_type?
           node.value.accept self
           stream << ".#{Type.union_type.member(node.type)}"
           return

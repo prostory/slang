@@ -6,16 +6,27 @@ module SLang
     attr_accessor :type
     attr_accessor :unreached
 
-    def self.return(body)
+    def self.return(body, target = nil)
       unless body.last.nil?
-        body << body.children.pop.return
+        if target
+          last = body.children.pop
+          if target != last
+            assign = last.assign(target)
+            body << assign
+          end
+          body << target.clone.return
+        else
+          body << body.children.pop.return
+        end
       end
+      body
     end
 
     def self.assign(target, body)
       unless body.last.nil?
-        body << body.children.pop.assign(target.clone)
+        body << body.children.pop.assign(target)
       end
+      body
     end
 
     def return
@@ -23,13 +34,13 @@ module SLang
     end
 
     def assign(target)
-      Assign.new(target, self)
+      Assign.new(target.clone, self)
     end
   end
 
   class Expressions
-    def return
-      self.class.return self
+    def return(target = nil)
+      self.class.return self, target
     end
 
     def assign(target)
@@ -118,7 +129,11 @@ module SLang
     end
 
     def assign(target)
-      self
+      if values.empty?
+        self
+      else
+        values[0].assign(target)
+      end
     end
   end
 
@@ -369,6 +384,8 @@ module SLang
           context.define_variable self_var
         end
 
+        context.define_variable Variable.new(:result, Type.nil)
+
         instance.params.each {|param| param.accept self}
 
         varlist = instance.params.pop if instance.has_var_list?
@@ -402,21 +419,13 @@ module SLang
         unless instance.body.type.child_of? instance.return_type
           raise "can't cast #{instance.body.type} to #{instance.return_type}"
         end
-
-        unless instance.body.type == Type.void
-          unless instance.body.last.nil? || instance.body.last.is_a?(Return)
-            ret = instance.body.last.return
-            ret.type = instance.body.type
-            instance.body.children.pop
-            instance.body << ret
-          end
-        end
       end
       instance
     end
 
     def visit_function(node)
       node.params.each {|param| param.accept self }
+      node.body.return(Variable.new(:result))
       node.return_type = Type.types[node.return_type]
       context.add_function node
       if node.name == :main
@@ -429,6 +438,7 @@ module SLang
 
     def visit_lambda(node)
       node.params.each {|param| param.accept self }
+      node.body.return(Variable.new(:result))
       node.return_type = Type.types[node.return_type]
       node.type = Type.lambda.new_instance
       Type.lambda.add_function node
@@ -437,6 +447,7 @@ module SLang
 
     def visit_class_fun(node)
       node.params.each {|param| param.accept self }
+      node.body.return(Variable.new(:result))
       node.return_type = Type.types[node.return_type]
       context.add_function node
       false
@@ -472,12 +483,14 @@ module SLang
       node.type = Type.void
     end
 
-    def end_visit_return(node)
+    def visit_return(node)
+      node.values.each { |value| value.accept self }
       if node.values.empty?
         node.type = Type.void
       else
         node.type = node.values[0].type
       end
+      false
     end
 
     def visit_assign(node)
@@ -487,7 +500,13 @@ module SLang
         assign_if.accept self
         return false
       end
+
       node.value.accept self
+
+      if node.value.type == Type.void
+        node.parent.replace(node, node.value)
+        return false
+      end
       node.type = node.target.type = node.value.type
 
       case node.target
@@ -495,6 +514,10 @@ module SLang
         var = context.lookup_member(node.target.name)
       else
         var = context.lookup_variable(node.target.name)
+      end
+
+      if var && (var.type.any_type? || var.type.nil_type? )
+        var.type = node.type
       end
 
       if var.nil? || var.type != node.type
@@ -506,8 +529,12 @@ module SLang
               var.type = type
               node.target.optional_type = node.type
               var << node.target
-              return false
+            else
+              if node.type.any_type?
+                node.type = node.target.type = type
+              end
             end
+            return false
           end
           node.target.sequence = var.sequence + 1
         end
@@ -521,7 +548,7 @@ module SLang
 
     def visit_cast(node)
       node.value.accept self
-      node.type = Type.types[node.target.name]
+      node.type = Type.types[node.cast_type.name]
       if node.value.type.is_a? UnionType
         raise "can't case #{node.type} to #{node.value.type.despect}" unless node.value.type.include? node.type
       end

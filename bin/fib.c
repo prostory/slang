@@ -37,50 +37,68 @@ typedef struct { char unused; } Rect_Class;
 static Rect_Class Rect_class;
 extern Integer fib1(Integer n);
 extern Integer printf(String, ...);
-extern Void foo2(Void);
-extern Options bar3(Integer n);
+extern Float fib2(Float n);
+extern Nil foo3(Void);
+extern Options bar4(Integer n);
 extern String strdup(String);
-extern String new4(String_Class * self, String const_str);
+extern String new5(String_Class * self, String const_str);
 extern Integer strlen(String);
 extern String realloc(String, Integer);
 extern String strcat(String, String);
-extern String __lsh__5(String self, String s);
+extern String __lsh__6(String self, String s);
 extern Integer puts(String);
-extern String to_s6(Bool self);
-extern String string7(Options self);
-extern Integer int8(Options self);
-extern Float float9(Options self);
+extern String to_s7(Bool self);
+extern String string8(Options self);
+extern Integer int9(Options self);
+extern Float float10(Options self);
 extern Pointer calloc(Integer, Integer);
-extern Rect * __alloc__10(Rect_Class * self);
-extern Integer __init__11(Rect * self, Integer x, Integer y, Integer w, Integer h);
-extern Rect * new12(Rect_Class * self, Integer var0, Integer var1, Integer var2, Integer var3);
-extern Integer x13(Rect * self);
-extern Integer y14(Rect * self);
-extern Integer w15(Rect * self);
-extern Integer h16(Rect * self);
-extern Integer dump17(Rect * self);
-extern Rect * __div__18(Rect * self, Integer n);
+extern Rect * __alloc__11(Rect_Class * self);
+extern Integer __init__12(Rect * self, Integer x, Integer y, Integer w, Integer h);
+extern Rect * new13(Rect_Class * self, Integer var0, Integer var1, Integer var2, Integer var3);
+extern Integer x14(Rect * self);
+extern Integer y15(Rect * self);
+extern Integer w16(Rect * self);
+extern Integer h17(Rect * self);
+extern Integer dump18(Rect * self);
+extern Rect * __div__19(Rect * self, Integer n);
 Integer fib1(Integer n)
 {
+    Integer result;
     if ((n < 2))
     {
-        return n;
+        result = n;
     }
     else
     {
-        return (fib1((n - 2)) + fib1((n - 1)));
+        result = (fib1((n - 2)) + fib1((n - 1)));
     }
+    return result;
 }
-Void foo2(Void)
+Float fib2(Float n)
 {
+    Float result;
+    if ((n < 2))
+    {
+        result = n;
+    }
+    else
+    {
+        result = (fib2((n - 2)) + fib2((n - 1)));
+    }
+    return result;
+}
+Nil foo3(Void)
+{
+    Nil result;
     Integer i;
     i = 0;
     while ((i < 10))
     {
         i = (i + 1);
     }
+    return result;
 }
-Options bar3(Integer n)
+Options bar4(Integer n)
 {
     Options result;
     if ((n < 0))
@@ -100,109 +118,143 @@ Options bar3(Integer n)
     }
     return result;
 }
-String new4(String_Class * self, String const_str)
+String new5(String_Class * self, String const_str)
 {
-    return strdup(const_str);
+    String result;
+    result = strdup(const_str);
+    return result;
 }
-String __lsh__5(String self, String s)
+String __lsh__6(String self, String s)
 {
+    String result;
     Integer len;
     len = ((strlen(self) + strlen(s)) + 1);
     self = realloc(self, len);
-    return strcat(self, s);
+    result = strcat(self, s);
+    return result;
 }
-String to_s6(Bool self)
+String to_s7(Bool self)
 {
+    String result;
     if (self)
     {
-        return "true";
+        result = "true";
     }
     else
     {
-        return "false";
+        result = "false";
     }
+    return result;
 }
-String string7(Options self)
+String string8(Options self)
 {
-    return self.uString;
+    String result;
+    result = self.uString;
+    return result;
 }
-Integer int8(Options self)
+Integer int9(Options self)
 {
-    return self.uInteger;
+    Integer result;
+    result = self.uInteger;
+    return result;
 }
-Float float9(Options self)
+Float float10(Options self)
 {
-    return self.uFloat;
+    Float result;
+    result = self.uFloat;
+    return result;
 }
-Rect * __alloc__10(Rect_Class * self)
+Rect * __alloc__11(Rect_Class * self)
 {
-    return calloc(sizeof(Rect), 1);
+    Pointer result;
+    result = calloc(sizeof(Rect), 1);
+    return result;
 }
-Integer __init__11(Rect * self, Integer x, Integer y, Integer w, Integer h)
+Integer __init__12(Rect * self, Integer x, Integer y, Integer w, Integer h)
 {
+    Integer result;
     self->x = x;
     self->y = y;
     self->w = w;
-    return self->h = h;
+    self->h = h;
+    result = self->h;
+    return result;
 }
-Rect * new12(Rect_Class * self, Integer var0, Integer var1, Integer var2, Integer var3)
+Rect * new13(Rect_Class * self, Integer var0, Integer var1, Integer var2, Integer var3)
 {
+    Pointer result;
     Pointer obj;
-    obj = __alloc__10(self);
-    __init__11(obj, var0, var1, var2, var3);
-    return obj;
+    obj = __alloc__11(self);
+    __init__12(obj, var0, var1, var2, var3);
+    result = obj;
+    return result;
 }
-Integer x13(Rect * self)
+Integer x14(Rect * self)
 {
-    return self->x;
+    Integer result;
+    result = self->x;
+    return result;
 }
-Integer y14(Rect * self)
+Integer y15(Rect * self)
 {
-    return self->y;
+    Integer result;
+    result = self->y;
+    return result;
 }
-Integer w15(Rect * self)
+Integer w16(Rect * self)
 {
-    return self->w;
+    Integer result;
+    result = self->w;
+    return result;
 }
-Integer h16(Rect * self)
+Integer h17(Rect * self)
 {
-    return self->h;
+    Integer result;
+    result = self->h;
+    return result;
 }
-Integer dump17(Rect * self)
+Integer dump18(Rect * self)
 {
-    return printf("(%d, %d, %d, %d)\n", x13(self), y14(self), w15(self), h16(self));
+    Integer result;
+    result = printf("(%d, %d, %d, %d)\n", x14(self), y15(self), w16(self), h17(self));
+    return result;
 }
-Rect * __div__18(Rect * self, Integer n)
+Rect * __div__19(Rect * self, Integer n)
 {
-    return new12(&Rect_class, (x13(self) / n), (y14(self) / n), (w15(self) / n), (h16(self) / n));
+    Pointer result;
+    result = new13(&Rect_class, (x14(self) / n), (y15(self) / n), (w16(self) / n), (h17(self) / n));
+    return result;
 }
 Integer main(Void)
 {
+    Integer result;
     Integer i;
     Float i1;
     String i2;
     Bool i3;
     Pointer r;
     printf("fib(6) = %d\n", fib1(6));
-    foo2();
-    bar3(10);
+    printf("fib(6.5) = %.2f\n", fib2(6.5));
+    foo3();
+    bar4(10);
     i = 0;
     printf("i = %d\n", i);
     i1 = (i + 1.0);
     i1 = (1 + i1);
     printf("i = %.2f\n", i1);
-    i2 = new4(&String_class, "Hello ");
-    __lsh__5(i2, "World");
+    i2 = new5(&String_class, "Hello ");
+    __lsh__6(i2, "World");
     puts(i2);
     i3 = True;
-    puts(to_s6(i3));
+    puts(to_s7(i3));
     i3 = False;
-    puts(to_s6(i3));
-    printf("bar(0) = '%s'\n", string7(bar3(0)));
-    printf("bar(-1) = %d\n", int8(bar3(-(1))));
-    printf("bar(10) = %.2f\n", float9(bar3(10)));
-    r = new12(&Rect_class, 10, 10, 20, 20);
-    dump17(r);
-    dump17(__div__18(r, 2));
-    return 0;
+    puts(to_s7(i3));
+    printf("bar(0) = '%s'\n", string8(bar4(0)));
+    printf("bar(-1) = %d\n", int9(bar4(-(1))));
+    printf("bar(10) = %.2f\n", float10(bar4(10)));
+    r = new13(&Rect_class, 10, 10, 20, 20);
+    dump18(r);
+    dump18(__div__19(r, 2));
+    result = 0;
+    return result;
 }

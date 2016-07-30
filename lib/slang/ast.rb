@@ -584,6 +584,10 @@ module SLang
 			end
 		end
 
+		def to_s
+			"(ret #{values.join ' '})"
+		end
+
 		def ==(other)
 			other.class == self.class && other.values == values
 		end
@@ -633,7 +637,44 @@ module SLang
 		end
 	end
 
-	class Cast < Assign
+	class Cast < ASTNode
+		attr_accessor :cast_type
+		attr_accessor :value
+
+		def initialize(type, value)
+			@cast_type = type
+			@cast_type.parent = self
+			@value = value
+			@value.parent = self
+		end
+
+		def accept_children(visitor)
+			type.accept visitor
+			value.accept visitor
+		end
+
+		def replace(old, new)
+			case old
+			when type
+				@cast_type = new
+			when value
+				@value = new
+			end
+		end
+
+		def to_s
+			"(cast #{cast_type} #{value})"
+		end
+
+		def ==(other)
+			other.class == self.class && other.cast_type == cast_type && other.value == value
+		end
+
+		def clone
+			assign = self.class.new cast_type.clone, value.clone
+			assign.source_code = source_code
+			assign
+		end
 	end
 
 	class Typeof < ASTNode

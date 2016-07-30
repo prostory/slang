@@ -68,52 +68,69 @@ extern Integer SDL_RenderDrawLine(Pointer, Integer, Integer, Integer, Integer);
 extern Integer SDL_RenderDrawPoint(Pointer, Integer, Integer);
 extern Void SDL_RenderPresent(Pointer);
 extern Void SDL_Delay(Integer);
-extern Void render13(Game * self);
+extern Nil render13(Game * self);
 extern Void SDL_DestroyWindow(Pointer);
 extern Void SDL_Quit(Void);
-extern Void quit14(Game * self);
-extern Void start15(Game * self);
+extern Nil quit14(Game * self);
+extern Nil start15(Game * self);
 Game * __alloc__1(Game_Class * self)
 {
-    return calloc(sizeof(Game), 1);
+    Pointer result;
+    result = calloc(sizeof(Game), 1);
+    return result;
 }
 Bool __init__2(Game * self, Integer width, Integer height)
 {
+    Bool result;
     self->width = width;
     self->height = height;
-    return self->quit = False;
+    self->quit = False;
+    result = self->quit;
+    return result;
 }
 Game * new3(Game_Class * self, Integer var0, Integer var1)
 {
+    Pointer result;
     Pointer obj;
     obj = __alloc__1(self);
     __init__2(obj, var0, var1);
-    return obj;
+    result = obj;
+    return result;
 }
 Bool nil__mark__4(Pointer self)
 {
-    return (self == 0);
+    Bool result;
+    result = (self == 0);
+    return result;
 }
 Rect * __alloc__5(Rect_Class * self)
 {
-    return calloc(sizeof(Rect), 1);
+    Pointer result;
+    result = calloc(sizeof(Rect), 1);
+    return result;
 }
 Integer __init__6(Rect * self, Integer x, Integer y, Integer w, Integer h)
 {
+    Integer result;
     self->x = x;
     self->y = y;
     self->w = w;
-    return self->h = h;
+    self->h = h;
+    result = self->h;
+    return result;
 }
 Rect * new7(Rect_Class * self, Integer var0, Integer var1, Integer var2, Integer var3)
 {
+    Pointer result;
     Pointer obj;
     obj = __alloc__5(self);
     __init__6(obj, var0, var1, var2, var3);
-    return obj;
+    result = obj;
+    return result;
 }
 Rect * init8(Game * self)
 {
+    Pointer result;
     if ((SDL_Init(32) < 0))
     {
         printf("SDL_Init failed: %s\n", SDL_GetError());
@@ -133,29 +150,41 @@ Rect * init8(Game * self)
     }
     SDL_SetRenderDrawColor(self->renderer, 255, 255, 255, 255);
     self->fill_rect = new7(&Rect_class, (self->width / 4), (self->height / 4), (self->width / 2), (self->height / 2));
-    return self->outline_rect = new7(&Rect_class, (self->width / 6), (self->height / 6), (self->width * (2 / 3)), (self->height * (2 / 3)));
+    self->outline_rect = new7(&Rect_class, (self->width / 6), (self->height / 6), (self->width * (2 / 3)), (self->height * (2 / 3)));
+    result = self->outline_rect;
+    return result;
 }
 Event * __alloc__9(Event_Class * self)
 {
-    return calloc(sizeof(Event), 1);
+    Pointer result;
+    result = calloc(sizeof(Event), 1);
+    return result;
 }
 Integer __init__10(Event * self)
 {
-    return self->type = 0;
+    Integer result;
+    self->type = 0;
+    result = self->type;
+    return result;
 }
 Event * new11(Event_Class * self)
 {
+    Pointer result;
     Pointer obj;
     obj = __alloc__9(self);
     __init__10(obj);
-    return obj;
+    result = obj;
+    return result;
 }
 Integer type12(Event * self)
 {
-    return self->type;
+    Integer result;
+    result = self->type;
+    return result;
 }
-Void render13(Game * self)
+Nil render13(Game * self)
 {
+    Nil result;
     Integer i;
     SDL_SetRenderDrawColor(self->renderer, 255, 255, 255, 255);
     SDL_RenderClear(self->renderer);
@@ -174,17 +203,21 @@ Void render13(Game * self)
     }
     SDL_RenderPresent(self->renderer);
     SDL_Delay(1);
+    return result;
 }
-Void quit14(Game * self)
+Nil quit14(Game * self)
 {
+    Nil result;
     if (!(nil__mark__4(self->window)))
     {
         SDL_DestroyWindow(self->window);
     }
     SDL_Quit();
+    return result;
 }
-Void start15(Game * self)
+Nil start15(Game * self)
 {
+    Nil result;
     Pointer e;
     init8(self);
     e = new11(&Event_class);
@@ -199,10 +232,13 @@ Void start15(Game * self)
         }
         render13(self);
     }
-    quit14(self);
+    result = quit14(self);
+    return result;
 }
 Integer main(Void)
 {
+    Integer result;
     start15(new3(&Game_class, 800, 600));
-    return 0;
+    result = 0;
+    return result;
 }

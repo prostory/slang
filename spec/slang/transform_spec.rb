@@ -37,15 +37,15 @@ describe SLang::Transform do
     end
 
     it "transforms a class variable" do
-      expect(xform.apply(:class_var => '@@hello')).to eq('hello'.class_var)
+      expect(xform.apply(:class_var => {:name => '@@hello'})).to eq('hello'.class_var)
     end
 
     it "transforms a instance variable" do
-      expect(xform.apply(:instance_var => '@hello')).to eq('hello'.instance_var)
+      expect(xform.apply(:instance_var => {:name => '@hello'})).to eq('hello'.instance_var)
     end
 
     it "transforms a variable" do
-      expect(xform.apply(:variable => 'hello')).to eq('hello'.var)
+      expect(xform.apply(:variable => {:name => 'hello'})).to eq('hello'.var)
     end
 
     it "transforms a negative expression" do
@@ -69,7 +69,7 @@ describe SLang::Transform do
 
     it "transforms a cast statement" do
       input = parser.parse('cast(Float, a)')
-      expect(xform.apply(input).last).to eq(Cast.new('Float'.const, 'a'.var))
+      expect(xform.apply(input).last).to eq(Cast.new('Float', 'a'.var))
     end
 
     it "transforms a empty block statement" do

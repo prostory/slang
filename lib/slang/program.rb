@@ -19,7 +19,8 @@ module SLang
               [:class, :Object, nil,
                [:static, :__alloc__, [], [:calloc, nil, [[:sizeof, :self], 1]]],
                [:static, :new, [[:args, :VarList]], [[:set, :obj, [:__alloc__, :self, []]], [:__init__, :obj, [:args]], [:ret, :obj]]],
-               [:fun, :__init__, [], []]
+               [:fun, :__init__, [], []],
+               [:operator, :==, [:Object], :Bool]
               ],
               [:class, :Integer, nil,
                [:operator, :-, [], :Integer],

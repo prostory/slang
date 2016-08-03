@@ -97,12 +97,15 @@ module SLang
     end
 
     rule(:name)                 do
-      reserved >>
-        (alpha >> (alpha | digit).repeat >> (match['?!'] | (space?.ignore >> str('=')).maybe)).as(:name)
+      reserved >> f_name
+    end
+
+    rule(:f_name)               do
+      (alpha >> (alpha | digit).repeat >> (match['?!'] | (space?.ignore >> str('=')).maybe)).as(:name)
     end
 
     rule(:opt_name)			        do
-      name | operators_name.as(:name)
+      f_name | operators_name.as(:name)
     end
 
     rule(:const)                do
@@ -114,15 +117,15 @@ module SLang
     end
 
     rule(:variable)             do
-      reserved >> (alpha >> (alpha | digit).repeat).as(:variable) >> space?
+      reserved >> ((alpha >> (alpha | digit).repeat).as(:name) >> (spaced(':') >> type).maybe).as(:variable) >> space?
     end
 
     rule(:instance_var)         do
-      (str('@') >> alpha >> (alpha | digit).repeat).as(:instance_var) >> space?
+      (str('@') >> (alpha >> (alpha | digit).repeat).as(:name) >> (spaced(':') >> type).maybe).as(:instance_var) >> space?
     end
 
     rule(:class_var)            do
-      (str('@@') >> alpha >> (alpha | digit).repeat).as(:class_var) >> space?
+      (str('@@') >> (alpha >> (alpha | digit).repeat).as(:name) >> (spaced(':') >> type).maybe).as(:class_var) >> space?
     end
 
     rule(:var)              { const | variable | instance_var | class_var }
@@ -178,7 +181,7 @@ module SLang
     end
 
     rule(:cast_stmt)            do
-      (cast_keyword >> lparen >> const.as(:type) >> comma >> expr.as(:value) >> rparen).as(:cast_stmt)
+      (cast_keyword >> lparen >> type >> comma >> expr.as(:value) >> rparen).as(:cast_stmt)
     end
     
     rule(:block_stmt)           do

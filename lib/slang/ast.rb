@@ -642,8 +642,7 @@ module SLang
 		attr_accessor :value
 
 		def initialize(type, value)
-			@cast_type = type
-			@cast_type.parent = self
+			@cast_type = type.to_sym
 			@value = value
 			@value.parent = self
 		end
@@ -654,12 +653,7 @@ module SLang
 		end
 
 		def replace(old, new)
-			case old
-			when type
-				@cast_type = new
-			when value
-				@value = new
-			end
+			@value = new if value == old
 		end
 
 		def to_s
@@ -671,7 +665,7 @@ module SLang
 		end
 
 		def clone
-			assign = self.class.new cast_type.clone, value.clone
+			assign = self.class.new cast_type, value.clone
 			assign.source_code = source_code
 			assign
 		end

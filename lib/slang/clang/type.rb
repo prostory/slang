@@ -1,7 +1,7 @@
 require_relative '../type'
 
 module SLang
-  class BaseObjectType < BaseType
+  class BaseObjectType
     def define
       target_type.nil? ? '' : "typedef #{target_type} #{name};\n"
     end
@@ -15,7 +15,7 @@ module SLang
     end
 
     def define_variable(var)
-      "#{base_type} #{var}"
+      "#{reference} #{var}"
     end
   end
 
@@ -46,7 +46,7 @@ module SLang
     end
   end
 
-  class ObjectType < AnyType
+  class ObjectType
     def target_type
       "struct { #{display_members} }"
     end
@@ -80,7 +80,7 @@ module SLang
     end
   end
 
-  class ClassType < ObjectType
+  class ClassType
     def name
       "#{@name}_Class".to_sym
     end
@@ -94,7 +94,7 @@ module SLang
     end
   end
 
-  class UnionType < AnyType
+  class UnionType
     def target_type
       "union { #{display_members} }"
     end
@@ -116,7 +116,7 @@ module SLang
     end
   end
 
-  class EnumType < AnyType
+  class EnumType
     def define
       members.empty? ? '' : super
     end
@@ -130,7 +130,7 @@ module SLang
     end
   end
 
-  class VarList < ContainerType
+  class VarList
     def reference
       s = ''
       members.each_with_index do |t, i|
@@ -153,13 +153,13 @@ module SLang
     end
   end
 
-  class LambdaType < AnyType
+  class LambdaType
     def name
       "#{@name}#{seq}"
     end
   end
 
-  class ModuleType < BaseObjectType
+  class ModuleType
 
   end
 
@@ -201,14 +201,14 @@ module SLang
     end
 
     def self.union(members)
-      type = types[:UnionType] || UnionType.new(:UnionType)
+      type = types[:UnionType] || UnionType.new
       type.add_types members
       types[:UnionType] = type
       type
     end
 
     def self.union_type(type = nil)
-      types[:UnionType] ||= UnionType.new(:UnionType)
+      types[:UnionType] ||= UnionType.new
       return types[:UnionType] unless type
       types[:UnionType] << type
       types[:UnionType]

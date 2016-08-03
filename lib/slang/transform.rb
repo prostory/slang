@@ -1,4 +1,5 @@
 require 'parslet'
+require 'pp'
 require_relative 'ast'
 require_relative 'parser'
 
@@ -24,9 +25,9 @@ module SLang
     end
     rule(:array             => subtree(:t)) { ArrayLiteral.new t }
     rule(:const             => simple(:t))  { Const.new(t) }
-    rule(:class_var         => simple(:t))  { ClassVar.new(t.to_s.gsub(/^@@/, '')) }
-    rule(:instance_var      => simple(:t))  { Member.new(t.to_s.gsub(/^@/, '')) }
-    rule(:variable          => simple(:t))  { Variable.new(t) }
+    rule(:class_var         => subtree(:t)) { ClassVar.new(t[:name].to_s.gsub(/^@@/, ''), t[:type]) }
+    rule(:instance_var      => subtree(:t)) { Member.new(t[:name].to_s.gsub(/^@/, ''), t[:type]) }
+    rule(:variable          => subtree(:t)) { Variable.new(t[:name], t[:type]) }
     rule(:unary_operation   => subtree(:t)) do
       if t[:operand].is_a?(NumberLiteral) && (t[:operator] == '++' || t[:operator] == '--')
         NumberLiteral.new(t[:operand].value + 1)

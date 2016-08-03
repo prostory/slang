@@ -344,7 +344,7 @@ module SLang
           stream << ".#{Type.union_type.member(node.type)}"
           return
         end
-        stream << "(#{node.type.reference})"
+        stream << "(#{node.type.reference})" unless node.optional_type
         node.value.accept self
       end
 

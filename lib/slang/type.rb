@@ -197,6 +197,10 @@ module SLang
       ancestors.include? type
     end
 
+    def cast_of?(type)
+      return true if child_of?(type)
+    end
+
     def union_type?
       self.kind_of? UnionType
     end
@@ -347,8 +351,10 @@ module SLang
   end
 
   class UnionType < AnyType
-    def initialize(name, parent = nil, prototype = nil)
-      super name, parent, prototype
+    attr_accessor :optional_type
+
+    def initialize(parent = nil, prototype = nil)
+      super :UnionType, parent, prototype
       @members = []
     end
 
@@ -358,6 +364,11 @@ module SLang
       else
         members << type unless has_type? type
       end
+    end
+
+    def cast_of?(type)
+      return true if super(type)
+      return true if has_type?(type)
     end
 
     def add_types(types)
@@ -375,6 +386,10 @@ module SLang
 
     def despect
       "#{name}(#{members.join '|'})"
+    end
+
+    def clone
+      self.class.new parent, prototype
     end
   end
 

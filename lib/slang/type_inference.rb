@@ -5,6 +5,7 @@ module SLang
   class ASTNode
     attr_accessor :type
     attr_accessor :unreached
+    attr_accessor :optional_type
 
     def self.return(body, target = nil)
       unless body.last.nil?
@@ -77,7 +78,6 @@ module SLang
   class Variable
     attr_accessor :instances
     attr_accessor :sequence
-    attr_accessor :optional_type
 
     def <<(instance)
       @instances ||= []
@@ -225,7 +225,7 @@ module SLang
 
 
     def visit_const(node)
-      type = Type.types[node.name]
+      type = Type.lookup(node.name)
       if type.nil?
         call = Call.new(node.name)
         visit_call(call)
@@ -237,9 +237,10 @@ module SLang
     end
 
     def visit_class_def(node)
-      superclass = Type.types[node.superclass] or raise "uninitialized constant '#{node.superclass}'" if node.superclass
+      superclass = Type.lookup(node.superclass) or raise "uninitialized constant '#{node.superclass}'" if node.superclass
       type = Type.object_type node.name, superclass
       node << ClassFun.new(:type_id, [], [NumberLiteral.new(type.type_id)], :Integer, node)
+      node << Function.new(:class, [], [Const.new(node.name)], :Any, node)
       context.new_scope(nil, type) do
         node.accept_children self
       end
@@ -417,7 +418,7 @@ module SLang
 
         instance.body.type = new_type if new_type
 
-        unless instance.body.type.child_of? instance.return_type
+        unless instance.body.type.cast_of? instance.return_type
           raise "can't cast #{instance.body.type} to #{instance.return_type}"
         end
       end
@@ -427,7 +428,7 @@ module SLang
     def visit_function(node)
       node.params.each {|param| param.accept self }
       node.body.return(Variable.new(:result))
-      node.return_type = Type.types[node.return_type]
+      node.return_type = Type.lookup(node.return_type)
       context.add_function node
       if node.name == :main
         visit_call(Call.new(:main))
@@ -440,7 +441,7 @@ module SLang
     def visit_lambda(node)
       node.params.each {|param| param.accept self }
       node.body.return(Variable.new(:result))
-      node.return_type = Type.types[node.return_type]
+      node.return_type = Type.lookup(node.return_type)
       node.type = Type.lambda.new_instance
       Type.lambda.add_function node
       false
@@ -449,14 +450,14 @@ module SLang
     def visit_class_fun(node)
       node.params.each {|param| param.accept self }
       node.body.return(Variable.new(:result))
-      node.return_type = Type.types[node.return_type]
+      node.return_type = Type.lookup(node.return_type)
       context.add_function node
       false
     end
 
     def visit_external(node)
       node.params.each {|param| param.accept self }
-      node.return_type = Type.types[node.return_type]
+      node.return_type = Type.lookup(node.return_type)
       context.add_function node
       false
     end
@@ -550,9 +551,9 @@ module SLang
 
     def visit_cast(node)
       node.value.accept self
-      node.type = Type.types[node.cast_type.name]
-      if node.value.type.is_a? UnionType
-        raise "can't case #{node.type} to #{node.value.type.despect}" unless node.value.type.include? node.type
+      node.type = Type.lookup(node.cast_type)
+      unless node.value.type.cast_of? node.type
+        raise "can't case #{node.value.type.despect} to #{node.type.despect}"
       end
       false
     end

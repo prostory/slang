@@ -36,6 +36,10 @@ static StringHelper_Class StringHelper_class;
 typedef struct { Integer type; UnionType value; } Options;
 typedef struct { char unused; } Options_Class;
 static Options_Class Options_class;
+typedef struct { char unused; } A_Class;
+static A_Class A_class;
+typedef struct { Integer a; } B_Class;
+static B_Class B_class;
 extern Pointer calloc(Integer, Integer);
 extern Options * __alloc__1(Options_Class * self);
 extern Void __init__2(Options * self);
@@ -56,6 +60,9 @@ extern String string15(Options * self);
 extern Float float16(Options * self);
 extern Integer printf(String, ...);
 extern Integer dump17(Options * self);
+extern Integer a18(B_Class * self);
+extern Integer b19(Void);
+extern Integer a20(B_Class * self);
 Options * __alloc__1(Options_Class * self)
 {
     Pointer result;
@@ -200,6 +207,25 @@ Integer dump17(Options * self)
     }
     return result;
 }
+Integer a18(B_Class * self)
+{
+    Integer result;
+    self->a = 1;
+    result = puts("a");
+    return result;
+}
+Integer b19(Void)
+{
+    Integer result;
+    result = puts("b");
+    return result;
+}
+Integer a20(B_Class * self)
+{
+    Integer result;
+    result = self->a;
+    return result;
+}
 Integer main(Void)
 {
     Integer result;
@@ -209,6 +235,9 @@ Integer main(Void)
     dump17(a);
     a1 = foo13(-(1));
     dump17(a1);
+    a18(&B_class);
+    b19();
+    printf("%d\n", a20(&B_class));
     result = 0;
     return result;
 }

@@ -376,7 +376,7 @@ module SLang
 		attr_accessor :receiver
 		attr_accessor :sequence
 
-		def initialize(name, params = [], body = [], return_type = :Any, receiver = nil)
+		def initialize(name, params = [], body = [], return_type = :Any, receiver = nil, class_fun = false, scope = nil)
 			@name = name.to_sym
 			@params = to_args(params)
 			@params.each {|param| param.parent = self}
@@ -385,6 +385,9 @@ module SLang
 			@return_type = return_type || :Any
 			@receiver = receiver
 			@receiver.parent = self if receiver
+			@class_fun = class_fun
+			@scope = scope
+			@scope.parent = self if scope
 			@sequence = 0
     end
 
@@ -392,6 +395,15 @@ module SLang
       @receiver = receiver
       @receiver.parent = self if receiver
     end
+
+		def scope
+			@scope || @receiver
+		end
+
+		def scope=(scope)
+			@scope = scope
+			@scope.parent = self if scope
+		end
 
 		def accept_children(visitor)
 			params.map { |param| param.accept visitor }
@@ -404,6 +416,8 @@ module SLang
 				@body = new
 			when @receiver
 				@receiver = new
+			when @scope
+				@scope = new
 			end
 
 			params.each_with_index do |child, idx|
@@ -415,15 +429,20 @@ module SLang
 
 		def ==(other)
 			other.class == self.class && other.name == name && other.params == params &&
-				other.body == body && other.return_type == return_type && other.receiver == receiver
+				other.body == body && other.return_type == return_type && other.receiver == receiver &&
+				other.class_fun? == class_fun? && other.scope == scope
     end
 
     def to_s
       "(def #{name} (#{params.join ' '}) #{body})"
     end
 
+		def class_fun?
+			@class_fun
+		end
+
 		def clone
-			function = self.class.new name, params.map(&:clone), body.clone, return_type, receiver
+			function = self.class.new name, params.map(&:clone), body.clone, return_type, receiver, class_fun?, scope
 			function.sequence = sequence
 			function.source_code = source_code
 			function
@@ -431,8 +450,8 @@ module SLang
 	end
 
 	class Lambda < Function
-		def initialize(params = [], body = [], return_type = :Any, receiver = nil)
-			super :lambda, params, body, return_type, receiver
+		def initialize(params = [], body = [], return_type = :Any, receiver = nil, class_fun = false, scope = nil)
+			super :lambda, params, body, return_type, receiver, class_fun, scope
     end
 
     def to_s
@@ -440,7 +459,7 @@ module SLang
     end
 
 		def clone
-			lambda = self.class.new params, body, return_type, receiver
+			lambda = self.class.new params, body, return_type, receiver, class_fun?, scope
 			lambda.sequence = sequence
 			lambda.source_code = source_code
 			lambda
@@ -450,8 +469,8 @@ module SLang
 	class External < Function
 		attr_accessor :output_name
 
-		def initialize(name, output_name, params = [], return_type = :Void, receiver = nil)
-			super name, params, [], return_type, receiver
+		def initialize(name, output_name, params = [], return_type = :Void, receiver = nil, class_fun = false, scope = nil)
+			super name, params, [], return_type, receiver, class_fun, scope
 			@output_name = output_name || name
 		end
 
@@ -460,16 +479,13 @@ module SLang
 		end
 
 		def clone
-			external = self.class.new name, output_name, params.map(&:clone), return_type, receiver
+			external = self.class.new name, output_name, params.map(&:clone), return_type, receiver, class_fun?, scope
 			external.body = body
 			external
 		end
 	end
 
 	class Operator < External
-  end
-
-  class ClassFun < Function
   end
 
 	class If < ASTNode

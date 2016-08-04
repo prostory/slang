@@ -33,8 +33,8 @@ module SLang
       end
 
       def add_function(fun)
-        if fun.receiver
-          Type.types[fun.receiver.name].add_function fun
+        if fun.scope
+          Type.types[fun.scope.name].add_function fun
         else
           Type.kernel.add_function fun
         end

@@ -303,17 +303,21 @@ module SLang
       space? >> lparen >> args(type(:type).as(:param)).as(:params).maybe >> rparen
     end
 
+    rule(:scope)                do
+      (str('self') | const).as(:scope) >> str('.')
+    end
+
     rule(:def_decl)             do
-      (export_keyword.maybe >> def_keyword >> opt_name >>
+      (export_keyword.maybe >> def_keyword >> scope.maybe >> opt_name >>
         def_params >> return_type.maybe >> terms >> stmts.as(:body) >> end_keyword).as(:def_decl)
     end
 
     rule(:external_decl)        do
-      (external_keyword >> name >> fun_params >> return_type).as(:external_decl)
+      (external_keyword >> scope.maybe >> name >> fun_params >> return_type).as(:external_decl)
     end
 
     rule(:operator_decl)        do
-      (operator_keyword >> operators_name.as(:name) >> fun_params >> return_type).as(:operator_decl)
+      (operator_keyword >> scope.maybe >> operators_name.as(:name) >> fun_params >> return_type).as(:operator_decl)
     end
 
     rule(:decl)                 do

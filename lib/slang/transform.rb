@@ -120,10 +120,10 @@ module SLang
       mod = Module.new(t[:name].name, body)
       if body.kind_of? Expressions
         body.each do |child|
-          child.receiver = mod if child.is_a? Function
+          child.receiver = t[:name] if child.is_a?(Function)
         end
       elsif body.is_a? Function
-        body.receiver = mod
+        body.receiver = t[:name]
       end
       mod
     end
@@ -133,23 +133,31 @@ module SLang
       clazz = ClassDef.new(t[:name].name, t[:body], parent)
       if body.kind_of? Expressions
         body.each do |child|
-          child.receiver = clazz if child.is_a? Function
+          child.receiver = t[:name] if child.is_a?(Function)
         end
       elsif body.is_a? Function
-        body.receiver = clazz
+        body.receiver = t[:name]
       end
       clazz
     end
     # rule(:import_decl)
     rule(:def_decl          => subtree(:t))     do
       return_type = t[:return_type].to_sym if t[:return_type]
-      Function.new(t[:name], t[:params], t[:body], return_type)
+      scope = t[:scope] if t[:scope].is_a? Const
+      class_fun = t[:scope] != nil
+      Function.new(t[:name], t[:params], t[:body], return_type, nil, class_fun, scope)
     end
     rule(:external_decl     => subtree(:t))     do
-      External.new(t[:name], nil, t[:params], t[:return_type].to_sym)
+      return_type = t[:return_type].to_sym if t[:return_type]
+      scope = t[:scope] if t[:scope].is_a? Const
+      class_fun = t[:obj] != nil
+      External.new(t[:name], nil, t[:params], return_type, nil, class_fun, scope)
     end
     rule(:operator_decl     => subtree(:t))     do
-      Operator.new(t[:name], nil, t[:params], t[:return_type].to_sym)
+      return_type = t[:return_type].to_sym if t[:return_type]
+      scope = t[:scope] if t[:scope].is_a? Const
+      class_fun = t[:scope] != nil
+      Operator.new(t[:name], nil, t[:params], return_type, nil, class_fun, scope)
     end
     rule(:stmts             => subtree(:t))     do
       if t.is_a?(String) && t.empty?

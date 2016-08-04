@@ -170,7 +170,7 @@ module SLang
     end
 
     def add_function(fun)
-      if fun.is_a? ClassFun
+      if fun.class_fun?
         class_type.prototype.add_function(fun)
       else
         prototype.add_function(fun)

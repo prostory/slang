@@ -36,7 +36,26 @@ def foo(n)
 	end
 end
 
+class A
+end
+
+class B
+	def A.a; @@a = 1; puts "a" end
+	
+	def B.a
+		@@a
+	end
+end
+
 a = foo 5
 a.dump
 a = foo -1
 a.dump
+
+def A.b
+	puts "b"
+end
+A.a
+
+A.b
+printf "%d\n", B.a

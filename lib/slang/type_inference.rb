@@ -239,7 +239,7 @@ module SLang
     def visit_class_def(node)
       superclass = Type.lookup(node.superclass) or raise "uninitialized constant '#{node.superclass}'" if node.superclass
       type = Type.object_type node.name, superclass
-      node << ClassFun.new(:type_id, [], [NumberLiteral.new(type.type_id)], :Integer, node)
+      node << Function.new(:type_id, [], [NumberLiteral.new(type.type_id)], :Integer, node, true)
       node << Function.new(:class, [], [Const.new(node.name)], :Any, node)
       context.new_scope(nil, type) do
         node.accept_children self
@@ -296,6 +296,10 @@ module SLang
         error = "undefined function '#{node.name}'(#{types.map(&:to_s).join ', '}), #{node.source_code}"
         error << " for #{node.obj.type.name}" if node.obj
         raise error
+      end
+      if untyped_fun.receiver && untyped_fun.scope != untyped_fun.receiver
+        untyped_fun.receiver.accept self
+        node.obj = untyped_fun.receiver
       end
 
       types.unshift node.obj.type if node.obj && untyped_fun.receiver
@@ -433,7 +437,6 @@ module SLang
       if node.name == :main
         visit_call(Call.new(:main))
         node.body.type = node.return_type
-        node << node
       end
       false
     end
@@ -444,14 +447,6 @@ module SLang
       node.return_type = Type.lookup(node.return_type)
       node.type = Type.lambda.new_instance
       Type.lambda.add_function node
-      false
-    end
-
-    def visit_class_fun(node)
-      node.params.each {|param| param.accept self }
-      node.body.return(Variable.new(:result))
-      node.return_type = Type.lookup(node.return_type)
-      context.add_function node
       false
     end
 

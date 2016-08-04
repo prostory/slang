@@ -116,6 +116,12 @@ module SLang
     end
   end
 
+  class ClassVar
+    def mangled_name
+      "self->#{name}"
+    end
+  end
+
   module CLang
     class CodeGenVisitor < Visitor
       attr_accessor :context

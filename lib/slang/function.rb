@@ -163,17 +163,23 @@ module SLang
 
     def self.combine_same_instances
       uniq_instances = {}
+      list = []
 
       @@instances.each do |fun|
         if uniq_instances.has_key? fun.key
           old_fun = uniq_instances[fun.key]
-          fun.calls.each { |call| call.target_fun = old_fun }
+          if old_fun.receiver == fun.receiver && old_fun.scope == fun.scope && old_fun.return_type == fun.return_type
+            fun.calls.each { |call| call.target_fun = old_fun }
+          else
+            list << fun
+          end
         else
           uniq_instances[fun.key] = fun
+          list << fun
         end
       end
 
-      @@instances = uniq_instances.values
+      @@instances = list
       @@instances
     end
   end

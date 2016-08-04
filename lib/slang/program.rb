@@ -133,7 +133,11 @@ module SLang
     end
 
     def run
-      source = ARGF.read || 'return 0'
+      if code
+        source = code
+      else
+        source = ARGF.read || 'return 0'
+      end
       code = compile(source)
       output code
       if run?
@@ -160,6 +164,7 @@ module SLang
         end
         opts.on('-e code', '--execute', 'Execute Code') do |code|
           @options[:code] = code
+          @run = true
         end
         opts.on('-r', '--run', 'Run program') do
           @run = true
@@ -176,10 +181,6 @@ module SLang
           exit
         end
       end.parse!
-
-      if output_file.nil? && ARGV.length > 0
-        @options[:output_filename] = File.basename(ARGV[0], File.extname(ARGV[0]))
-      end
     end
 
     def output(code)

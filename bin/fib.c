@@ -25,9 +25,9 @@ typedef struct { char unused; } Bool_Class;
 static Bool_Class Bool_class;
 typedef struct { char unused; } Array_Class;
 static Array_Class Array_class;
-typedef union { Integer uInteger; String uString; Float uFloat; } Options;
-typedef struct { char unused; } Options_Class;
-static Options_Class Options_class;
+typedef union { Integer uInteger; String uString; Float uFloat; } UnionType;
+typedef struct { char unused; } UnionType_Class;
+static UnionType_Class UnionType_class;
 typedef struct { char unused; } Object_Class;
 static Object_Class Object_class;
 typedef struct { char unused; } StringHelper_Class;
@@ -39,7 +39,7 @@ extern Integer fib1(Integer n);
 extern Integer printf(String, ...);
 extern Float fib2(Float n);
 extern Nil foo3(Void);
-extern Options bar4(Integer n);
+extern UnionType bar4(Integer n);
 extern String strdup(String);
 extern String new5(String_Class * self, String const_str);
 extern Integer strlen(String);
@@ -48,9 +48,9 @@ extern String strcat(String, String);
 extern String __lsh__6(String self, String s);
 extern Integer puts(String);
 extern String to_s7(Bool self);
-extern String string8(Options self);
-extern Integer int9(Options self);
-extern Float float10(Options self);
+extern String string8(UnionType self);
+extern Integer int9(UnionType self);
+extern Float float10(UnionType self);
 extern Pointer calloc(Integer, Integer);
 extern Rect * __alloc__11(Rect_Class * self);
 extern Integer __init__12(Rect * self, Integer x, Integer y, Integer w, Integer h);
@@ -98,9 +98,9 @@ Nil foo3(Void)
     }
     return result;
 }
-Options bar4(Integer n)
+UnionType bar4(Integer n)
 {
-    Options result;
+    UnionType result;
     if ((n < 0))
     {
         result.uInteger = -(n);
@@ -146,19 +146,19 @@ String to_s7(Bool self)
     }
     return result;
 }
-String string8(Options self)
+String string8(UnionType self)
 {
     String result;
     result = self.uString;
     return result;
 }
-Integer int9(Options self)
+Integer int9(UnionType self)
 {
     Integer result;
     result = self.uInteger;
     return result;
 }
-Float float10(Options self)
+Float float10(UnionType self)
 {
     Float result;
     result = self.uFloat;
@@ -182,8 +182,8 @@ Integer __init__12(Rect * self, Integer x, Integer y, Integer w, Integer h)
 }
 Rect * new13(Rect_Class * self, Integer var0, Integer var1, Integer var2, Integer var3)
 {
-    Pointer result;
-    Pointer obj;
+    Rect * result;
+    Rect * obj;
     obj = __alloc__11(self);
     __init__12(obj, var0, var1, var2, var3);
     result = obj;
@@ -221,7 +221,7 @@ Integer dump18(Rect * self)
 }
 Rect * __div__19(Rect * self, Integer n)
 {
-    Pointer result;
+    Rect * result;
     result = new13(&Rect_class, (x14(self) / n), (y15(self) / n), (w16(self) / n), (h17(self) / n));
     return result;
 }
@@ -232,7 +232,7 @@ Integer main(Void)
     Float i1;
     String i2;
     Bool i3;
-    Pointer r;
+    Rect * r;
     printf("fib(6) = %d\n", fib1(6));
     printf("fib(6.5) = %.2f\n", fib2(6.5));
     foo3();

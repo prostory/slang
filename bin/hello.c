@@ -11,6 +11,9 @@ static Integer_Class Integer_class;
 typedef double Float;
 typedef struct { char unused; } Float_Class;
 static Float_Class Float_class;
+typedef void * Nil;
+typedef struct { char unused; } Nil_Class;
+static Nil_Class Nil_class;
 typedef char * String;
 typedef struct { char unused; } String_Class;
 static String_Class String_class;
@@ -22,8 +25,8 @@ typedef struct { char unused; } Bool_Class;
 static Bool_Class Bool_class;
 typedef struct { char unused; } Array_Class;
 static Array_Class Array_class;
-typedef struct { char unused; } Options_Class;
-static Options_Class Options_class;
+typedef struct { char unused; } UnionType_Class;
+static UnionType_Class UnionType_class;
 typedef struct { char unused; } Object_Class;
 static Object_Class Object_class;
 typedef struct { char unused; } StringHelper_Class;
@@ -44,7 +47,7 @@ extern Greeter * new3(Greeter_Class * self, String var0);
 extern Integer printf(String, ...);
 extern Integer say_hello4(Greeter * self);
 extern Integer lambda0(Integer n);
-extern Void times5(Integer self);
+extern Nil times5(Integer self);
 extern Point * __alloc__6(Point_Class * self);
 extern Float __init__7(Point * self, Float x, Float y);
 extern Point * new8(Point_Class * self, Float var0, Float var1);
@@ -56,29 +59,41 @@ extern Float to_f13(Float self);
 extern Integer dump14(Point * self);
 Greeter * __alloc__1(Greeter_Class * self)
 {
-    return calloc(sizeof(Greeter), 1);
+    Pointer result;
+    result = calloc(sizeof(Greeter), 1);
+    return result;
 }
 String __init__2(Greeter * self, String name)
 {
-    return self->name = name;
+    String result;
+    self->name = name;
+    result = self->name;
+    return result;
 }
 Greeter * new3(Greeter_Class * self, String var0)
 {
-    Pointer obj;
+    Greeter * result;
+    Greeter * obj;
     obj = __alloc__1(self);
     __init__2(obj, var0);
-    return obj;
+    result = obj;
+    return result;
 }
 Integer say_hello4(Greeter * self)
 {
-    return printf("Hello, %s\n", self->name);
+    Integer result;
+    result = printf("Hello, %s\n", self->name);
+    return result;
 }
 Integer lambda0(Integer n)
 {
-    return printf("Say hello %d times.\n", n);
+    Integer result;
+    result = printf("Say hello %d times.\n", n);
+    return result;
 }
-Void times5(Integer self)
+Nil times5(Integer self)
 {
+    Nil result;
     Integer i;
     i = 1;
     while ((i <= self))
@@ -86,66 +101,87 @@ Void times5(Integer self)
         lambda0(i);
         i = (i + 1);
     }
+    return result;
 }
 Point * __alloc__6(Point_Class * self)
 {
-    return calloc(sizeof(Point), 1);
+    Pointer result;
+    result = calloc(sizeof(Point), 1);
+    return result;
 }
 Float __init__7(Point * self, Float x, Float y)
 {
+    Float result;
     self->x = x;
-    return self->y = y;
+    self->y = y;
+    result = self->y;
+    return result;
 }
 Point * new8(Point_Class * self, Float var0, Float var1)
 {
-    Pointer obj;
+    Point * result;
+    Point * obj;
     obj = __alloc__6(self);
     __init__7(obj, var0, var1);
-    return obj;
+    result = obj;
+    return result;
 }
 Float x9(Point * self)
 {
-    return self->x;
+    Float result;
+    result = self->x;
+    return result;
 }
 Float y10(Point * self)
 {
-    return self->y;
+    Float result;
+    result = self->y;
+    return result;
 }
 Point * __add__11(Point * self, Point * p)
 {
-    return new8(&Point_class, (self->x + x9(p)), (self->y + y10(p)));
+    Point * result;
+    result = new8(&Point_class, (self->x + x9(p)), (self->y + y10(p)));
+    return result;
 }
 Point * __sub__12(Point * self, Point * p)
 {
-    return new8(&Point_class, (self->x - x9(p)), (self->y - y10(p)));
+    Point * result;
+    result = new8(&Point_class, (self->x - x9(p)), (self->y - y10(p)));
+    return result;
 }
 Float to_f13(Float self)
 {
-    return self;
+    Float result;
+    result = self;
+    return result;
 }
 Integer dump14(Point * self)
 {
-    return printf("(%.2f, %.2f)\n", to_f13(self->x), to_f13(self->y));
+    Integer result;
+    result = printf("(%.2f, %.2f)\n", to_f13(self->x), to_f13(self->y));
+    return result;
 }
 Integer main(Void)
 {
+    Integer result;
+    Greeter * g;
+    Point * p1;
+    Point * p2;
+    Point * p3;
+    Point * p4;
+    Integer i;
     puts("Hello World");
-    Pointer g;
     g = new3(&Greeter_class, "SLang");
     say_hello4(g);
     times5(10);
-    Pointer p1;
     p1 = new8(&Point_class, 1.2, 2.3);
-    Pointer p2;
     p2 = new8(&Point_class, 2.2, 6.4);
-    Pointer p3;
     p3 = __add__11(p1, p2);
-    Pointer p4;
     p4 = __sub__12(p1, p2);
     dump14(p3);
     dump14(p4);
     dump14(__add__11(p3, p4));
-    Integer i;
     i = 1;
     if ((i > 0))
     {
@@ -229,4 +265,6 @@ Integer main(Void)
         (i += 1);
         printf("i = %d\n", i);
     }
+    result = 0;
+    return result;
 }

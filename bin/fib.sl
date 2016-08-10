@@ -47,7 +47,7 @@ class Bool
 	end
 end
 
-class Options
+class UnionType
 	def string
 		cast(String, self)
 	end

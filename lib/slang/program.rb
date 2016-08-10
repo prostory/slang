@@ -139,13 +139,23 @@ module SLang
         source = ARGF.read || 'return 0'
       end
       code = compile(source)
-      output code
-      if run?
+      if compile?
+        output code
+      else
         state = TCC::State.new
         state.set_error_func(method(:error_func))
         state.add_library_path '../vendor/tcc/lib'
-        state.compile(code)
-        state.run
+        state.add_library_path '/usr/lib'
+        state.add_library_path '/usr/local/lib'
+        libraries.each {|lib| state.add_library lib }
+        if run?
+          state.compile(code)
+          state.run
+        else
+          state.output_type = TCC::OutPutType::EXE
+          state.compile(code)
+          state.output_file = output_file
+        end
       end
     end
 
@@ -154,12 +164,14 @@ module SLang
 
       @options = {}
       @run = false
+      @compile = false
+      @libraries = []
       OptionParser.new do |opts|
         opts.banner = "Usage: slang [options] file1[, file2...]"
         opts.separator ""
         opts.separator "Specific options:"
         
-        opts.on('-o file', '--output', 'Output filename') do |output|
+        opts.on('-o file', '--output', 'Output file') do |output|
           @options[:output_filename] = output
         end
         opts.on('-e code', '--execute', 'Execute Code') do |code|
@@ -168,6 +180,18 @@ module SLang
         end
         opts.on('-r', '--run', 'Run program') do
           @run = true
+        end
+        opts.on('-c', '--compile', 'Compile to C file') do
+          @compile = true
+          @options[:output_filename] << '.c' if File.extname(output_file) != '.c'
+        end
+        opts.on('-l x,y,z', Array, "Link libraries") do |libs|
+          @libraries = libs
+        end
+        
+        if output_file.nil? && ARGV.length > 0
+          source_file = ARGV.find {|arg| File.extname(arg) == '.sl'}
+          @options[:output_filename] = File.basename(source_file, File.extname(source_file)) if source_file
         end
         
         opts.separator ""
@@ -184,7 +208,7 @@ module SLang
     end
 
     def output(code)
-      File.open(output_file, "w") { |io| io.puts code } if output_file
+      File.open(output_file, "w") { |io| io.puts code } if compile?
     end
 
     def output_file
@@ -194,9 +218,17 @@ module SLang
     def code
       @options[:code]
     end
+    
+    def libraries
+      @libraries
+    end
 
     def run?
       @run
+    end
+    
+    def compile?
+      @compile
     end
   end
 end

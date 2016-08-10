@@ -51,7 +51,7 @@ module SLang
     end
 
     def self.high_priority?(op1, op2)
-      @@operators[op1] < @@operators[op2]
+      @@operators[op1] <= @@operators[op2]
     end
 
     def self.operators(operators={})

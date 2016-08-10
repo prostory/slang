@@ -30,6 +30,9 @@ class Rect
 end
 
 class Event
+	def self.__alloc__
+		calloc(60, 1)
+	end
 	def __init__
 		@type = 0
 	end
@@ -134,9 +137,9 @@ class Game
 	end
   
 	def quit
-		#if !@renderer.nil?
-		#	SDL_DestroyRenderer(@renderer)
-		#end
+		if !@renderer.nil?
+			SDL_DestroyRenderer(@renderer)
+		end
 		if !@window.nil?
 			SDL_DestroyWindow(@window)
 		end

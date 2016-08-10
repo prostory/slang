@@ -25,8 +25,8 @@ typedef struct { char unused; } Bool_Class;
 static Bool_Class Bool_class;
 typedef struct { char unused; } Array_Class;
 static Array_Class Array_class;
-typedef struct { char unused; } Options_Class;
-static Options_Class Options_class;
+typedef struct { char unused; } UnionType_Class;
+static UnionType_Class UnionType_class;
 typedef struct { char unused; } Object_Class;
 static Object_Class Object_class;
 typedef struct { char unused; } StringHelper_Class;
@@ -69,6 +69,7 @@ extern Integer SDL_RenderDrawPoint(Pointer, Integer, Integer);
 extern Void SDL_RenderPresent(Pointer);
 extern Void SDL_Delay(Integer);
 extern Nil render13(Game * self);
+extern Void SDL_DestroyRenderer(Pointer);
 extern Void SDL_DestroyWindow(Pointer);
 extern Void SDL_Quit(Void);
 extern Nil quit14(Game * self);
@@ -90,8 +91,8 @@ Bool __init__2(Game * self, Integer width, Integer height)
 }
 Game * new3(Game_Class * self, Integer var0, Integer var1)
 {
-    Pointer result;
-    Pointer obj;
+    Game * result;
+    Game * obj;
     obj = __alloc__1(self);
     __init__2(obj, var0, var1);
     result = obj;
@@ -121,8 +122,8 @@ Integer __init__6(Rect * self, Integer x, Integer y, Integer w, Integer h)
 }
 Rect * new7(Rect_Class * self, Integer var0, Integer var1, Integer var2, Integer var3)
 {
-    Pointer result;
-    Pointer obj;
+    Rect * result;
+    Rect * obj;
     obj = __alloc__5(self);
     __init__6(obj, var0, var1, var2, var3);
     result = obj;
@@ -130,7 +131,7 @@ Rect * new7(Rect_Class * self, Integer var0, Integer var1, Integer var2, Integer
 }
 Rect * init8(Game * self)
 {
-    Pointer result;
+    Rect * result;
     if ((SDL_Init(32) < 0))
     {
         printf("SDL_Init failed: %s\n", SDL_GetError());
@@ -150,14 +151,14 @@ Rect * init8(Game * self)
     }
     SDL_SetRenderDrawColor(self->renderer, 255, 255, 255, 255);
     self->fill_rect = new7(&Rect_class, (self->width / 4), (self->height / 4), (self->width / 2), (self->height / 2));
-    self->outline_rect = new7(&Rect_class, (self->width / 6), (self->height / 6), (self->width * (2 / 3)), (self->height * (2 / 3)));
+    self->outline_rect = new7(&Rect_class, (self->width / 6), (self->height / 6), ((self->width * 2) / 3), ((self->height * 2) / 3));
     result = self->outline_rect;
     return result;
 }
 Event * __alloc__9(Event_Class * self)
 {
     Pointer result;
-    result = calloc(sizeof(Event), 1);
+    result = calloc(60, 1);
     return result;
 }
 Integer __init__10(Event * self)
@@ -169,8 +170,8 @@ Integer __init__10(Event * self)
 }
 Event * new11(Event_Class * self)
 {
-    Pointer result;
-    Pointer obj;
+    Event * result;
+    Event * obj;
     obj = __alloc__9(self);
     __init__10(obj);
     result = obj;
@@ -208,6 +209,10 @@ Nil render13(Game * self)
 Nil quit14(Game * self)
 {
     Nil result;
+    if (!(nil__mark__4(self->renderer)))
+    {
+        SDL_DestroyRenderer(self->renderer);
+    }
     if (!(nil__mark__4(self->window)))
     {
         SDL_DestroyWindow(self->window);
@@ -218,7 +223,7 @@ Nil quit14(Game * self)
 Nil start15(Game * self)
 {
     Nil result;
-    Pointer e;
+    Event * e;
     init8(self);
     e = new11(&Event_class);
     while (!(self->quit))

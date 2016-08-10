@@ -14,6 +14,10 @@ module SLang
       t[:call] ? t[:call] : t[:name]
     end
   end
+  
+  class ASTNode
+    attr_accessor :primary
+  end
 
   class Transform < Parslet::Transform
     rule(:integer           => simple(:t))  { NumberLiteral.new(t.to_s.to_i(0)) }
@@ -28,6 +32,7 @@ module SLang
     rule(:class_var         => subtree(:t)) { ClassVar.new(t[:name].to_s.gsub(/^@@/, ''), t[:type]) }
     rule(:instance_var      => subtree(:t)) { Member.new(t[:name].to_s.gsub(/^@/, ''), t[:type]) }
     rule(:variable          => subtree(:t)) { Variable.new(t[:name], t[:type]) }
+    rule(:primary           => subtree(:t)) { t.primary = true; t }
     rule(:unary_operation   => subtree(:t)) do
       if t[:operand].is_a?(NumberLiteral) && (t[:operator] == '++' || t[:operator] == '--')
         NumberLiteral.new(t[:operand].value + 1)
@@ -40,13 +45,20 @@ module SLang
     rule(:binary_operation  => subtree(:t))       do
       if t[:right].is_a? Call
         call = t[:right]
-        if Parser.operator?(call.name) && Parser.high_priority?(t[:operator].to_sym, call.name)
-          t[:left] = Call.new(t[:operator], [call.obj], t[:left])
-          t[:right] = call.args.first
-          t[:operator] = call.name
+        right = call
+        while call.is_a?(Call) && !call.primary
+          right = call
+          call = call.obj
         end
+        if !right.primary && Parser.operator?(right.name) && Parser.high_priority?(t[:operator].to_sym, right.name)
+          right.obj = Call.new(t[:operator], [right.obj], t[:left])
+          t[:right]
+        else
+          Call.new(t[:operator], [t[:right]], t[:left])   
+        end
+      else
+        Call.new(t[:operator], [t[:right]], t[:left])   
       end
-      Call.new(t[:operator], [t[:right]], t[:left])
     end
     rule(:negative_expr     => subtree(:t)) { Call.new('-', [], t) }
     rule(:access_expr       => subtree(:t)) { transform_call(t[:call], t[:obj]) }

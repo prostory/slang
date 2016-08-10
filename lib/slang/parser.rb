@@ -130,8 +130,8 @@ module SLang
 
     rule(:var)              { const | variable | instance_var | class_var }
 
-    rule(:primary)          { literal | if_stmt | unless_stmt | case_stmt | while_stmt | until_stmt | do_while_stmt | do_until_stmt | block_stmt |
-      assign_stmt | include_stmt | extend_stmt | cast_stmt | call_stmt | negative_expr | special_call | var | lparen >> expr >> rparen }
+    rule(:primary)          { (literal | if_stmt | unless_stmt | case_stmt | while_stmt | until_stmt | do_while_stmt | do_until_stmt | block_stmt |
+      assign_stmt | include_stmt | extend_stmt | cast_stmt | call_stmt | negative_expr | special_call | var | lparen >> expr >> rparen).as(:primary) }
 
     rule(:factor)           { array_set_expr | array_get_expr | access_expr | unary_operation | primary }
 

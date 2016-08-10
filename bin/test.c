@@ -25,7 +25,7 @@ typedef struct { char unused; } Bool_Class;
 static Bool_Class Bool_class;
 typedef struct { char unused; } Array_Class;
 static Array_Class Array_class;
-typedef union { String uString; Float uFloat; } UnionType;
+typedef union { String uString; Float uFloat; Integer uInteger; } UnionType;
 typedef struct { char unused; } UnionType_Class;
 static UnionType_Class UnionType_class;
 typedef struct { char unused; } Object;
@@ -38,7 +38,7 @@ typedef struct { char unused; } Options_Class;
 static Options_Class Options_class;
 typedef struct { char unused; } A_Class;
 static A_Class A_class;
-typedef struct { Integer a; } B_Class;
+typedef struct { UnionType a; } B_Class;
 static B_Class B_class;
 extern Pointer calloc(Integer, Integer);
 extern Options * __alloc__1(Options_Class * self);
@@ -63,6 +63,10 @@ extern Integer dump17(Options * self);
 extern Integer a18(B_Class * self);
 extern Integer b19(Void);
 extern Integer a20(B_Class * self);
+extern Float a__asgn__21(B_Class * self, Float n);
+extern Float a22(B_Class * self);
+extern String a__asgn__23(B_Class * self, String n);
+extern UnionType a24(B_Class * self);
 Options * __alloc__1(Options_Class * self)
 {
     Pointer result;
@@ -210,7 +214,7 @@ Integer dump17(Options * self)
 Integer a18(B_Class * self)
 {
     Integer result;
-    self->a = 1;
+    self->a.uFloat = 1;
     result = puts("a");
     return result;
 }
@@ -223,6 +227,32 @@ Integer b19(Void)
 Integer a20(B_Class * self)
 {
     Integer result;
+    result = self->a.uInteger;
+    return result;
+}
+Float a__asgn__21(B_Class * self, Float n)
+{
+    Float result;
+    self->a.uFloat = n;
+    result = self->a.uFloat;
+    return result;
+}
+Float a22(B_Class * self)
+{
+    Float result;
+    result = self->a.uFloat;
+    return result;
+}
+String a__asgn__23(B_Class * self, String n)
+{
+    String result;
+    self->a.uString = n;
+    result = self->a.uString;
+    return result;
+}
+UnionType a24(B_Class * self)
+{
+    UnionType result;
     result = self->a;
     return result;
 }
@@ -238,6 +268,17 @@ Integer main(Void)
     a18(&B_class);
     b19();
     printf("%d\n", a20(&B_class));
+    a__asgn__21(&B_class, 5.1);
+    printf("%f\n", a22(&B_class));
+    if ((type_id11(class10(a22(&B_class))) == type_id8(&String_class)))
+    {
+        a__asgn__23(&B_class, "Hello");
+    }
+    else
+    {
+        a__asgn__23(&B_class, "World");
+    }
+    puts(a24(&B_class).uString);
     result = 0;
     return result;
 }

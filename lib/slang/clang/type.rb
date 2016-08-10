@@ -1,6 +1,13 @@
 require_relative '../type'
 
 module SLang
+  class Variable
+    def type_reference
+      return Type.union_type.reference if optional_type
+      type.reference
+    end  
+  end
+  
   class BaseObjectType
     def define
       target_type.nil? ? '' : "typedef #{target_type} #{name};\n"
@@ -64,7 +71,7 @@ module SLang
         return 'char unused;'
       end
 
-      "#{members.map{|n, v| "#{v.type.reference} #{n};"}.join ' '}"
+      "#{members.map{|n, v| "#{v.type_reference} #{n};"}.join ' '}"
     end
 
     def reference

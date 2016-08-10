@@ -45,6 +45,10 @@ class B
 	def B.a
 		@@a
 	end
+	
+	def self.a=(n)
+		@@a = n
+	end
 end
 
 a = foo 5
@@ -59,3 +63,13 @@ A.a
 
 A.b
 printf "%d\n", B.a
+B.a = 5.1
+printf "%f\n", B.a
+
+if B.a.class.type_id == String.type_id
+  B.a = "Hello"
+else
+  B.a = "World"
+end
+
+puts cast(String, B.a)

@@ -93,6 +93,10 @@ module SLang
       @optional_type = @type
       @instances.each {|var| var.optional_type = var.type } if @instances
     end
+    
+    def optional?
+      !type.union_type? && !optional_type.nil?
+    end
 
     def var_list?
       type && (type == :VarList || (type.is_a?(BaseType) && type.name == :VarList))
@@ -199,6 +203,7 @@ module SLang
         return
       end
       node.type = var.type
+      node.optional_type = node.type if var.optional?
       var << node
       false
     end
@@ -212,6 +217,7 @@ module SLang
       var = context.lookup_member(node.name)
       raise "Bug: instance variable '#{node.name}' for #{context.scope.type} is not defined!" if var.nil?
       node.type = var.type
+      node.optional_type = node.type if var.optional?
       var << node
       false
     end
@@ -219,6 +225,7 @@ module SLang
     def visit_class_var(node)
       var = context.lookup_member(node.name) or raise "Bug: class variable '#{node.name}' is not defined!"
       node.type = var.type
+      node.optional_type = node.type if var.optional?
       var << node
       false
     end
@@ -520,11 +527,15 @@ module SLang
 
       if var.nil? || var.type != node.type
         if var
-          if @branch
+          if @branch || var.is_a?(Member) || var.is_a?(ClassVar)
             type = Type.merge(var.type, node.type)
             if type.union_type?
               var.init_optional_type unless var.type.union_type?
-              var.type = type
+              if @branch
+                var.type = type
+              else
+                var.type = node.type
+              end
               node.target.optional_type = node.type
               var << node.target
             else

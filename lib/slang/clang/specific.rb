@@ -29,13 +29,16 @@ module SLang
       symbols[:[]] = '__get__'
 
       def self.convert(s)
+        return symbols[s.to_sym] if symbols.has_key?(s.to_sym)
         case s[s.length-1]
         when '?'
           s.slice(0..-2) + '__mark__'
         when '!'
           s.slice(0..-2) + '__stress__'
+        when '='
+          s.slice(0..-2) + '__asgn__'
         else
-          symbols[s.to_sym] || s
+          s
         end
       end
     end

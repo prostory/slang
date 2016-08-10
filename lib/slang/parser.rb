@@ -101,7 +101,7 @@ module SLang
     end
 
     rule(:f_name)               do
-      (alpha >> (alpha | digit).repeat >> (match['?!'] | (space?.ignore >> str('=')).maybe)).as(:name)
+      (alpha >> (alpha | digit).repeat >> (match['?!'] | (space?.ignore >> op_eq.absent? >> str('=')).maybe)).as(:name)
     end
 
     rule(:opt_name)			        do

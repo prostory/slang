@@ -42,7 +42,8 @@ module SLang
       end
 
       def lookup_function(name, signature, obj)
-        obj.type.lookup_function(name, signature)
+        fun = obj.type.lookup_function(name, signature)
+        fun || Type.kernel.lookup_function(name, signature)
       end
 
       def define_variable(var)
@@ -53,8 +54,12 @@ module SLang
         scope.lookup_variable name
       end
 
-      def lookup_member(name)
-        scope.lookup_member name
+      def lookup_instance_var(name)
+        scope.lookup_instance_var name
+      end
+
+      def lookup_class_var(name)
+        scope.lookup_class_var name
       end
 
       def new_scope(obj, type)

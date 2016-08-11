@@ -81,6 +81,7 @@ module SLang
     attr_accessor :template
     attr_accessor :ancestors
     attr_accessor :class_type
+    attr_accessor :parent
     attr_accessor :type_id
 
     @@sequence = 0
@@ -89,7 +90,8 @@ module SLang
       @functions = {}
       @ancestors = [obj]
       @template = TypeTemplate.new(obj.name)
-      extend(parent) if parent
+      @parent = parent
+      extend_parent(parent) if parent
       @type_id = @@sequence
       @@sequence += 1
     end
@@ -97,8 +99,8 @@ module SLang
     def class_type
       unless @class_type
         obj = ancestors.first
-        parent = ancestors[1]
-        @class_type = ClassType.new(obj.name, parent && parent.class_type)
+        @class_type = ClassType.new(obj.name)
+        @class_type.extend_parent parent.class_type if parent
         @class_type.object_type = obj
       end
       @class_type
@@ -119,7 +121,7 @@ module SLang
       instance
     end
 
-    def extend(parent)
+    def extend_parent(parent)
       ancestors.push *parent.ancestors
       parent.ancestors.each do |type|
         type.prototype.functions.each do |name, prototype|
@@ -151,6 +153,10 @@ module SLang
 
     def type_id
       prototype.type_id
+    end
+
+    def extend_parent(type)
+      prototype.extend_parent(type)
     end
 
     def new_instance
@@ -247,15 +253,32 @@ module SLang
     end
 
     def <<(var)
+      case var
+      when Member
+        define_instance_var(var)
+      when ClassVar
+        define_class_var(var)
+      end
+    end
+
+    def define_instance_var(var)
       members[var.name] = var
+    end
+
+    def define_class_var(var)
+      class_type << var
     end
 
     def include?(name)
       members.has_key? name
     end
 
-    def [](name)
+    def lookup_instance_var(name)
       members[name]
+    end
+
+    def lookup_class_var(name)
+      class_type.lookup_class_var name
     end
 
     def hash
@@ -320,23 +343,28 @@ module SLang
 
   class ClassType < ObjectType
     attr_accessor :object_type
-    attr_accessor :class_vars
 
     def initialize(name, parent = nil, prototype = nil)
       super name, parent, prototype
-      @class_vars = {}
-      ancestors.each do |type|
-        type.members.each {|name, var| class_vars[name] = var unless class_vars[name]}
-      end
     end
 
     def <<(var)
       members[var.name] = var
-      class_vars[var.name] = var
+      var.target_type = self
     end
 
-    def [](name)
-      class_vars[name]
+    def lookup_instance_var(name)
+      raise "Can't lookup instance var in Class"
+    end
+
+    def lookup_class_var(name)
+      if members.has_key? name
+        return members[name]
+      else
+        type = ancestors.find {|type| type.members.has_key? name }
+        return type.members[name] if type
+      end
+      return nil
     end
   end
 

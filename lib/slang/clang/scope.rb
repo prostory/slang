@@ -15,8 +15,12 @@ module SLang
         @vars[name]
       end
 
-      def lookup_member(name)
-        @type[name]
+      def lookup_instance_var(name)
+        @type.lookup_instance_var name
+      end
+
+      def lookup_class_var(name)
+        @type.lookup_class_var name
       end
 
       def <<(var)

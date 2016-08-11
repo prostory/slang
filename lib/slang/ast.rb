@@ -305,6 +305,18 @@ module SLang
 	end
 
 	class ClassVar < Variable
+		attr_accessor :target_type
+
+		def ==(other)
+			other.class == self.class && other.name == name && other.type == type &&
+				other.target_type == target_type
+		end
+
+		def clone
+			var = self.class.new name, type
+			var.target_type = target_type
+			var
+		end
 	end
 
 	class Const < ASTNode

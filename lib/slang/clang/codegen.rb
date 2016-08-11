@@ -118,7 +118,7 @@ module SLang
 
   class ClassVar
     def mangled_name
-      "self->#{name}"
+      "#{target_type.instance_name}.#{name}"
     end
   end
 

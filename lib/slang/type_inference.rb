@@ -103,6 +103,13 @@ module SLang
     end
   end
 
+  class ClassVar
+    def <<(instance)
+      super(instance)
+      instance.target_type = target_type
+    end
+  end
+
   class If
     def return
       @then.return
@@ -214,7 +221,7 @@ module SLang
     end
 
     def visit_member(node)
-      var = context.lookup_member(node.name)
+      var = context.lookup_instance_var(node.name)
       raise "Bug: instance variable '#{node.name}' for #{context.scope.type} is not defined!" if var.nil?
       node.type = var.type
       node.optional_type = node.type if var.optional?
@@ -223,7 +230,7 @@ module SLang
     end
 
     def visit_class_var(node)
-      var = context.lookup_member(node.name) or raise "Bug: class variable '#{node.name}' is not defined!"
+      var = context.lookup_class_var(node.name) or raise "Bug: class variable '#{node.name}' is not defined!"
       node.type = var.type
       node.optional_type = node.type if var.optional?
       var << node
@@ -515,8 +522,10 @@ module SLang
       node.type = node.target.type = node.value.type
 
       case node.target
-      when Member, ClassVar
-        var = context.lookup_member(node.target.name)
+      when Member
+        var = context.lookup_instance_var(node.target.name)
+      when ClassVar
+        var = context.lookup_class_var(node.target.name)
       else
         var = context.lookup_variable(node.target.name)
       end

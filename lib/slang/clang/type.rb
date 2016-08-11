@@ -182,6 +182,8 @@ module SLang
 
   class Type
     def self.init_base_types
+      types[:Object] = object_type(:Object)
+      types[:Class] = object_type(:Class, types[:Object])
       base(:void, :Void)
       base(:int, :Integer)
       base(:double, :Float)

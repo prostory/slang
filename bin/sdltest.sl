@@ -74,20 +74,20 @@ class Game
 	
 	def init
 		if SDL_Init(0x00000020) < 0
-			printf "SDL_Init failed: %s\n", SDL_GetError
+			printf "SDL_Init failed: %s\n", SDL_GetError()
 			exit 1
 		end
 		
 		@window = SDL_CreateWindow("slang test", 0, 0, @width, @height, 0x00000004)
 		if @window.nil?
-			printf "SDL_CreateWindow failed: %s\n", SDL_GetError
+			printf "SDL_CreateWindow failed: %s\n", SDL_GetError()
 			exit 1
 		end
 		
 		@renderer = SDL_CreateRenderer(@window, -1, 0x00000002)
 		
 		if @renderer.nil?
-			printf "SDL_CreateRenderer failed: %s\n", SDL_GetError
+			printf "SDL_CreateRenderer failed: %s\n", SDL_GetError()
 			exit 1
 		end
 		
@@ -143,7 +143,7 @@ class Game
 		if !@window.nil?
 			SDL_DestroyWindow(@window)
 		end
-		SDL_Quit
+		SDL_Quit()
 	end
 end
 

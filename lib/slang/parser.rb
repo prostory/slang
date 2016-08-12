@@ -108,8 +108,20 @@ module SLang
       f_name | operators_name.as(:name)
     end
 
-    rule(:const)                do
+    rule(:simple_const)         do
       (upper >> (alpha | digit).repeat).as(:const) >> space?
+    end
+
+    rule(:const_chain)          do
+      (simple_const >> (str('::') >> simple_const).repeat(1)).as(:const_chain) >> space?
+    end
+
+    rule(:top_const)            do
+      (str('::') >> simple_const).as(:top_const) >> space?
+    end
+
+    rule(:const)                do
+      const_chain | top_const | simple_const
     end
 
     rule(:special_call)         do

@@ -1,45 +1,42 @@
 typedef struct { char unused; } Any_Class;
-static Any_Class Any_class;
 typedef struct { char unused; } Kernel_Class;
-static Kernel_Class Kernel_class;
+typedef struct { char unused; } Object_Class;
+typedef struct { char unused; } Class_Class;
 typedef void Void;
 typedef struct { char unused; } Void_Class;
-static Void_Class Void_class;
 typedef int Integer;
 typedef struct { char unused; } Integer_Class;
-static Integer_Class Integer_class;
 typedef double Float;
 typedef struct { char unused; } Float_Class;
-static Float_Class Float_class;
 typedef void * Nil;
 typedef struct { char unused; } Nil_Class;
-static Nil_Class Nil_class;
 typedef char * String;
 typedef struct { char unused; } String_Class;
-static String_Class String_class;
 typedef void * Pointer;
 typedef struct { char unused; } Pointer_Class;
-static Pointer_Class Pointer_class;
 typedef enum { False = 0, True = 1, } Bool;
 typedef struct { char unused; } Bool_Class;
-static Bool_Class Bool_class;
 typedef struct { char unused; } Array_Class;
-static Array_Class Array_class;
 typedef struct { char unused; } UnionType_Class;
-static UnionType_Class UnionType_class;
-typedef struct { char unused; } Object_Class;
-static Object_Class Object_class;
+typedef struct { char unused; } MainTop_Class;
 typedef struct { char unused; } StringHelper_Class;
-static StringHelper_Class StringHelper_class;
 typedef struct { Integer x; Integer y; Integer w; Integer h; } Rect;
 typedef struct { char unused; } Rect_Class;
-static Rect_Class Rect_class;
 typedef struct { Integer type; } Event;
 typedef struct { char unused; } Event_Class;
-static Event_Class Event_class;
 typedef struct { Integer width; Integer height; Bool quit; Pointer window; Pointer renderer; Rect * fill_rect; Rect * outline_rect; } Game;
 typedef struct { char unused; } Game_Class;
-static Game_Class Game_class;
+static Object_Class Main_Object;
+static Integer_Class Main_Integer;
+static Float_Class Main_Float;
+static Bool_Class Main_Bool;
+static StringHelper_Class Main_StringHelper;
+static String_Class Main_String;
+static Array_Class Main_Array;
+static Pointer_Class Main_Pointer;
+static Rect_Class Main_Rect;
+static Event_Class Main_Event;
+static Game_Class Main_Game;
 extern Pointer calloc(Integer, Integer);
 extern Game * __alloc__1(Game_Class * self);
 extern Bool __init__2(Game * self, Integer width, Integer height);
@@ -150,8 +147,8 @@ Rect * init8(Game * self)
         exit(1);
     }
     SDL_SetRenderDrawColor(self->renderer, 255, 255, 255, 255);
-    self->fill_rect = new7(&Rect_class, (self->width / 4), (self->height / 4), (self->width / 2), (self->height / 2));
-    self->outline_rect = new7(&Rect_class, (self->width / 6), (self->height / 6), ((self->width * 2) / 3), ((self->height * 2) / 3));
+    self->fill_rect = new7(&Main_Rect, (self->width / 4), (self->height / 4), (self->width / 2), (self->height / 2));
+    self->outline_rect = new7(&Main_Rect, (self->width / 6), (self->height / 6), ((self->width * 2) / 3), ((self->height * 2) / 3));
     result = self->outline_rect;
     return result;
 }
@@ -225,7 +222,7 @@ Nil start15(Game * self)
     Nil result;
     Event * e;
     init8(self);
-    e = new11(&Event_class);
+    e = new11(&Main_Event);
     while (!(self->quit))
     {
         while ((SDL_PollEvent(e) != 0))
@@ -243,7 +240,7 @@ Nil start15(Game * self)
 Integer main(Void)
 {
     Integer result;
-    start15(new3(&Game_class, 800, 600));
+    start15(new3(&Main_Game, 800, 600));
     result = 0;
     return result;
 }

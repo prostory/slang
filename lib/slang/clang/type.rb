@@ -92,12 +92,12 @@ module SLang
       "#{@name}_Class".to_sym
     end
 
-    def instance_name
-      "#{@name}_class".to_sym
+    def define
+      "typedef #{target_type} #{name};\n"
     end
 
-    def define
-      "typedef #{target_type} #{name};\nstatic #{name} #{instance_name};\n"
+    def define_consts
+      consts.values.map { |const| "static #{const.type} #{const.mangled_name};\n" }.join
     end
   end
 

@@ -1,12 +1,11 @@
-class Integer
+class Fixnum
   def dump
-    printf "%d\n", self
+    puts self
   end
 end
 
 class A
   @@f = 3
-  C = 1
   
   def foo
     @a = 1

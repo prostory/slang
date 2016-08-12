@@ -148,6 +148,10 @@ module SLang
     end
   end
 
+  class Const
+    attr_accessor :value
+  end
+
   class TypeVisitor < Visitor
     attr_accessor :context
 
@@ -239,22 +243,37 @@ module SLang
 
 
     def visit_const(node)
-      type = Type.lookup(node.name)
-      if type.nil?
-        call = Call.new(node.name)
-        visit_call(call)
-        node.parent.replace(node, call)
-        return
+      const = nil
+      if node.target
+        type = context.main_top
+        unless node.target.name == :Main
+          node.target.accept self
+          type = node.target.type
+        end
+        const = type.lookup_const(node.name)
+      else
+        const = context.lookup_const(node.name)
       end
-      node.type = type.class_type or raise "uninitialized constant '#{node.name}'"
+      raise "uninitialized constant '#{node.name}'" if const.nil?
+      node.type = const.type
+      node.target = const.target
       false
     end
 
     def visit_class_def(node)
-      superclass = Type.lookup(node.superclass) or raise "uninitialized constant '#{node.superclass}'" if node.superclass
-      type = Type.object_type node.name, superclass
-      node << Function.new(:type_id, [], [NumberLiteral.new(type.type_id)], :Integer, node, true)
-      node << Function.new(:class, [], [Const.new(node.name)], :Any, node)
+      superclass = nil
+      if node.superclass
+        node.superclass.accept self
+        superclass = node.superclass.type.object_type
+      end
+      name = node.name.name
+      type = Type.object_type name, superclass
+      node << Function.new(:type_id, [], [NumberLiteral.new(type.type_id)], :Integer, node.name, true)
+      node << Function.new(:class, [], [Const.new(name)], :Any, node.name)
+      node.name.type = type.class_type
+      node.name.value = NumberLiteral.new(type.type_id)
+      type.class_type.target = node.name
+      context.define_class(node.name)
       context.new_scope(nil, type) do
         node.accept_children self
       end
@@ -262,7 +281,10 @@ module SLang
     end
 
     def visit_module(node)
-      type = Type.module_type node.name
+      type = Type.module_type node.name.name
+      node.name.type = type.class_type
+      node.name.value = NumberLiteral.new(type.type_id)
+      context.define_class(node.name)
       context.new_scope(nil, type) do
         node.accept_children self
       end
@@ -395,7 +417,7 @@ module SLang
       instance.owner = call.obj.type if call.obj
       instance.body.type = Type.void
 
-      scope_type = call.obj ? call.obj.type : Type.kernel
+      scope_type = call.obj ? call.obj.type : nil
 
       context.new_scope(function, scope_type) do
         function.clear_variables
@@ -444,6 +466,7 @@ module SLang
     end
 
     def visit_function(node)
+      node.scope.accept self if node.scope
       node.params.each {|param| param.accept self }
       node.body.return(Variable.new(:result))
       node.return_type = Type.lookup(node.return_type)
@@ -456,6 +479,7 @@ module SLang
     end
 
     def visit_lambda(node)
+      node.scope.accept self if node.scope
       node.params.each {|param| param.accept self }
       node.body.return(Variable.new(:result))
       node.return_type = Type.lookup(node.return_type)
@@ -465,6 +489,7 @@ module SLang
     end
 
     def visit_external(node)
+      node.scope.accept self if node.scope
       node.params.each {|param| param.accept self }
       node.return_type = Type.lookup(node.return_type)
       context.add_function node
@@ -504,7 +529,7 @@ module SLang
       false
     end
 
-    def visit_assign(node)
+    def visit_assign(node)   
       if node.value.is_a? If
         assign_if = node.value.assign(node.target)
         node.parent.replace(node, assign_if)
@@ -520,6 +545,12 @@ module SLang
       end
 
       node.type = node.target.type = node.value.type
+
+      if node.target.is_a?(Const)
+        node.target.value = node.value
+        context.define_const node.target
+        return false
+      end
 
       case node.target
       when Member

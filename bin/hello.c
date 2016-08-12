@@ -1,44 +1,39 @@
 typedef struct { char unused; } Any_Class;
-static Any_Class Any_class;
 typedef struct { char unused; } Kernel_Class;
-static Kernel_Class Kernel_class;
+typedef struct { char unused; } Object_Class;
+typedef struct { char unused; } Class_Class;
 typedef void Void;
 typedef struct { char unused; } Void_Class;
-static Void_Class Void_class;
 typedef int Integer;
 typedef struct { char unused; } Integer_Class;
-static Integer_Class Integer_class;
 typedef double Float;
 typedef struct { char unused; } Float_Class;
-static Float_Class Float_class;
 typedef void * Nil;
 typedef struct { char unused; } Nil_Class;
-static Nil_Class Nil_class;
 typedef char * String;
 typedef struct { char unused; } String_Class;
-static String_Class String_class;
 typedef void * Pointer;
 typedef struct { char unused; } Pointer_Class;
-static Pointer_Class Pointer_class;
 typedef enum { False = 0, True = 1, } Bool;
 typedef struct { char unused; } Bool_Class;
-static Bool_Class Bool_class;
 typedef struct { char unused; } Array_Class;
-static Array_Class Array_class;
 typedef struct { char unused; } UnionType_Class;
-static UnionType_Class UnionType_class;
-typedef struct { char unused; } Object_Class;
-static Object_Class Object_class;
+typedef struct { char unused; } MainTop_Class;
 typedef struct { char unused; } StringHelper_Class;
-static StringHelper_Class StringHelper_class;
 typedef struct { String name; } Greeter;
 typedef struct { char unused; } Greeter_Class;
-static Greeter_Class Greeter_class;
 typedef struct { char unused; } Lambda_Class;
-static Lambda_Class Lambda_class;
 typedef struct { Float x; Float y; } Point;
 typedef struct { char unused; } Point_Class;
-static Point_Class Point_class;
+static Object_Class Main_Object;
+static Integer_Class Main_Integer;
+static Float_Class Main_Float;
+static Bool_Class Main_Bool;
+static StringHelper_Class Main_StringHelper;
+static String_Class Main_String;
+static Array_Class Main_Array;
+static Greeter_Class Main_Greeter;
+static Point_Class Main_Point;
 extern Integer puts(String);
 extern Pointer calloc(Integer, Integer);
 extern Greeter * __alloc__1(Greeter_Class * self);
@@ -141,13 +136,13 @@ Float y10(Point * self)
 Point * __add__11(Point * self, Point * p)
 {
     Point * result;
-    result = new8(&Point_class, (self->x + x9(p)), (self->y + y10(p)));
+    result = new8(&Main_Point, (self->x + x9(p)), (self->y + y10(p)));
     return result;
 }
 Point * __sub__12(Point * self, Point * p)
 {
     Point * result;
-    result = new8(&Point_class, (self->x - x9(p)), (self->y - y10(p)));
+    result = new8(&Main_Point, (self->x - x9(p)), (self->y - y10(p)));
     return result;
 }
 Float to_f13(Float self)
@@ -172,11 +167,11 @@ Integer main(Void)
     Point * p4;
     Integer i;
     puts("Hello World");
-    g = new3(&Greeter_class, "SLang");
+    g = new3(&Main_Greeter, "SLang");
     say_hello4(g);
     times5(10);
-    p1 = new8(&Point_class, 1.2, 2.3);
-    p2 = new8(&Point_class, 2.2, 6.4);
+    p1 = new8(&Main_Point, 1.2, 2.3);
+    p2 = new8(&Main_Point, 2.2, 6.4);
     p3 = __add__11(p1, p2);
     p4 = __sub__12(p1, p2);
     dump14(p3);

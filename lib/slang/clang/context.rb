@@ -8,7 +8,7 @@ module SLang
       def initialize
         Type.init_base_types
 
-        @scopes = [Scope.new(main, Type.kernel)]
+        @scopes = [Scope.new(main, Type.main)]
         @type = TypeVisitor.new(self)
         @codegen = CodeGenVisitor.new(self)
       end
@@ -34,16 +34,15 @@ module SLang
 
       def add_function(fun)
         if fun.scope
-          Type.types[fun.scope.name].add_function fun
+          fun.scope.type.object_type.add_function fun
         else
-          Type.kernel.add_function fun
+          main_top.add_function fun
         end
         fun
       end
 
       def lookup_function(name, signature, obj)
-        fun = obj.type.lookup_function(name, signature)
-        fun || Type.kernel.lookup_function(name, signature)
+        obj.type.lookup_function(name, signature) || main_top.lookup_function(name, signature)
       end
 
       def define_variable(var)
@@ -61,9 +60,25 @@ module SLang
       def lookup_class_var(name)
         scope.lookup_class_var name
       end
+      
+      def lookup_const(name)
+        scope.lookup_const(name) || main_top.lookup_const(name)
+      end
+      
+      def define_const(const)
+        scope.define_const const
+      end
+      
+      def define_class(const)
+        scope.define_class const
+      end
+      
+      def main_top
+        Type.main
+      end
 
       def new_scope(obj, type)
-        @scopes.push(Scope.new obj, type)
+        @scopes.push(Scope.new obj, type || main_top)
         yield
         @scopes.pop
       end

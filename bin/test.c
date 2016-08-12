@@ -1,45 +1,41 @@
 typedef struct { char unused; } Any_Class;
-static Any_Class Any_class;
 typedef struct { char unused; } Kernel_Class;
-static Kernel_Class Kernel_class;
-typedef void Void;
-typedef struct { char unused; } Void_Class;
-static Void_Class Void_class;
-typedef int Integer;
-typedef struct { char unused; } Integer_Class;
-static Integer_Class Integer_class;
-typedef double Float;
-typedef struct { char unused; } Float_Class;
-static Float_Class Float_class;
-typedef void * Nil;
-typedef struct { char unused; } Nil_Class;
-static Nil_Class Nil_class;
-typedef char * String;
-typedef struct { char unused; } String_Class;
-static String_Class String_class;
-typedef void * Pointer;
-typedef struct { char unused; } Pointer_Class;
-static Pointer_Class Pointer_class;
-typedef enum { False = 0, True = 1, } Bool;
-typedef struct { char unused; } Bool_Class;
-static Bool_Class Bool_class;
-typedef struct { char unused; } Array_Class;
-static Array_Class Array_class;
-typedef union { String uString; Float uFloat; Integer uInteger; } UnionType;
-typedef struct { char unused; } UnionType_Class;
-static UnionType_Class UnionType_class;
 typedef struct { char unused; } Object;
 typedef struct { char unused; } Object_Class;
-static Object_Class Object_class;
+typedef struct { char unused; } Class_Class;
+typedef void Void;
+typedef struct { char unused; } Void_Class;
+typedef int Integer;
+typedef struct { char unused; } Integer_Class;
+typedef double Float;
+typedef struct { char unused; } Float_Class;
+typedef void * Nil;
+typedef struct { char unused; } Nil_Class;
+typedef char * String;
+typedef struct { char unused; } String_Class;
+typedef void * Pointer;
+typedef struct { char unused; } Pointer_Class;
+typedef enum { False = 0, True = 1, } Bool;
+typedef struct { char unused; } Bool_Class;
+typedef struct { char unused; } Array_Class;
+typedef union { String uString; Float uFloat; Integer uInteger; } UnionType;
+typedef struct { char unused; } UnionType_Class;
+typedef struct { char unused; } MainTop_Class;
 typedef struct { char unused; } StringHelper_Class;
-static StringHelper_Class StringHelper_class;
 typedef struct { Integer type; UnionType value; } Options;
 typedef struct { char unused; } Options_Class;
-static Options_Class Options_class;
 typedef struct { char unused; } A_Class;
-static A_Class A_class;
 typedef struct { UnionType a; } B_Class;
-static B_Class B_class;
+static Object_Class Main_Object;
+static Integer_Class Main_Integer;
+static Float_Class Main_Float;
+static Bool_Class Main_Bool;
+static StringHelper_Class Main_StringHelper;
+static String_Class Main_String;
+static Array_Class Main_Array;
+static Options_Class Main_Options;
+static A_Class Main_A;
+static B_Class Main_B;
 extern Pointer calloc(Integer, Integer);
 extern Options * __alloc__1(Options_Class * self);
 extern Void __init__2(Options * self);
@@ -108,13 +104,13 @@ Object * new6(Object_Class * self)
 String_Class * class7(String self)
 {
     String_Class * result;
-    result = &String_class;
+    result = &Main_String;
     return result;
 }
 Integer type_id8(String_Class * self)
 {
     Integer result;
-    result = 6;
+    result = 8;
     return result;
 }
 Options * option9(Options * self, String value)
@@ -128,13 +124,13 @@ Options * option9(Options * self, String value)
 Float_Class * class10(Float self)
 {
     Float_Class * result;
-    result = &Float_class;
+    result = &Main_Float;
     return result;
 }
 Integer type_id11(Float_Class * self)
 {
     Integer result;
-    result = 4;
+    result = 6;
     return result;
 }
 Options * option12(Options * self, Float value)
@@ -155,9 +151,9 @@ Options * foo13(Integer n)
     Bool d;
     a = 0;
     a = "Hello World";
-    a1 = new3(&Options_class);
-    b = new6(&Object_class);
-    c = new6(&Object_class);
+    a1 = new3(&Main_Options);
+    b = new6(&Main_Object);
+    c = new6(&Main_Object);
     d = (b == c);
     if (d)
     {
@@ -198,13 +194,13 @@ Float float16(Options * self)
 Integer dump17(Options * self)
 {
     Integer result;
-    if ((type14(self) == type_id8(&String_class)))
+    if ((type14(self) == type_id8(&Main_String)))
     {
         result = puts(string15(self));
     }
     else
     {
-        if ((type14(self) == type_id11(&Float_class)))
+        if ((type14(self) == type_id11(&Main_Float)))
         {
             result = printf("%f\n", float16(self));
         }
@@ -214,7 +210,7 @@ Integer dump17(Options * self)
 Integer a18(B_Class * self)
 {
     Integer result;
-    self->a.uFloat = 1;
+    Main_B.a.uFloat = 1;
     result = puts("a");
     return result;
 }
@@ -227,33 +223,33 @@ Integer b19(Void)
 Integer a20(B_Class * self)
 {
     Integer result;
-    result = self->a.uInteger;
+    result = Main_B.a.uInteger;
     return result;
 }
 Float a__asgn__21(B_Class * self, Float n)
 {
     Float result;
-    self->a.uFloat = n;
-    result = self->a.uFloat;
+    Main_B.a.uFloat = n;
+    result = Main_B.a.uFloat;
     return result;
 }
 Float a22(B_Class * self)
 {
     Float result;
-    result = self->a.uFloat;
+    result = Main_B.a.uFloat;
     return result;
 }
 String a__asgn__23(B_Class * self, String n)
 {
     String result;
-    self->a.uString = n;
-    result = self->a.uString;
+    Main_B.a.uString = n;
+    result = Main_B.a.uString;
     return result;
 }
 UnionType a24(B_Class * self)
 {
     UnionType result;
-    result = self->a;
+    result = Main_B.a;
     return result;
 }
 Integer main(Void)
@@ -265,20 +261,20 @@ Integer main(Void)
     dump17(a);
     a1 = foo13(-(1));
     dump17(a1);
-    a18(&B_class);
+    a18(&Main_B);
     b19();
-    printf("%d\n", a20(&B_class));
-    a__asgn__21(&B_class, 5.1);
-    printf("%f\n", a22(&B_class));
-    if ((type_id11(class10(a22(&B_class))) == type_id8(&String_class)))
+    printf("%d\n", a20(&Main_B));
+    a__asgn__21(&Main_B, 5.1);
+    printf("%f\n", a22(&Main_B));
+    if ((type_id11(class10(a22(&Main_B))) == type_id8(&Main_String)))
     {
-        a__asgn__23(&B_class, "Hello");
+        a__asgn__23(&Main_B, "Hello");
     }
     else
     {
-        a__asgn__23(&B_class, "World");
+        a__asgn__23(&Main_B, "World");
     }
-    puts(a24(&B_class).uString);
+    puts(a24(&Main_B).uString);
     result = 0;
     return result;
 }

@@ -17,6 +17,10 @@ module SLang
     def self.varlist
       VarList.new
     end
+    
+    def self.main
+      types[:Main] ||= ObjectType.new(:MainTop, nil)
+    end
 
     def self.lambda
       types[:Lambda] ||= LambdaType.new
@@ -246,10 +250,12 @@ module SLang
 
   class BaseObjectType < BaseType
     attr_accessor :members
+    attr_accessor :consts
 
     def initialize(name, parent = nil, prototype = nil)
       super name, parent, prototype
       @members = {}
+      @consts = {}
     end
 
     def <<(var)
@@ -268,6 +274,18 @@ module SLang
     def define_class_var(var)
       class_type << var
     end
+    
+    def define_const(const)
+      class_type.define_const const
+    end
+    
+    def define_class(const)
+      class_type.define_class const
+    end
+    
+    def lookup_const(name)
+      class_type.lookup_const name
+    end
 
     def include?(name)
       members.has_key? name
@@ -279,6 +297,10 @@ module SLang
 
     def lookup_class_var(name)
       class_type.lookup_class_var name
+    end
+
+    def target
+      Const.new(:Main)
     end
 
     def hash
@@ -343,14 +365,35 @@ module SLang
 
   class ClassType < ObjectType
     attr_accessor :object_type
+    attr_accessor :target
 
     def initialize(name, parent = nil, prototype = nil)
       super name, parent, prototype
+      ancestors.each do |type|
+        type.consts.each {|name, const| consts[name] ||= const }
+      end
+      @target = Const.new(:Main)
     end
 
     def <<(var)
       members[var.name] = var
       var.target_type = self
+    end
+    
+    def define_const(const)
+      old_const = consts[const.name]
+      raise "Redefined const '#{const.name}' in #{@name}" if old_const && old_const.target.type == self
+      consts[const.name] = const
+      const.target = self.target if const.target.nil?
+      const.target.type = self
+    end
+    
+    def define_class(const)
+      old_const = consts[const.name]
+      raise "#{const.name} is not a class" if old_const && old_const.target.type == self && !old_const.type.is_a?(ClassType)
+      consts[const.name] = const
+      const.target = self.target if const.target.nil?
+      const.target.type = self
     end
 
     def lookup_instance_var(name)
@@ -365,6 +408,10 @@ module SLang
         return type.members[name] if type
       end
       return nil
+    end
+    
+    def lookup_const(name)
+      consts[name]
     end
   end
 

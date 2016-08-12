@@ -118,7 +118,17 @@ module SLang
 
   class ClassVar
     def mangled_name
-      "#{target_type.instance_name}.#{name}"
+      "#{target_type.target.mangled_name}.#{name}"
+    end
+  end
+
+  class Const
+    def mangled_name
+      if target
+        "#{target.mangled_name}_#{name}"
+      else
+        "#{name}"
+      end
     end
   end
 
@@ -154,8 +164,14 @@ module SLang
         false
       end
 
+      def visit_module(node)
+        node.body.accept self
+        false
+      end
+
       def visit_class_def(node)
-        true
+        node.body.accept self
+        false
       end
 
       def visit_expressions(node)
@@ -245,7 +261,11 @@ module SLang
       end
 
       def visit_const(node)
-        stream << "&#{Type.types[node.name].class_type.instance_name}"
+        if node.type.is_a?(ClassType)
+          stream << "&#{node.mangled_name}"
+        else
+          stream << "#{node.mangled_name}"
+        end
         false
       end
 
@@ -400,6 +420,9 @@ module SLang
         Type.types.each_value do |type|
           stream << "#{type.define}"
           stream << "#{type.class_type.define}"
+        end
+        Type.types.each_value do |type|
+          stream << type.class_type.define_consts
         end
       end
 

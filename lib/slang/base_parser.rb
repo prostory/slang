@@ -20,9 +20,9 @@ module SLang
             when :do
               Do.new parse_expression(exp[1..-1])
             when :fun
-              Function.new exp[1], parse_params(exp[2]), parse_expression(exp[3]), exp[4], @target
+              Function.new exp[1], parse_params(exp[2]), parse_expression(exp[3]), exp[4]
             when :lambda
-              Lambda.new parse_params(exp[1]), parse_expression(exp[2]), exp[3], @target
+              Lambda.new parse_params(exp[1]), parse_expression(exp[2]), exp[3]
             when :call
               if exp[1].is_a? Array
                 func = parse_expression(exp[1])
@@ -36,8 +36,8 @@ module SLang
             when :ret
               Return.new(parse_args(exp[1..-1]))
             when :external
-              return External.new(exp[1], exp[2], parse_params(exp[3]), exp[4], @target) if exp[2].is_a? Symbol
-              return External.new(exp[1], exp[1], parse_params(exp[2]), exp[3], @target) if exp[2].is_a? Array
+              return External.new(exp[1], exp[2], parse_params(exp[3]), exp[4]) if exp[2].is_a? Symbol
+              return External.new(exp[1], exp[1], parse_params(exp[2]), exp[3]) if exp[2].is_a? Array
             when :class
               parse_class(exp[1..-1])
             when :module
@@ -45,8 +45,8 @@ module SLang
             when :include
               Include.new(exp[1..-1])
             when :operator
-              return Operator.new(exp[1], exp[2], parse_params(exp[3]), exp[4], @target) if exp[2].is_a? Symbol
-              return Operator.new(exp[1], exp[1], parse_params(exp[2]), exp[3], @target) if exp[2].is_a? Array
+              return Operator.new(exp[1], exp[2], parse_params(exp[3]), exp[4]) if exp[2].is_a? Symbol
+              return Operator.new(exp[1], exp[1], parse_params(exp[2]), exp[3]) if exp[2].is_a? Array
             when :set
               Assign.new(parse_var(exp[1]), parse_obj(exp[2]))
             when :list
@@ -54,7 +54,7 @@ module SLang
             when :cast
               Cast.new(exp[1], parse_obj(exp[2]))
             when :static
-              Function.new(exp[1], parse_params(exp[2]), parse_expression(exp[3]), exp[4], @target, true)
+              Function.new(exp[1], parse_params(exp[2]), parse_expression(exp[3]), exp[4], nil, true)
             when :typeof
               Typeof.new(parse_obj(exp[1]))
             when :sizeof
@@ -80,7 +80,7 @@ module SLang
       case exp
       when Symbol
         if exp.to_s.match /^[A-Z]/
-          Const.new(exp)
+          Const.new(exp, Const.new(:Main))
         elsif var = exp.to_s.match(/^@@([^@]+)/)
           ClassVar.new(var[1].to_sym, @target)
         elsif var = exp.to_s.match(/^@([^@]+)/)
@@ -129,21 +129,23 @@ module SLang
     end
 
     def parse_class(exp)
-      @target = class_def = ClassDef.new(exp[0], nil, exp[1])
-      parse_class_body(exp[2..-1])
-      @target = nil
+      class_def = ClassDef.new(parse_var(exp[0]), nil, parse_var(exp[1]))
+      parse_class_body(class_def, exp[2..-1])
       class_def
     end
 
     def parse_module(exp)
-      @target = mod = Module.new(exp[0])
-      parse_class_body(exp[1..-1])
-      @target = nil
+      mod = Module.new(parse_var(exp[0]))
+      parse_class_body(mod, exp[1..-1])
       mod
     end
 
-    def parse_class_body(children)
-      children.map {|child| @target << parse_expression(child)} if children
+    def parse_class_body(receiver, children)
+      children.map do |child|
+        fun = parse_expression(child)
+        fun.receiver = receiver.name if fun.is_a? Function
+        receiver << fun
+      end if children
     end
 
     def new_string(str)

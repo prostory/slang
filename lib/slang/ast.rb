@@ -209,7 +209,8 @@ module SLang
 		attr_accessor :body
 
 		def initialize(name, body = nil)
-			@name = name.to_sym
+			@name = name
+			@name.parent = self
 			@body = Expressions.from body
 			@body.parent = self
 		end
@@ -219,10 +220,12 @@ module SLang
 		end
 
 		def accept_children(visitor)
+		  name.accept visitor
 			body.accept visitor
 		end
 
 		def replace(old, new)
+		  @name = new if @name == old
 			@body = new if @body == old
 		end
 
@@ -260,11 +263,22 @@ module SLang
 
 		def initialize(name, body = nil, superclass = nil)
 			super name, body
-			@superclass = superclass.to_sym if superclass
+			@superclass = superclass
+			@superclass.parent = self if superclass
 		end
 
 		def ==(other)
 			super && other.superclass == superclass
+		end
+		
+		def accept_children(visitor)
+		  super
+		  superclass.accept visitor if superclass
+		end
+		
+		def replace(old, new)
+		  super
+		  @superclass = new if @superclass == old
 		end
 
 		def to_s
@@ -321,21 +335,29 @@ module SLang
 
 	class Const < ASTNode
 		attr_accessor :name
+		attr_accessor :target
 
-		def initialize(name)
+		def initialize(name, target = nil)
 			@name = name.to_sym
+			@target = target
+			@target.parent = self if target
 		end
 
 		def ==(other)
-			other.class == self.class && other.name == name
+			other.class == self.class && other.name == name &&
+			  other.target == target
     end
+
+    def replace(old, new)
+			@target = new if target == old
+		end
 
     def to_s
       name.to_s
     end
 
 		def clone
-			self.class.new name
+			self.class.new name, target
 		end
 	end
 
@@ -410,11 +432,6 @@ module SLang
 
 		def scope
 			@scope || @receiver
-		end
-
-		def scope=(scope)
-			@scope = scope
-			@scope.parent = self if scope
 		end
 
 		def accept_children(visitor)

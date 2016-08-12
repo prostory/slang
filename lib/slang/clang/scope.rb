@@ -22,6 +22,18 @@ module SLang
       def lookup_class_var(name)
         @type.lookup_class_var name
       end
+      
+      def lookup_const(name)
+        @type.lookup_const name
+      end
+      
+      def define_const(const)
+        @type.define_const const
+      end
+      
+      def define_class(const)
+        @type.define_class const
+      end
 
       def <<(var)
         case var

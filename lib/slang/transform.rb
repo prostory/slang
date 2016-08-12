@@ -29,11 +29,20 @@ module SLang
     end
     rule(:array             => subtree(:t)) { ArrayLiteral.new t }
     rule(:const             => simple(:t))  { Const.new(t) }
+    rule(:top_const         => subtree(:t)) { Const.new(t, Const.new(:Main))}
+    rule(:const_chain       => subtree(:t))       do
+      target = t[0]
+      t[1..-1].each do |const|
+        const.target = target
+        target = const
+      end
+      t.last
+    end
     rule(:class_var         => subtree(:t)) { ClassVar.new(t[:name].to_s.gsub(/^@@/, ''), t[:type]) }
     rule(:instance_var      => subtree(:t)) { Member.new(t[:name].to_s.gsub(/^@/, ''), t[:type]) }
     rule(:variable          => subtree(:t)) { Variable.new(t[:name], t[:type]) }
     rule(:primary           => subtree(:t)) { t.primary = true; t }
-    rule(:unary_operation   => subtree(:t)) do
+    rule(:unary_operation   => subtree(:t))       do
       if t[:operand].is_a?(NumberLiteral) && (t[:operator] == '++' || t[:operator] == '--')
         NumberLiteral.new(t[:operand].value + 1)
       else
@@ -129,7 +138,7 @@ module SLang
     #rule(:extend_stmt)
     rule(:module_decl       => subtree(:t))     do
       body = t[:body]
-      mod = Module.new(t[:name].name, body)
+      mod = Module.new(t[:name], body)
       if body.kind_of? Expressions
         body.each do |child|
           child.receiver = t[:name] if child.is_a?(Function)
@@ -141,8 +150,8 @@ module SLang
     end
     rule(:class_decl        => subtree(:t))     do
       body = t[:body]
-      parent = t[:parent] ? t[:parent].name : :Object
-      clazz = ClassDef.new(t[:name].name, t[:body], parent)
+      parent = t[:parent] ? t[:parent] : Const.new(:Object, Const.new(:Main))
+      clazz = ClassDef.new(t[:name], t[:body], parent)
       if body.kind_of? Expressions
         body.each do |child|
           child.receiver = t[:name] if child.is_a?(Function)

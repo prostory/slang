@@ -1,40 +1,37 @@
 typedef struct { char unused; } Any_Class;
-static Any_Class Any_class;
 typedef struct { char unused; } Kernel_Class;
-static Kernel_Class Kernel_class;
+typedef struct { char unused; } Object_Class;
+typedef struct { char unused; } Class_Class;
 typedef void Void;
 typedef struct { char unused; } Void_Class;
-static Void_Class Void_class;
 typedef int Integer;
 typedef struct { char unused; } Integer_Class;
-static Integer_Class Integer_class;
 typedef double Float;
 typedef struct { char unused; } Float_Class;
-static Float_Class Float_class;
 typedef void * Nil;
 typedef struct { char unused; } Nil_Class;
-static Nil_Class Nil_class;
 typedef char * String;
 typedef struct { char unused; } String_Class;
-static String_Class String_class;
 typedef void * Pointer;
 typedef struct { char unused; } Pointer_Class;
-static Pointer_Class Pointer_class;
 typedef enum { False = 0, True = 1, } Bool;
 typedef struct { char unused; } Bool_Class;
-static Bool_Class Bool_class;
 typedef struct { char unused; } Array_Class;
-static Array_Class Array_class;
 typedef union { Integer uInteger; String uString; Float uFloat; } UnionType;
 typedef struct { char unused; } UnionType_Class;
-static UnionType_Class UnionType_class;
-typedef struct { char unused; } Object_Class;
-static Object_Class Object_class;
+typedef struct { char unused; } MainTop_Class;
 typedef struct { char unused; } StringHelper_Class;
-static StringHelper_Class StringHelper_class;
 typedef struct { Integer x; Integer y; Integer w; Integer h; } Rect;
 typedef struct { char unused; } Rect_Class;
-static Rect_Class Rect_class;
+static Object_Class Main_Object;
+static Integer_Class Main_Integer;
+static Float_Class Main_Float;
+static Bool_Class Main_Bool;
+static StringHelper_Class Main_StringHelper;
+static String_Class Main_String;
+static Array_Class Main_Array;
+static UnionType_Class Main_UnionType;
+static Rect_Class Main_Rect;
 extern Integer fib1(Integer n);
 extern Integer printf(String, ...);
 extern Float fib2(Float n);
@@ -222,7 +219,7 @@ Integer dump18(Rect * self)
 Rect * __div__19(Rect * self, Integer n)
 {
     Rect * result;
-    result = new13(&Rect_class, (x14(self) / n), (y15(self) / n), (w16(self) / n), (h17(self) / n));
+    result = new13(&Main_Rect, (x14(self) / n), (y15(self) / n), (w16(self) / n), (h17(self) / n));
     return result;
 }
 Integer main(Void)
@@ -242,7 +239,7 @@ Integer main(Void)
     i1 = (i + 1.0);
     i1 = (1 + i1);
     printf("i = %.2f\n", i1);
-    i2 = new5(&String_class, "Hello ");
+    i2 = new5(&Main_String, "Hello ");
     __lsh__6(i2, "World");
     puts(i2);
     i3 = True;
@@ -252,7 +249,7 @@ Integer main(Void)
     printf("bar(0) = '%s'\n", string8(bar4(0)));
     printf("bar(-1) = %d\n", int9(bar4(-(1))));
     printf("bar(10) = %.2f\n", float10(bar4(10)));
-    r = new13(&Rect_class, 10, 10, 20, 20);
+    r = new13(&Main_Rect, 10, 10, 20, 20);
     dump18(r);
     dump18(__div__19(r, 2));
     result = 0;

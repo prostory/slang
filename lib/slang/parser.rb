@@ -117,7 +117,7 @@ module SLang
     end
 
     rule(:top_const)            do
-      (str('::') >> simple_const).as(:top_const) >> space?
+      str('::') >> (upper >> (alpha | digit).repeat).as(:top_const) >> space?
     end
 
     rule(:const)                do

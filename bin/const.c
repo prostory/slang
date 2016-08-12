@@ -41,6 +41,7 @@ Integer main(Void)
     Main_B = 2;
     Main_A_B = 3;
     printf("%d\n", Main_A_B);
+    printf("%d\n", Main_B);
     Main_A_C_D = 4;
     printf("%d\n", Main_A_C_D);
     result = 0;

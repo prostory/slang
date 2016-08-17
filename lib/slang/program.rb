@@ -53,7 +53,7 @@ module SLang
                [:operator, :!=, [:Float], :Bool],
                [:fun, :to_f, [], [:cast, :Float, :self]],
                [:fun, :to_i, [], [:ret, :self]],
-               [:fun, :times, [:fn], [[:set, :i, 1], [:while, [:<=, :i, [:self]], [[:fn, nil, [:i]], [:set, :i, [:+, :i, [1]]]]]]]
+               [:fun, :times, [:fn], [[:set, :i, 0], [:while, [:<, :i, [:self]], [[:fn, nil, [:i]], [:set, :i, [:+, :i, [1]]]]]]]
               ],
               [:class, :Float, nil,
                [:operator, :-, [], :Float],

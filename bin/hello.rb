@@ -4,34 +4,29 @@
 
 puts "Hello World"
 
-class Integer
-	operator ++():Integer
-	operator +=(Integer):Integer
-end
-
 class Greeter
 
 	# the constructor function
 	# @params: name
 	# @return
-	def __init__(name)
+	def initialize(name)
 		@name = name
 	end
 	
 	def say_hello
-		printf "Hello, %s\n", @name
+		puts "Hello, #{@name}"
 	end
 end
 
 g = Greeter.new "SLang"
 g.say_hello
 
-10.times (n)-> 
-	printf "Say hello %d times.\n", n 
+10.times do |n|
+	puts "Say hello #{n} times."
 end
 
 class Point
-	def __init__(x, y)
+	def initialize(x, y)
 		@x = x
 		@y = y
 	end
@@ -48,7 +43,7 @@ class Point
 	end
 	
 	def dump
-		printf "(%.2f, %.2f)\n", @x.to_f, @y.to_f
+		puts "(#{@x}, #{@y})" 
 	end
 end
 
@@ -69,9 +64,9 @@ else
 end
 i = 5
 case i
-of 1, 2, 3
+when 1, 2, 3
 	puts "i = 1 or 2 or 3"
-of 4, 5, 6
+when 4, 5, 6
 	puts "i = 4 or 5 or 6"
 else
 	puts "i = other"
@@ -81,21 +76,22 @@ while i < 10
 	puts "Hello"
 	i = i + 1
 end
-printf "i = %d\n", i
+puts "i = #{i}"
 
 i = 0
-do
+begin
 	puts "Hello"
 	i = i + 1
-while i < 10 end
+end while i < 10
 i = 5
-do puts "Hello"; i = i + 1 until i == 10 end unless i == 5
+begin puts "Hello"; i = i + 1 end until i == 10 unless i == 5
 
 puts "Hello i = 10" if i == 10
 
-printf "3 * (5 - 4) / ((6 - 3) + 4) = %d\n", 3 * (5 - 4) / ((6 - 3) + 4)
+puts "3 * (5 - 4) / ((6 - 3) + 4) = #{3 * (5 - 4) / ((6 - 3) + 4)}"
 i += 5 - 6 * 3
-printf "i = %d\n", i
-printf "i++*5 = %d\n", i++*5
+puts "i = #{i}"
+puts "i++*5 = #{i*5}"
+i+=1
 
-begin i += 1; printf "i = %d\n", i end
+begin i += 1; puts "i = #{i}" end

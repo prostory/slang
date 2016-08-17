@@ -571,12 +571,12 @@ module SLang
             type = Type.merge(var.type, node.type)
             if type.union_type?
               var.init_optional_type unless var.type.union_type?
+              node.target.optional_type = node.type
               if @branch
                 var.type = type
               else
-                var.type = node.type
+                context.define_variable node.target
               end
-              node.target.optional_type = node.type
               var << node.target
             else
               if node.type.any_type?

@@ -210,7 +210,7 @@ Integer dump17(Options * self)
 Integer a18(B_Class * self)
 {
     Integer result;
-    Main_B.a.uFloat = 1;
+    Main_B.a.uInteger = 1;
     result = puts("a");
     return result;
 }

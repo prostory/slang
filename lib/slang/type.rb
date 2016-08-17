@@ -100,12 +100,13 @@ module SLang
       @@sequence += 1
     end
 
-    def class_type
+    def class_type(target)
       unless @class_type
         obj = ancestors.first
         @class_type = ClassType.new(obj.name)
         @class_type.extend_parent parent.class_type if parent
         @class_type.object_type = obj
+        @class_type.target = target || Const.new(:Main)
       end
       @class_type
     end
@@ -117,6 +118,10 @@ module SLang
 
     def lookup_function(name, signature)
       prototype = functions[name]
+      if prototype.nil?
+        type = ancestors.find {|type| type.functions.has_key? name }
+        prototype = type.functions[name] if type
+      end
       prototype.lookup signature if prototype
     end
 
@@ -127,17 +132,10 @@ module SLang
 
     def extend_parent(parent)
       ancestors.push *parent.ancestors
-      parent.ancestors.each do |type|
-        type.prototype.functions.each do |name, prototype|
-          functions[name] = prototype.clone unless functions.has_key? name
-        end
-      end
     end
 
     def include_module(mod)
-      mod.prototype.functions.each do |name, prototype|
-        functions[name] = prototype.clone unless functions.has_key? name
-      end if mod
+      ancestors.push mod
     end
   end
 
@@ -167,8 +165,8 @@ module SLang
       prototype.add_instance clone
     end
 
-    def class_type
-      prototype.class_type
+    def class_type(target = nil)
+      prototype.class_type(target)
     end
 
     def template
@@ -377,23 +375,21 @@ module SLang
 
     def <<(var)
       members[var.name] = var
-      var.target_type = self
+      var.target = target
     end
     
     def define_const(const)
       old_const = consts[const.name]
-      raise "Redefined const '#{const.name}' in #{@name}" if old_const && old_const.target.type == self
+      raise "Redefined const '#{const.name}' in #{@name}" if old_const && old_const.target == target
       consts[const.name] = const
-      const.target = self.target if const.target.nil?
-      const.target.type = self
+      const.target = target if const.target.nil?
     end
     
     def define_class(const)
       old_const = consts[const.name]
-      raise "#{const.name} is not a class" if old_const && old_const.target.type == self && !old_const.type.is_a?(ClassType)
+      raise "#{const.name} is not a class" if old_const && old_const.target == target && !old_const.type.is_a?(ClassType)
       consts[const.name] = const
-      const.target = self.target if const.target.nil?
-      const.target.type = self
+      const.target = target if const.target.nil?
     end
 
     def lookup_instance_var(name)

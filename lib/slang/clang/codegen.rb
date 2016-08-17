@@ -118,7 +118,7 @@ module SLang
 
   class ClassVar
     def mangled_name
-      "#{target_type.target.mangled_name}.#{name}"
+      "#{target.mangled_name}.#{name}"
     end
   end
 

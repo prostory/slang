@@ -112,18 +112,15 @@ module SLang
       function = functions[fun.signature]
       if function.nil?
         functions[fun.signature] = fun
-
-        functions.sort do |i, j|
-          i[0] <=> j[0]
-        end
+        @functions = Hash[functions.sort_by {|key, val| key}] if functions.size > 1
       else
         function.template << fun
       end
     end
 
     def lookup(signature)
-      function = functions.find { |sig, fun| signature.child_of? sig }
-      function[1].template.latest if function
+      function = functions.values.find { |fun| signature.child_of? fun.signature }
+      function.template.latest if function
     end
 
     def clone

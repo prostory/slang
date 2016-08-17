@@ -319,16 +319,16 @@ module SLang
 	end
 
 	class ClassVar < Variable
-		attr_accessor :target_type
+		attr_accessor :target
 
 		def ==(other)
 			other.class == self.class && other.name == name && other.type == type &&
-				other.target_type == target_type
+				other.target == target
 		end
 
 		def clone
 			var = self.class.new name, type
-			var.target_type = target_type
+			var.target = target
 			var
 		end
 	end

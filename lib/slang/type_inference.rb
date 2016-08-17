@@ -106,7 +106,7 @@ module SLang
   class ClassVar
     def <<(instance)
       super(instance)
-      instance.target_type = target_type
+      instance.target = target
     end
   end
 
@@ -146,10 +146,6 @@ module SLang
         values[0].assign(target)
       end
     end
-  end
-
-  class Const
-    attr_accessor :value
   end
 
   class TypeVisitor < Visitor
@@ -243,14 +239,17 @@ module SLang
 
 
     def visit_const(node)
-      const = nil
+      if node.name == :Main
+        node.type = context.main_top
+        return
+      end
+      if node.name == :Class
+        node.type = Type.lookup(:Class).class_type(node.name)
+        return
+      end
       if node.target
-        type = context.main_top
-        unless node.target.name == :Main
-          node.target.accept self
-          type = node.target.type
-        end
-        const = type.lookup_const(node.name)
+        node.target.accept self
+        const = node.target.type.lookup_const(node.name)
       else
         const = context.lookup_const(node.name)
       end
@@ -270,9 +269,7 @@ module SLang
       type = Type.object_type name, superclass
       node << Function.new(:type_id, [], [NumberLiteral.new(type.type_id)], :Integer, node.name, true)
       node << Function.new(:class, [], [Const.new(name)], :Any, node.name)
-      node.name.type = type.class_type
-      node.name.value = NumberLiteral.new(type.type_id)
-      type.class_type.target = node.name
+      node.name.type = type.class_type(node.name)
       context.define_class(node.name)
       context.new_scope(nil, type) do
         node.accept_children self
@@ -282,8 +279,7 @@ module SLang
 
     def visit_module(node)
       type = Type.module_type node.name.name
-      node.name.type = type.class_type
-      node.name.value = NumberLiteral.new(type.type_id)
+      node.name.type = type.class_type(node.name)
       context.define_class(node.name)
       context.new_scope(nil, type) do
         node.accept_children self
@@ -547,7 +543,6 @@ module SLang
       node.type = node.target.type = node.value.type
 
       if node.target.is_a?(Const)
-        node.target.value = node.value
         context.define_const node.target
         return false
       end

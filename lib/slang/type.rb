@@ -392,7 +392,8 @@ module SLang
     end
     
     def lookup_const(name)
-      consts[name]
+      type = ancestors.find {|type| type.consts.has_key? name }
+      type.consts[name] if type
     end
   end
 

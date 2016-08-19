@@ -398,7 +398,7 @@ module SLang
 
   class ModuleType < ObjectType
     def initialize(name, prototype = nil)
-      super name, nil, prototype
+      super name, Type.types[:Object], prototype
     end
 
     def clone

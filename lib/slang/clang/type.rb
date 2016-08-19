@@ -192,9 +192,9 @@ module SLang
 
   class Type
     def self.init_base_types
-      types[:Kernel] = ModuleType.new(:Kernel)
       types[:Any] = ObjectType.new(:Any)
       types[:Object] = ObjectType.new(:Object, types[:Any])
+      types[:Kernel] = ModuleType.new(:Kernel)
       types[:Object].include_module types[:Kernel]
       types[:Class] = ObjectType.new(:Class, types[:Object])
       types[:Main] = ObjectType.new(:MainTop, types[:Object])
@@ -226,14 +226,12 @@ module SLang
     end
 
     def self.union(members)
-      type = types[:UnionType] || UnionType.new
+      type = types[:UnionType]
       type.add_types members
-      types[:UnionType] = type
       type
     end
 
     def self.union_type(type = nil)
-      types[:UnionType] ||= UnionType.new
       return types[:UnionType] unless type
       types[:UnionType] << type
       types[:UnionType]

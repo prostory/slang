@@ -137,48 +137,23 @@ module SLang
     rule(:include_stmt      => subtree(:t)) { Include.new(t[:args].map(&:name)) }
     #rule(:extend_stmt)
     rule(:module_decl       => subtree(:t))     do
-      body = t[:body]
-      mod = Module.new(t[:name], body)
-      if body.kind_of? Expressions
-        body.each do |child|
-          child.receiver = t[:name] if child.is_a?(Function)
-        end
-      elsif body.is_a? Function
-        body.receiver = t[:name]
-      end
-      mod
+      Module.new(t[:name], t[:body])
     end
     rule(:class_decl        => subtree(:t))     do
-      body = t[:body]
-      parent = t[:parent] ? t[:parent] : Const.new(:Object, Const.new(:Main))
-      clazz = ClassDef.new(t[:name], t[:body], parent)
-      if body.kind_of? Expressions
-        body.each do |child|
-          child.receiver = t[:name] if child.is_a?(Function)
-        end
-      elsif body.is_a? Function
-        body.receiver = t[:name]
-      end
-      clazz
+      ClassDef.new(t[:name], t[:body], t[:parent] || Const.new(:Object))
     end
     # rule(:import_decl)
     rule(:def_decl          => subtree(:t))     do
       return_type = t[:return_type].to_sym if t[:return_type]
-      scope = t[:scope] if t[:scope].is_a? Const
-      class_fun = t[:scope] != nil
-      Function.new(t[:name], t[:params], t[:body], return_type, nil, class_fun, scope)
+      Function.new(t[:name], t[:params], t[:body], return_type, t[:owner])
     end
     rule(:external_decl     => subtree(:t))     do
       return_type = t[:return_type].to_sym if t[:return_type]
-      scope = t[:scope] if t[:scope].is_a? Const
-      class_fun = t[:obj] != nil
-      External.new(t[:name], nil, t[:params], return_type, nil, class_fun, scope)
+      External.new(t[:name], nil, t[:params], return_type, t[:owner])
     end
     rule(:operator_decl     => subtree(:t))     do
       return_type = t[:return_type].to_sym if t[:return_type]
-      scope = t[:scope] if t[:scope].is_a? Const
-      class_fun = t[:scope] != nil
-      Operator.new(t[:name], nil, t[:params], return_type, nil, class_fun, scope)
+      Operator.new(t[:name], nil, t[:params], return_type, t[:owner])
     end
     rule(:stmts             => subtree(:t))     do
       if t.is_a?(String) && t.empty?
@@ -199,7 +174,6 @@ module SLang
   def self.parse(source)
     parser = Parser.new
     input = parser.parse(source)
-    #pp input
     Transform.new.apply input
   rescue Parslet::ParseFailed => failure
     puts failure.cause.ascii_tree

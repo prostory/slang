@@ -33,8 +33,8 @@ module SLang
       end
 
       def add_function(fun)
-        if fun.scope
-          fun.scope.type.object_type.add_function fun
+        if fun.owner
+          fun.owner.type.object_type.add_function fun
         else
           main_top.add_function fun
         end

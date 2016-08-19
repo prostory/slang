@@ -1,8 +1,9 @@
-typedef struct { char unused; } Any_Class;
 typedef struct { char unused; } Kernel_Class;
+typedef struct { char unused; } Any_Class;
 typedef struct { char unused; } Object;
 typedef struct { char unused; } Object_Class;
 typedef struct { char unused; } Class_Class;
+typedef struct { char unused; } MainTop_Class;
 typedef void Void;
 typedef struct { char unused; } Void_Class;
 typedef int Integer;
@@ -17,10 +18,10 @@ typedef void * Pointer;
 typedef struct { char unused; } Pointer_Class;
 typedef enum { False = 0, True = 1, } Bool;
 typedef struct { char unused; } Bool_Class;
-typedef struct { char unused; } Array_Class;
 typedef union { String uString; Float uFloat; Integer uInteger; } UnionType;
 typedef struct { char unused; } UnionType_Class;
-typedef struct { char unused; } MainTop_Class;
+typedef struct { char unused; } Array_Class;
+typedef struct { char unused; } Lambda_Class;
 typedef struct { char unused; } StringHelper_Class;
 typedef struct { Integer type; UnionType value; } Options;
 typedef struct { char unused; } Options_Class;
@@ -110,7 +111,7 @@ String_Class * class7(String self)
 Integer type_id8(String_Class * self)
 {
     Integer result;
-    result = 8;
+    result = 9;
     return result;
 }
 Options * option9(Options * self, String value)
@@ -130,7 +131,7 @@ Float_Class * class10(Float self)
 Integer type_id11(Float_Class * self)
 {
     Integer result;
-    result = 6;
+    result = 7;
     return result;
 }
 Options * option12(Options * self, Float value)

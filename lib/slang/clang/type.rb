@@ -7,51 +7,6 @@ module SLang
       type.reference
     end  
   end
-  
-  class BaseObjectType
-    def define
-      target_type.nil? ? '' : "typedef #{target_type} #{name};\n"
-    end
-
-    def reference
-      name.to_s
-    end
-
-    def base_type
-      self
-    end
-
-    def define_variable(var)
-      "#{reference} #{var}"
-    end
-  end
-
-  class CBaseType < AnyType
-    def initialize(name, target_type = nil)
-      super name
-      @target_type = target_type
-    end
-
-    def define
-      target_type.nil? ? '' : "typedef #{target_type} #{name};\n"
-    end
-
-    def reference
-      name.to_s
-    end
-
-    def base_type
-      self
-    end
-
-    def target_type
-      @target_type
-    end
-
-    def clone
-      self.clone name, target_type
-    end
-  end
 
   class ObjectType
     def target_type
@@ -82,8 +37,43 @@ module SLang
       Type.pointer
     end
 
+    def define_variable(var)
+      "#{reference} #{var}"
+    end
+
     def name
       "#{@name}#{seq}"
+    end
+  end
+
+  class CBaseType < ObjectType
+    def initialize(name, target_type = nil)
+      super name, Type.types[:Object]
+      @target_type = target_type
+    end
+
+    def define
+      target_type.nil? ? '' : "typedef #{target_type} #{name};\n"
+    end
+
+    def reference
+      name.to_s
+    end
+
+    def base_type
+      self
+    end
+
+    def target_type
+      @target_type
+    end
+
+    def name
+      @name.to_s
+    end
+
+    def clone
+      self.clone name, target_type
     end
   end
 
@@ -107,11 +97,15 @@ module SLang
     end
 
     def define
-      members.empty? ? '' : super
+      members.empty? ? '' : "typedef #{target_type} #{name};\n"
     end
 
     def display_members
       members.map {|t| "#{t.base_type} #{member(t)};"}.join ' '
+    end
+
+    def reference
+      name.to_s
     end
 
     def base_type
@@ -121,11 +115,23 @@ module SLang
     def member(t)
       "u#{t.base_type}"
     end
+
+    def name
+      @name.to_s
+    end
   end
 
   class EnumType
     def define
-      members.empty? ? '' : super
+      members.empty? ? '' : "typedef #{target_type} #{name};\n"
+    end
+
+    def reference
+      name.to_s
+    end
+
+    def base_type
+      self
     end
 
     def target_type
@@ -134,6 +140,10 @@ module SLang
 
     def display_members
       members.map {|name, value| "#{name} = #{value},"}.join ' '
+    end
+
+    def name
+      @name.to_s
     end
   end
 
@@ -182,8 +192,12 @@ module SLang
 
   class Type
     def self.init_base_types
-      types[:Object] = object_type(:Object)
-      types[:Class] = object_type(:Class, types[:Object])
+      types[:Kernel] = ModuleType.new(:Kernel)
+      types[:Any] = ObjectType.new(:Any)
+      types[:Object] = ObjectType.new(:Object, types[:Any])
+      types[:Object].include_module types[:Kernel]
+      types[:Class] = ObjectType.new(:Class, types[:Object])
+      types[:Main] = ObjectType.new(:MainTop, types[:Object])
       base(:void, :Void)
       base(:int, :Integer)
       base(:double, :Float)
@@ -191,7 +205,9 @@ module SLang
       base('char *', :String)
       base('void *', :Pointer)
       enum({False: 0, True: 1}, :Bool)
+      types[:UnionType] = UnionType.new
       types[:Array] = ArrayType.new
+      types[:Lambda] = LambdaType.new
       union_type
     end
 

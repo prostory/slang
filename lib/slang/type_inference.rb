@@ -99,7 +99,7 @@ module SLang
     end
 
     def var_list?
-      type && (type == :VarList || (type.is_a?(BaseType) && type.name == :VarList))
+      type && (type == :VarList || type.is_a?(VarList))
     end
   end
 
@@ -267,8 +267,8 @@ module SLang
       end
       name = node.name.name
       type = Type.object_type name, superclass
-      node << Function.new(:type_id, [], [NumberLiteral.new(type.type_id)], :Integer, node.name, true)
-      node << Function.new(:class, [], [Const.new(name)], :Any, node.name)
+      node << Function.new(:type_id, [], [NumberLiteral.new(type.type_id)], :Integer, node.name)
+      node << Function.new(:class, [], [Const.new(name)], :Any)
       node.name.type = type.class_type(node.name)
       context.define_class(node.name)
       context.new_scope(nil, type) do
@@ -329,7 +329,7 @@ module SLang
         error << " for #{node.obj.type.name}" if node.obj
         raise error
       end
-      if untyped_fun.receiver && untyped_fun.scope != untyped_fun.receiver
+      if untyped_fun.receiver && untyped_fun.owner != untyped_fun.receiver
         untyped_fun.receiver.accept self
         node.obj = untyped_fun.receiver
       end
@@ -410,7 +410,6 @@ module SLang
     end
 
     def typed_instance(instance, function, call)
-      instance.owner = call.obj.type if call.obj
       instance.body.type = Type.void
 
       scope_type = call.obj ? call.obj.type : nil
@@ -462,7 +461,7 @@ module SLang
     end
 
     def visit_function(node)
-      node.scope.accept self if node.scope
+      node.owner.accept self if node.owner
       node.params.each {|param| param.accept self }
       node.body.return(Variable.new(:result))
       node.return_type = Type.lookup(node.return_type)
@@ -475,7 +474,7 @@ module SLang
     end
 
     def visit_lambda(node)
-      node.scope.accept self if node.scope
+      node.owner.accept self if node.owner
       node.params.each {|param| param.accept self }
       node.body.return(Variable.new(:result))
       node.return_type = Type.lookup(node.return_type)
@@ -485,7 +484,7 @@ module SLang
     end
 
     def visit_external(node)
-      node.scope.accept self if node.scope
+      node.owner.accept self if node.owner
       node.params.each {|param| param.accept self }
       node.return_type = Type.lookup(node.return_type)
       context.add_function node

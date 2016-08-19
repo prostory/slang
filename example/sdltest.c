@@ -1,5 +1,4 @@
 typedef struct { char unused; } Any_Class;
-typedef struct { char unused; } Kernel_Class;
 typedef struct { char unused; } Object_Class;
 typedef struct { char unused; } Class_Class;
 typedef void Void;

@@ -19,19 +19,19 @@ module SLang
     end
     
     def self.main
-      types[:Main] ||= ObjectType.new(:MainTop, nil)
+      types[:Main]
     end
 
     def self.lambda
-      types[:Lambda] ||= LambdaType.new
+      types[:Lambda]
     end
 
     def self.kernel
-      types[:Kernel] ||= ModuleType.new(:Kernel)
+      types[:Kernel]
     end
 
     def self.any
-      types[:Any] ||= BaseObjectType.new(:Any)
+      types[:Any]
     end
 
     def self.void
@@ -104,7 +104,11 @@ module SLang
       unless @class_type
         obj = ancestors.first
         @class_type = ClassType.new(obj.name)
-        @class_type.extend_parent parent.class_type if parent
+        if parent
+          @class_type.extend_parent(parent.class_type)
+        else
+          @class_type.extend_parent(Type.types[:Object])
+        end
         @class_type.object_type = obj
         @class_type.target = target || Const.new(:Main)
       end
@@ -117,12 +121,8 @@ module SLang
     end
 
     def lookup_function(name, signature)
-      prototype = functions[name]
-      if prototype.nil?
-        type = ancestors.find {|type| type.functions.has_key? name }
-        prototype = type.functions[name] if type
-      end
-      prototype.lookup signature if prototype
+      type = ancestors.find {|type| type.functions.has_key? name }
+      type.functions[name].lookup signature if type
     end
 
     def add_instance(instance)
@@ -246,7 +246,7 @@ module SLang
     end
   end
 
-  class BaseObjectType < BaseType
+  class ObjectType < BaseType
     attr_accessor :members
     attr_accessor :consts
 
@@ -309,20 +309,16 @@ module SLang
       super && other.members == members
     end
 
+    def latest
+      template.latest
+    end
+
     def despect
       "<#{template.name}: #{members.map {|n, v| "#{v.type} #{n}"}.join ';'}>"
     end
   end
 
-  class AnyType < BaseObjectType
-    def initialize(name, parent = nil, prototype = nil)
-      super name, parent || Type.any, prototype
-
-      include_module(Type.kernel)
-    end
-  end
-
-  class ContainerType < AnyType
+  class ContainerType < ObjectType
     include Enumerable
 
     def initialize(name, members = [], parent = nil, prototype = nil)
@@ -352,12 +348,6 @@ module SLang
 
     def <<(type)
       members << type
-    end
-  end
-
-  class ObjectType < AnyType
-    def latest
-      template.latest
     end
   end
 
@@ -397,13 +387,8 @@ module SLang
     end
 
     def lookup_class_var(name)
-      if members.has_key? name
-        return members[name]
-      else
-        type = ancestors.find {|type| type.members.has_key? name }
-        return type.members[name] if type
-      end
-      return nil
+      type = ancestors.find {|type| type.members.has_key? name }
+      type.members[name] if type
     end
     
     def lookup_const(name)
@@ -411,7 +396,7 @@ module SLang
     end
   end
 
-  class ModuleType < BaseObjectType
+  class ModuleType < ObjectType
     def initialize(name, prototype = nil)
       super name, nil, prototype
     end
@@ -421,11 +406,11 @@ module SLang
     end
   end
 
-  class UnionType < AnyType
+  class UnionType < ObjectType
     attr_accessor :optional_type
 
     def initialize(parent = nil, prototype = nil)
-      super :UnionType, parent, prototype
+      super :UnionType, Type.types[:Object], prototype
       @members = []
     end
 
@@ -464,9 +449,9 @@ module SLang
     end
   end
 
-  class EnumType < AnyType
+  class EnumType < ObjectType
     def initialize(name, parent = nil, prototype = nil)
-      super name, parent, prototype
+      super name, Type.types[:Object], prototype
     end
 
     def push(name, value = nil)
@@ -487,7 +472,7 @@ module SLang
     include Enumerable
 
     def initialize(parent = nil, prototype = nil)
-      super :VarList, [], parent, prototype
+      super :VarList, [], Type.types[:Object], prototype
     end
 
     def clone
@@ -495,9 +480,9 @@ module SLang
     end
   end
 
-  class LambdaType < AnyType
+  class LambdaType < ObjectType
     def initialize(parent = nil, prototype = nil)
-      super :Lambda, parent, prototype
+      super :Lambda, Type.types[:Object], prototype
     end
 
     def lookup_function(signature)
@@ -513,7 +498,7 @@ module SLang
     attr_accessor :size
 
     def initialize(elements = [], parent = nil, prototype = nil)
-      super :Array, elements, parent, prototype
+      super :Array, elements, Type.types[:Object], prototype
     end
 
     def new_array(elements)

@@ -1,7 +1,6 @@
 module SLang
   class Function
     attr_accessor :id
-    attr_accessor :owner
     attr_accessor :instances
     attr_accessor :template
     attr_accessor :calls
@@ -165,7 +164,7 @@ module SLang
       @@instances.each do |fun|
         if uniq_instances.has_key? fun.key
           old_fun = uniq_instances[fun.key]
-          if old_fun.receiver == fun.receiver && old_fun.scope == fun.scope && old_fun.return_type == fun.return_type
+          if old_fun.receiver == fun.receiver && old_fun.owner == fun.owner && old_fun.return_type == fun.return_type
             fun.calls.each { |call| call.target_fun = old_fun }
           else
             list << fun

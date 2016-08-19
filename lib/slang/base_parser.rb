@@ -54,7 +54,7 @@ module SLang
             when :cast
               Cast.new(exp[1], parse_obj(exp[2]))
             when :static
-              Function.new(exp[1], parse_params(exp[2]), parse_expression(exp[3]), exp[4], nil, true)
+              Function.new(exp[1], parse_params(exp[2]), parse_expression(exp[3]), exp[4], :self)
             when :typeof
               Typeof.new(parse_obj(exp[1]))
             when :sizeof
@@ -142,9 +142,7 @@ module SLang
 
     def parse_class_body(receiver, children)
       children.map do |child|
-        fun = parse_expression(child)
-        fun.receiver = receiver.name if fun.is_a? Function
-        receiver << fun
+        receiver << parse_expression(child)
       end if children
     end
 

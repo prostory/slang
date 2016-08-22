@@ -118,7 +118,7 @@ module SLang
 
   class ClassVar
     def mangled_name
-      "#{target.mangled_name}.#{name}"
+      "#{target.mangled_name}->#{name}"
     end
   end
 
@@ -165,11 +165,21 @@ module SLang
       end
 
       def visit_module(node)
+        if node.define
+          indent
+          node.define.accept self
+          stream << ";\n"
+        end
         node.body.accept self
         false
       end
 
       def visit_class_def(node)
+        if node.define
+          indent
+          node.define.accept self
+          stream << ";\n"
+        end
         node.body.accept self
         false
       end
@@ -261,11 +271,7 @@ module SLang
       end
 
       def visit_const(node)
-        if node.type.is_a?(ClassType)
-          stream << "&#{node.mangled_name}"
-        else
-          stream << "#{node.mangled_name}"
-        end
+        stream << "#{node.mangled_name}"
         false
       end
 
@@ -382,7 +388,7 @@ module SLang
       end
 
       def visit_sizeof(node)
-        stream << "sizeof(#{node.value.type})"
+        stream << "sizeof(#{node.value.type.to_s})"
         false
       end
 
@@ -419,7 +425,6 @@ module SLang
       def define_types
         Type.types.each_value do |type|
           stream << "#{type.define}"
-          stream << "#{type.class_type.define}"
         end
         Type.types.each_value do |type|
           stream << type.class_type.define_consts

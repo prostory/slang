@@ -16,10 +16,8 @@ module SLang
               [:external, :calloc, [:Integer, :Integer], :Pointer],
               [:external, :puts, [:String], :Integer],
               [:external, :printf, [:String, :VarList], :Integer],
+              [:class, :Class, nil],
               [:class, :Object, nil,
-               [:static, :__alloc__, [], [:calloc, nil, [[:sizeof, :self], 1]]],
-               [:static, :new, [[:args, :VarList]], [[:set, :obj, [:__alloc__, :self, []]], [:__init__, :obj, [:args]], [:ret, :obj]]],
-               [:fun, :__init__, [], []],
                [:operator, :==, [:Object], :Bool]
               ],
               [:class, :Integer, nil,

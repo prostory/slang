@@ -1,148 +1,383 @@
-typedef struct { char unused; } Kernel_Class;
-typedef struct { char unused; } Any_Class;
 typedef struct { char unused; } Object;
-typedef struct { char unused; } Object_Class;
-typedef struct { char unused; } Class_Class;
-typedef struct { char unused; } MainTop_Class;
 typedef void Void;
-typedef struct { char unused; } Void_Class;
 typedef int Integer;
-typedef struct { char unused; } Integer_Class;
 typedef double Float;
-typedef struct { char unused; } Float_Class;
 typedef void * Nil;
-typedef struct { char unused; } Nil_Class;
 typedef char * String;
-typedef struct { char unused; } String_Class;
 typedef void * Pointer;
-typedef struct { char unused; } Pointer_Class;
 typedef enum { False = 0, True = 1, } Bool;
-typedef struct { char unused; } Bool_Class;
 typedef union { String uString; Float uFloat; Integer uInteger; } UnionType;
-typedef struct { char unused; } UnionType_Class;
-typedef struct { char unused; } Array_Class;
-typedef struct { char unused; } Lambda_Class;
+typedef struct { char unused; } Class_Class;
+typedef struct { char unused; } Object_Class;
+typedef struct { char unused; } Integer_Class;
+typedef struct { char unused; } Float_Class;
+typedef struct { char unused; } Bool_Class;
 typedef struct { char unused; } StringHelper_Class;
-typedef struct { Integer type; UnionType value; } Options;
+typedef struct { char unused; } String_Class;
+typedef struct { char unused; } Array_Class;
 typedef struct { char unused; } Options_Class;
 typedef struct { char unused; } A_Class;
 typedef struct { UnionType a; } B_Class;
-static Object_Class Main_Object;
-static Integer_Class Main_Integer;
-static Float_Class Main_Float;
-static Bool_Class Main_Bool;
-static StringHelper_Class Main_StringHelper;
-static String_Class Main_String;
-static Array_Class Main_Array;
-static Options_Class Main_Options;
-static A_Class Main_A;
-static B_Class Main_B;
+typedef struct { Integer type; UnionType value; } Options;
+static Object_Class * Main_Object;
+static Class_Class * Main_Class;
+static Integer_Class * Main_Integer;
+static Float_Class * Main_Float;
+static Bool_Class * Main_Bool;
+static StringHelper_Class * Main_StringHelper;
+static String_Class * Main_String;
+static Array_Class * Main_Array;
+static Options_Class * Main_Options;
+static A_Class * Main_A;
+static B_Class * Main_B;
 extern Pointer calloc(Integer, Integer);
-extern Options * __alloc__1(Options_Class * self);
-extern Void __init__2(Options * self);
-extern Options * new3(Options_Class * self);
-extern Object * __alloc__4(Object_Class * self);
-extern Void __init__5(Object * self);
-extern Object * new6(Object_Class * self);
+extern Class_Class * __alloc__1(Class_Class * self);
+extern Void __init__2(Class_Class * self);
+extern Class_Class * new3(Class_Class * self);
+extern Object_Class * __alloc__4(Class_Class * self);
+extern Void __init__5(Object_Class * self);
+extern Object_Class * new6(Class_Class * self);
+extern Integer_Class * __alloc__7(Class_Class * self);
+extern Void __init__8(Integer_Class * self);
+extern Integer_Class * new9(Class_Class * self);
+extern Float_Class * __alloc__10(Class_Class * self);
+extern Void __init__11(Float_Class * self);
+extern Float_Class * new12(Class_Class * self);
+extern Bool_Class * __alloc__13(Class_Class * self);
+extern Void __init__14(Bool_Class * self);
+extern Bool_Class * new15(Class_Class * self);
+extern StringHelper_Class * __alloc__16(Class_Class * self);
+extern Void __init__17(StringHelper_Class * self);
+extern StringHelper_Class * new18(Class_Class * self);
+extern String_Class * __alloc__19(Class_Class * self);
+extern Void __init__20(String_Class * self);
+extern String_Class * new21(Class_Class * self);
+extern Array_Class * __alloc__22(Class_Class * self);
+extern Void __init__23(Array_Class * self);
+extern Array_Class * new24(Class_Class * self);
+extern Options_Class * __alloc__25(Class_Class * self);
+extern Void __init__26(Options_Class * self);
+extern Options_Class * new27(Class_Class * self);
+extern A_Class * __alloc__28(Class_Class * self);
+extern Void __init__29(A_Class * self);
+extern A_Class * new30(Class_Class * self);
+extern B_Class * __alloc__31(Class_Class * self);
+extern Void __init__32(B_Class * self);
+extern B_Class * new33(Class_Class * self);
+extern Options * __alloc__34(Options_Class * self);
+extern Void __init__35(Options * self);
+extern Options * new36(Options_Class * self);
+extern Object * __alloc__37(Object_Class * self);
+extern Void __init__38(Object * self);
+extern Object * new39(Object_Class * self);
 extern Integer puts(String);
-extern String_Class * class7(String self);
-extern Integer type_id8(String_Class * self);
-extern Options * option9(Options * self, String value);
-extern Float_Class * class10(Float self);
-extern Integer type_id11(Float_Class * self);
-extern Options * option12(Options * self, Float value);
-extern Options * foo13(Integer n);
-extern Integer type14(Options * self);
-extern String string15(Options * self);
-extern Float float16(Options * self);
+extern String_Class * class40(String self);
+extern Integer type_id41(String_Class * self);
+extern Options * option42(Options * self, String value);
+extern Float_Class * class43(Float self);
+extern Integer type_id44(Float_Class * self);
+extern Options * option45(Options * self, Float value);
+extern Options * foo46(Integer n);
+extern Integer type47(Options * self);
+extern String string48(Options * self);
+extern Float float49(Options * self);
 extern Integer printf(String, ...);
-extern Integer dump17(Options * self);
-extern Integer a18(B_Class * self);
-extern Integer b19(Void);
-extern Integer a20(B_Class * self);
-extern Float a__asgn__21(B_Class * self, Float n);
-extern Float a22(B_Class * self);
-extern String a__asgn__23(B_Class * self, String n);
-extern UnionType a24(B_Class * self);
-Options * __alloc__1(Options_Class * self)
+extern Integer dump50(Options * self);
+extern Integer a51(B_Class * self);
+extern Integer b52(Void);
+extern Integer a53(B_Class * self);
+extern Float a__asgn__54(B_Class * self, Float n);
+extern Float a55(B_Class * self);
+extern String a__asgn__56(B_Class * self, String n);
+extern UnionType a57(B_Class * self);
+Class_Class * __alloc__1(Class_Class * self)
 {
     Pointer result;
-    result = calloc(sizeof(Options), 1);
+    result = calloc(sizeof(Class_Class), 1);
     return result;
 }
-Void __init__2(Options * self)
+Void __init__2(Class_Class * self)
 {
     Nil result;
 }
-Options * new3(Options_Class * self)
+Class_Class * new3(Class_Class * self)
 {
-    Options * result;
-    Options * obj;
+    Class_Class * result;
+    Class_Class * obj;
     obj = __alloc__1(self);
     __init__2(obj);
     result = obj;
     return result;
 }
-Object * __alloc__4(Object_Class * self)
+Object_Class * __alloc__4(Class_Class * self)
 {
     Pointer result;
-    result = calloc(sizeof(Object), 1);
+    result = calloc(sizeof(Object_Class), 1);
     return result;
 }
-Void __init__5(Object * self)
+Void __init__5(Object_Class * self)
 {
     Nil result;
 }
-Object * new6(Object_Class * self)
+Object_Class * new6(Class_Class * self)
 {
-    Object * result;
-    Object * obj;
+    Object_Class * result;
+    Object_Class * obj;
     obj = __alloc__4(self);
     __init__5(obj);
     result = obj;
     return result;
 }
-String_Class * class7(String self)
+Integer_Class * __alloc__7(Class_Class * self)
+{
+    Pointer result;
+    result = calloc(sizeof(Integer_Class), 1);
+    return result;
+}
+Void __init__8(Integer_Class * self)
+{
+    Nil result;
+}
+Integer_Class * new9(Class_Class * self)
+{
+    Integer_Class * result;
+    Integer_Class * obj;
+    obj = __alloc__7(self);
+    __init__8(obj);
+    result = obj;
+    return result;
+}
+Float_Class * __alloc__10(Class_Class * self)
+{
+    Pointer result;
+    result = calloc(sizeof(Float_Class), 1);
+    return result;
+}
+Void __init__11(Float_Class * self)
+{
+    Nil result;
+}
+Float_Class * new12(Class_Class * self)
+{
+    Float_Class * result;
+    Float_Class * obj;
+    obj = __alloc__10(self);
+    __init__11(obj);
+    result = obj;
+    return result;
+}
+Bool_Class * __alloc__13(Class_Class * self)
+{
+    Pointer result;
+    result = calloc(sizeof(Bool_Class), 1);
+    return result;
+}
+Void __init__14(Bool_Class * self)
+{
+    Nil result;
+}
+Bool_Class * new15(Class_Class * self)
+{
+    Bool_Class * result;
+    Bool_Class * obj;
+    obj = __alloc__13(self);
+    __init__14(obj);
+    result = obj;
+    return result;
+}
+StringHelper_Class * __alloc__16(Class_Class * self)
+{
+    Pointer result;
+    result = calloc(sizeof(StringHelper_Class), 1);
+    return result;
+}
+Void __init__17(StringHelper_Class * self)
+{
+    Nil result;
+}
+StringHelper_Class * new18(Class_Class * self)
+{
+    StringHelper_Class * result;
+    StringHelper_Class * obj;
+    obj = __alloc__16(self);
+    __init__17(obj);
+    result = obj;
+    return result;
+}
+String_Class * __alloc__19(Class_Class * self)
+{
+    Pointer result;
+    result = calloc(sizeof(String_Class), 1);
+    return result;
+}
+Void __init__20(String_Class * self)
+{
+    Nil result;
+}
+String_Class * new21(Class_Class * self)
 {
     String_Class * result;
-    result = &Main_String;
+    String_Class * obj;
+    obj = __alloc__19(self);
+    __init__20(obj);
+    result = obj;
     return result;
 }
-Integer type_id8(String_Class * self)
+Array_Class * __alloc__22(Class_Class * self)
 {
-    Integer result;
-    result = 9;
+    Pointer result;
+    result = calloc(sizeof(Array_Class), 1);
     return result;
 }
-Options * option9(Options * self, String value)
+Void __init__23(Array_Class * self)
+{
+    Nil result;
+}
+Array_Class * new24(Class_Class * self)
+{
+    Array_Class * result;
+    Array_Class * obj;
+    obj = __alloc__22(self);
+    __init__23(obj);
+    result = obj;
+    return result;
+}
+Options_Class * __alloc__25(Class_Class * self)
+{
+    Pointer result;
+    result = calloc(sizeof(Options_Class), 1);
+    return result;
+}
+Void __init__26(Options_Class * self)
+{
+    Nil result;
+}
+Options_Class * new27(Class_Class * self)
+{
+    Options_Class * result;
+    Options_Class * obj;
+    obj = __alloc__25(self);
+    __init__26(obj);
+    result = obj;
+    return result;
+}
+A_Class * __alloc__28(Class_Class * self)
+{
+    Pointer result;
+    result = calloc(sizeof(A_Class), 1);
+    return result;
+}
+Void __init__29(A_Class * self)
+{
+    Nil result;
+}
+A_Class * new30(Class_Class * self)
+{
+    A_Class * result;
+    A_Class * obj;
+    obj = __alloc__28(self);
+    __init__29(obj);
+    result = obj;
+    return result;
+}
+B_Class * __alloc__31(Class_Class * self)
+{
+    Pointer result;
+    result = calloc(sizeof(B_Class), 1);
+    return result;
+}
+Void __init__32(B_Class * self)
+{
+    Nil result;
+}
+B_Class * new33(Class_Class * self)
+{
+    B_Class * result;
+    B_Class * obj;
+    obj = __alloc__31(self);
+    __init__32(obj);
+    result = obj;
+    return result;
+}
+Options * __alloc__34(Options_Class * self)
+{
+    Pointer result;
+    result = calloc(sizeof(Options), 1);
+    return result;
+}
+Void __init__35(Options * self)
+{
+    Nil result;
+}
+Options * new36(Options_Class * self)
 {
     Options * result;
-    self->type = type_id8(class7(value));
+    Options * obj;
+    obj = __alloc__34(self);
+    __init__35(obj);
+    result = obj;
+    return result;
+}
+Object * __alloc__37(Object_Class * self)
+{
+    Pointer result;
+    result = calloc(sizeof(Object), 1);
+    return result;
+}
+Void __init__38(Object * self)
+{
+    Nil result;
+}
+Object * new39(Object_Class * self)
+{
+    Object * result;
+    Object * obj;
+    obj = __alloc__37(self);
+    __init__38(obj);
+    result = obj;
+    return result;
+}
+String_Class * class40(String self)
+{
+    String_Class * result;
+    result = Main_String;
+    return result;
+}
+Integer type_id41(String_Class * self)
+{
+    Integer result;
+    result = 8;
+    return result;
+}
+Options * option42(Options * self, String value)
+{
+    Options * result;
+    self->type = type_id41(class40(value));
     self->value.uString = value;
     result = self;
     return result;
 }
-Float_Class * class10(Float self)
+Float_Class * class43(Float self)
 {
     Float_Class * result;
-    result = &Main_Float;
+    result = Main_Float;
     return result;
 }
-Integer type_id11(Float_Class * self)
+Integer type_id44(Float_Class * self)
 {
     Integer result;
-    result = 7;
+    result = 6;
     return result;
 }
-Options * option12(Options * self, Float value)
+Options * option45(Options * self, Float value)
 {
     Options * result;
-    self->type = type_id11(class10(value));
+    self->type = type_id44(class43(value));
     self->value.uFloat = value;
     result = self;
     return result;
 }
-Options * foo13(Integer n)
+Options * foo46(Integer n)
 {
     Options * result;
     String a;
@@ -152,9 +387,9 @@ Options * foo13(Integer n)
     Bool d;
     a = 0;
     a = "Hello World";
-    a1 = new3(&Main_Options);
-    b = new6(&Main_Object);
-    c = new6(&Main_Object);
+    a1 = new36(Main_Options);
+    b = new39(Main_Object);
+    c = new39(Main_Object);
     d = (b == c);
     if (d)
     {
@@ -166,116 +401,126 @@ Options * foo13(Integer n)
     }
     if ((n > 0))
     {
-        result = option9(a1, "hello");
+        result = option42(a1, "hello");
     }
     else
     {
-        result = option12(a1, 1.5);
+        result = option45(a1, 1.5);
     }
     return result;
 }
-Integer type14(Options * self)
+Integer type47(Options * self)
 {
     Integer result;
     result = self->type;
     return result;
 }
-String string15(Options * self)
+String string48(Options * self)
 {
     String result;
     result = self->value.uString;
     return result;
 }
-Float float16(Options * self)
+Float float49(Options * self)
 {
     Float result;
     result = self->value.uFloat;
     return result;
 }
-Integer dump17(Options * self)
+Integer dump50(Options * self)
 {
     Integer result;
-    if ((type14(self) == type_id8(&Main_String)))
+    if ((type47(self) == type_id41(Main_String)))
     {
-        result = puts(string15(self));
+        result = puts(string48(self));
     }
     else
     {
-        if ((type14(self) == type_id11(&Main_Float)))
+        if ((type47(self) == type_id44(Main_Float)))
         {
-            result = printf("%f\n", float16(self));
+            result = printf("%f\n", float49(self));
         }
     }
     return result;
 }
-Integer a18(B_Class * self)
+Integer a51(B_Class * self)
 {
     Integer result;
-    Main_B.a.uInteger = 1;
+    Main_B->a.uInteger = 1;
     result = puts("a");
     return result;
 }
-Integer b19(Void)
+Integer b52(Void)
 {
     Integer result;
     result = puts("b");
     return result;
 }
-Integer a20(B_Class * self)
+Integer a53(B_Class * self)
 {
     Integer result;
-    result = Main_B.a.uInteger;
+    result = Main_B->a.uInteger;
     return result;
 }
-Float a__asgn__21(B_Class * self, Float n)
+Float a__asgn__54(B_Class * self, Float n)
 {
     Float result;
-    Main_B.a.uFloat = n;
-    result = Main_B.a.uFloat;
+    Main_B->a.uFloat = n;
+    result = Main_B->a.uFloat;
     return result;
 }
-Float a22(B_Class * self)
+Float a55(B_Class * self)
 {
     Float result;
-    result = Main_B.a.uFloat;
+    result = Main_B->a.uFloat;
     return result;
 }
-String a__asgn__23(B_Class * self, String n)
+String a__asgn__56(B_Class * self, String n)
 {
     String result;
-    Main_B.a.uString = n;
-    result = Main_B.a.uString;
+    Main_B->a.uString = n;
+    result = Main_B->a.uString;
     return result;
 }
-UnionType a24(B_Class * self)
+UnionType a57(B_Class * self)
 {
     UnionType result;
-    result = Main_B.a;
+    result = Main_B->a;
     return result;
 }
 Integer main(Void)
 {
     Integer result;
     Options * a;
-    Options * a1;
-    a = foo13(5);
-    dump17(a);
-    a1 = foo13(-(1));
-    dump17(a1);
-    a18(&Main_B);
-    b19();
-    printf("%d\n", a20(&Main_B));
-    a__asgn__21(&Main_B, 5.1);
-    printf("%f\n", a22(&Main_B));
-    if ((type_id11(class10(a22(&Main_B))) == type_id8(&Main_String)))
+    Main_Class = new3(Main_Class);
+    Main_Object = new6(Main_Class);
+    Main_Integer = new9(Main_Class);
+    Main_Float = new12(Main_Class);
+    Main_Bool = new15(Main_Class);
+    Main_StringHelper = new18(Main_Class);
+    Main_String = new21(Main_Class);
+    Main_Array = new24(Main_Class);
+    Main_Options = new27(Main_Class);
+    Main_A = new30(Main_Class);
+    Main_B = new33(Main_Class);
+    a = foo46(5);
+    dump50(a);
+    a = foo46(-(1));
+    dump50(a);
+    a51(Main_B);
+    b52();
+    printf("%d\n", a53(Main_B));
+    a__asgn__54(Main_B, 5.1);
+    printf("%f\n", a55(Main_B));
+    if ((type_id44(class43(a55(Main_B))) == type_id41(Main_String)))
     {
-        a__asgn__23(&Main_B, "Hello");
+        a__asgn__56(Main_B, "Hello");
     }
     else
     {
-        a__asgn__23(&Main_B, "World");
+        a__asgn__56(Main_B, "World");
     }
-    puts(a24(&Main_B).uString);
+    puts(a57(Main_B).uString);
     result = 0;
     return result;
 }

@@ -165,6 +165,10 @@ module SLang
       prototype.add_instance clone
     end
 
+    def add_instance(instance)
+      prototype.add_instance instance
+    end
+
     def class_type(target = nil)
       prototype.class_type(target)
     end
@@ -238,11 +242,15 @@ module SLang
     end
 
     def clone
-      self.class.new template.name, parent, prototype
+      self.class.new name, parent, prototype
+    end
+
+    def mangled_name
+      "#{name}#{seq}"
     end
 
     def to_s
-      name.to_s
+      mangled_name.to_s
     end
   end
 
@@ -277,8 +285,8 @@ module SLang
       class_type.define_const const
     end
     
-    def define_class(const)
-      class_type.define_class const
+    def define_class(const, defined = true)
+      class_type.define_class const, defined
     end
     
     def lookup_const(name)
@@ -314,7 +322,7 @@ module SLang
     end
 
     def despect
-      "<#{template.name}: #{members.map {|n, v| "#{v.type} #{n}"}.join ';'}>"
+      name.to_s
     end
   end
 
@@ -371,15 +379,20 @@ module SLang
     def define_const(const)
       old_const = consts[const.name]
       raise "Redefined const '#{const.name}' in #{@name}" if old_const && old_const.target == target
-      consts[const.name] = const
-      const.target = target if const.target.nil?
+      if old_const.nil?
+        consts[const.name] = const
+        const.target = target if const.target.nil?
+      end
     end
     
-    def define_class(const)
+    def define_class(const, defined = true)
       old_const = consts[const.name]
       raise "#{const.name} is not a class" if old_const && old_const.target == target && !old_const.type.is_a?(ClassType)
-      consts[const.name] = const
-      const.target = target if const.target.nil?
+      if old_const.nil?
+        consts[const.name] = const
+        const.target = target if const.target.nil?
+      end
+      consts[const.name].defined = defined
     end
 
     def lookup_instance_var(name)

@@ -57,11 +57,11 @@ module SLang
       uniq_instances = {}
 
       @instances.each do |type|
-        if uniq_instances.has_key? type.members
-          old_type = uniq_instances[type.members]
+        if uniq_instances.has_key?(type)
+          old_type = uniq_instances[type]
           type.sequence = old_type.sequence
         else
-          uniq_instances[type.members] = type
+          uniq_instances[type] = type
         end
       end
 

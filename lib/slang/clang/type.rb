@@ -17,7 +17,7 @@ module SLang
       template.combine_same_instances
 
       template.map do |obj|
-        "typedef #{obj.target_type} #{obj.name};\n"
+        "typedef #{obj.target_type} #{obj.mangled_name};\n"
       end.join ''
     end
 
@@ -30,7 +30,7 @@ module SLang
     end
 
     def reference
-      "#{name} *"
+      "#{mangled_name} *"
     end
 
     def base_type
@@ -39,10 +39,6 @@ module SLang
 
     def define_variable(var)
       "#{reference} #{var}"
-    end
-
-    def name
-      "#{@name}#{seq}"
     end
   end
 
@@ -68,26 +64,22 @@ module SLang
       @target_type
     end
 
-    def name
-      @name.to_s
-    end
-
     def clone
       self.clone name, target_type
     end
   end
 
   class ClassType
-    def name
+    def mangled_name
       "#{@name}_Class".to_sym
     end
 
     def define
-      "typedef #{target_type} #{name};\n"
+      "typedef #{target_type} #{mangled_name};\n"
     end
 
     def define_consts
-      consts.values.map { |const| "static #{const.type} #{const.mangled_name};\n" }.join
+      consts.values.map { |const| "static #{const.type.reference} #{const.mangled_name};\n" }.join
     end
   end
 
@@ -196,7 +188,6 @@ module SLang
       types[:Object] = ObjectType.new(:Object, types[:Any])
       types[:Kernel] = ModuleType.new(:Kernel)
       types[:Object].include_module types[:Kernel]
-      types[:Class] = ObjectType.new(:Class, types[:Object])
       types[:Main] = ObjectType.new(:MainTop, types[:Object])
       base(:void, :Void)
       base(:int, :Integer)
@@ -209,6 +200,31 @@ module SLang
       types[:Array] = ArrayType.new
       types[:Lambda] = LambdaType.new
       union_type
+      types[:Class] = ObjectType.new(:Class, types[:Object])
+
+      def_class(:Object) do |obj|
+        function(obj, [:static, :__alloc__, [], [:calloc, nil, [[:sizeof, :self], 1]]])
+        function(obj, [:static, :new, [[:args, :VarList]], [[:set, :obj, [:__alloc__, :self, []]], [:__init__, :obj, [:args]], [:ret, :obj]]])
+        function(obj, [:fun, :__init__, [], []])
+        function(obj, [:operator, :==, [:Object], :Bool])
+      end
+      def_class(:Class)
+    end
+
+    def self.function(obj, exp)
+      fun = BaseParser.new.parse_expression(exp)
+      fun.params.each {|param| param.type = param.var_list? ? Type.varlist : Type.types[param.type]}
+      fun.body.return(Variable.new(:result))
+      fun.return_type = Type.lookup(fun.return_type)
+      fun.receiver = obj
+      types[obj.name].add_function fun
+    end
+
+    def self.def_class(name, target = :Main)
+      const = Const.new(name)
+      const.type = types[name].class_type(const)
+      yield const if block_given?
+      types[target].define_class const, false
     end
 
     def self.base(ctype, name)

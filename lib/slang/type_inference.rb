@@ -148,6 +148,14 @@ module SLang
     end
   end
 
+  class Module
+    attr_accessor :define
+  end
+
+  class Const
+    attr_accessor :defined
+  end
+
   class TypeVisitor < Visitor
     attr_accessor :context
 
@@ -243,20 +251,20 @@ module SLang
         node.type = context.main_top
         return
       end
-      if node.name == :Class
-        node.type = Type.lookup(:Class).class_type(node.name)
-        return
-      end
-      if node.target
-        node.target.accept self
-        const = node.target.type.lookup_const(node.name)
-      else
-        const = context.lookup_const(node.name)
-      end
-      raise "uninitialized constant '#{node.name}'" if const.nil?
+      const = lookup_const(node)
+      raise "uninitialized constant '#{node.name}' in #{node.target ? node.target.type : context.scope.type}" if const.nil?
       node.type = const.type
       node.target = const.target
       false
+    end
+
+    def lookup_const(node)
+      if node.target
+        node.target.accept self
+        node.target.type.lookup_const(node.name)
+      else
+        context.lookup_const(node.name)
+      end
     end
 
     def visit_class_def(node)
@@ -267,10 +275,17 @@ module SLang
       end
       name = node.name.name
       type = Type.object_type name, superclass
-      node << Function.new(:type_id, [], [NumberLiteral.new(type.type_id)], :Integer, node.name)
-      node << Function.new(:class, [], [Const.new(name)], :Any)
-      node.name.type = type.class_type(node.name)
-      context.define_class(node.name)
+      const = lookup_const(node.name)
+      if const.nil? || !const.defined
+        define_class = Assign.new(node.name, Call.new(:new, [], Const.new(:Class)))
+        define_class.type = type.class_type(define_class.target)
+        Type.lookup(:Class).add_instance define_class.type
+        context.define_class(define_class.target)
+        node.define = define_class
+        node.define.accept self
+        node << Function.new(:type_id, [], [NumberLiteral.new(type.type_id)], :Integer, node.name)
+        node << Function.new(:class, [], [Const.new(name)], :Any)
+      end
       context.new_scope(nil, type) do
         node.accept_children self
       end
@@ -279,8 +294,15 @@ module SLang
 
     def visit_module(node)
       type = Type.module_type node.name.name
-      node.name.type = type.class_type(node.name)
-      context.define_class(node.name)
+      const = lookup_const(node.name)
+      if const.nil? || !const.defined
+        define_class = Assign.new(node.name, Call.new(:new, [], Const.new(:Class)))
+        define_class.type = type.class_type(define_class.target)
+        Type.lookup(:Class).add_instance define_class.type
+        context.define_class(define_class.target)
+        node.define = define_class
+        node.define.accept self
+      end
       context.new_scope(nil, type) do
         node.accept_children self
       end
@@ -446,7 +468,11 @@ module SLang
         instance.params.unshift self_var if self_var
 
         if call.name == :__alloc__ && call.obj.type.is_a?(ClassType)
-          new_type = call.obj.type.object_type.new_instance
+          if call.obj.type == Type.lookup_class(:Class)
+            new_type = call.obj.type.object_type.latest
+          else
+            new_type = call.obj.type.object_type.new_instance
+          end
         end
 
         instance.body.accept self
@@ -542,7 +568,11 @@ module SLang
       node.type = node.target.type = node.value.type
 
       if node.target.is_a?(Const)
-        context.define_const node.target
+        if node.target.type.is_a?(ClassType)
+          return false
+        else
+          context.define_const node.target
+        end
         return false
       end
 

@@ -222,7 +222,6 @@ module SLang
 		end
 
 		def accept_children(visitor)
-		  name.accept visitor
 			body.accept visitor
 		end
 
@@ -774,6 +773,10 @@ module SLang
 
 		def ==(other)
 			other.class == self.class && other.value == value
+		end
+
+		def to_s
+			"(sizeof #{value})"
 		end
 
 		def clone

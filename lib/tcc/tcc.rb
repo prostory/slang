@@ -62,7 +62,11 @@ module TCC
     end
 
     def add_library(library)
-      TCC.tcc_add_library self, library
+      raise "can't find the library '#{library}'" if TCC.tcc_add_library(self, library) < 0
+    end
+
+    def add_libraries(libs)
+      libs.each { |lib| add_library(lib) }
     end
 
     def add_symbol(name, value)

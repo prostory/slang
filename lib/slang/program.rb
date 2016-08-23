@@ -145,12 +145,13 @@ module SLang
         state.add_library_path '../vendor/tcc/lib'
         state.add_library_path '/usr/lib'
         state.add_library_path '/usr/local/lib'
-        libraries.each {|lib| state.add_library lib }
         if run?
+          state.add_libraries(libraries)
           state.compile(code)
           state.run
         else
           state.output_type = TCC::OutPutType::EXE
+          state.add_libraries(libraries)
           state.compile(code)
           state.output_file = output_file
         end

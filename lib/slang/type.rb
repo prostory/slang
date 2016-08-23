@@ -107,7 +107,7 @@ module SLang
         if parent
           @class_type.extend_parent(parent.class_type)
         else
-          @class_type.extend_parent(Type.types[:Object])
+          @class_type.extend_parent(Type.types[:Class])
         end
         @class_type.object_type = obj
         @class_type.target = target || Const.new(:Main)
@@ -135,7 +135,7 @@ module SLang
     end
 
     def include_module(mod)
-      ancestors.push mod
+      ancestors.insert 1, mod
     end
   end
 
@@ -322,7 +322,7 @@ module SLang
     end
 
     def despect
-      name.to_s
+      "<Object:#{name}>"
     end
   end
 
@@ -365,9 +365,6 @@ module SLang
 
     def initialize(name, parent = nil, prototype = nil)
       super name, parent, prototype
-      ancestors.each do |type|
-        type.consts.each {|name, const| consts[name] ||= const }
-      end
       @target = Const.new(:Main)
     end
 
@@ -378,7 +375,7 @@ module SLang
     
     def define_const(const)
       old_const = consts[const.name]
-      raise "Redefined const '#{const.name}' in #{@name}" if old_const && old_const.target == target
+      raise "Redefined const '#{const.name}' in #{despect}" if old_const && old_const.target == target
       if old_const.nil?
         consts[const.name] = const
         const.target = target if const.target.nil?
@@ -408,6 +405,10 @@ module SLang
       type = ancestors.find {|type| type.consts.has_key? name }
       type.consts[name] if type
     end
+
+    def despect
+      "<Class:#{name}>"
+    end
   end
 
   class ModuleType < ObjectType
@@ -415,8 +416,12 @@ module SLang
       super name, Type.types[:Object], prototype
     end
 
+    def despect
+      "<Module:#{name}>"
+    end
+
     def clone
-      self.class.new @name, prototype
+      self.class.new name, prototype
     end
   end
 

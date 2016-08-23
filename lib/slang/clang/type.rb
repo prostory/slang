@@ -206,7 +206,6 @@ module SLang
         function(obj, [:static, :__alloc__, [], [:calloc, nil, [[:sizeof, :self], 1]]])
         function(obj, [:static, :new, [[:args, :VarList]], [[:set, :obj, [:__alloc__, :self, []]], [:__init__, :obj, [:args]], [:ret, :obj]]])
         function(obj, [:fun, :__init__, [], []])
-        function(obj, [:operator, :==, [:Object], :Bool])
       end
       def_class(:Class)
     end

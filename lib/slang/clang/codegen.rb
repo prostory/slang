@@ -424,7 +424,7 @@ module SLang
 
       def define_types
         Type.types.each_value do |type|
-          stream << "#{type.define}"
+          stream << type.define
         end
         Type.types.each_value do |type|
           stream << type.class_type.define_consts

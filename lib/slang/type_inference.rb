@@ -347,8 +347,8 @@ module SLang
       untyped_fun = context.lookup_function(node.name, node.signature, node.obj) if untyped_fun.nil?
 
       if untyped_fun.nil?
-        error = "undefined function '#{node.name}'(#{types.map(&:to_s).join ', '}), #{node.source_code}"
-        error << " for #{node.obj.type.name}" if node.obj
+        error = "undefined function '#{node.name}'(#{types.map(&:despect).join ', '}), #{node.source_code}"
+        error << " for #{node.obj.type.despect}" if node.obj
         raise error
       end
       if untyped_fun.receiver && untyped_fun.owner != untyped_fun.receiver

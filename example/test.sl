@@ -1,6 +1,12 @@
+class Class
+  def ==(other)
+    cast(Pointer, self) == cast(Pointer, other)
+  end
+end
+
 class Options
 	def option(value)
-		@type = value.class.type_id
+		@type = cast(Pointer, value.class)
 		@value = value
 		self
 	end
@@ -13,9 +19,9 @@ class Options
 	
 	def dump
 		case type
-		of String.type_id
+		of String
 			puts string
-		of Float.type_id
+		of Float
 			printf "%f\n", float
 		end
 	end
@@ -66,7 +72,7 @@ printf "%d\n", B.a
 B.a = 5.1
 printf "%f\n", B.a
 
-if B.a.class.type_id == String.type_id
+if B.a.class == String
   B.a = "Hello"
 else
   B.a = "World"

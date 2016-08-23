@@ -743,7 +743,7 @@ module SLang
 		end
 
 		def replace(old, new)
-			value = new if old == value
+			@value = new if old == value
 		end
 
 		def ==(other)
@@ -768,7 +768,7 @@ module SLang
 		end
 
 		def replace(old, new)
-			value = new if old == value
+			@value = new if old == value
 		end
 
 		def ==(other)
@@ -793,7 +793,7 @@ module SLang
 		end
 
 		def replace(old, new)
-			size = new if old == size
+			@size = new if old == size
 		end
 
 		def ==(other)
@@ -832,11 +832,11 @@ module SLang
 		def replace(old, new)
 			case old
 			when target
-				target = new
+				@target = new
 			when index
-				index = new
+				@index = new
 			when value
-				value = new
+				@value = new
 			end
 		end
 
@@ -871,9 +871,9 @@ module SLang
 		def replace(old, new)
 			case old
 			when target
-				target = new
+				@target = new
 			when index
-				index = new
+				@index = new
 			end
 		end
 

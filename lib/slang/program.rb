@@ -110,15 +110,6 @@ module SLang
       BaseParser.parse(stdlib)
     end
 
-    def parse(source)
-      parser = Parser.new
-      input = parser.parse(source)
-      #pp input
-      Transform.new.apply input
-    rescue Parslet::ParseFailed => failure
-      puts failure.cause.ascii_tree
-    end
-
     def compile(source)
       context = CLang::Context.new
       code = parse(source)

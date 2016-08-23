@@ -210,6 +210,7 @@ module SLang
     end
 
     def cast_of?(type)
+      return true if base_type == type.base_type
       return true if child_of?(type)
     end
 

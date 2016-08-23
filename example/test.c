@@ -18,7 +18,7 @@ typedef struct { char unused; } Array_Class;
 typedef struct { char unused; } Options_Class;
 typedef struct { char unused; } A_Class;
 typedef struct { UnionType a; } B_Class;
-typedef struct { Integer type; UnionType value; } Options;
+typedef struct { Pointer type; UnionType value; } Options;
 static Object_Class * Main_Object;
 static Class_Class * Main_Class;
 static Integer_Class * Main_Integer;
@@ -72,24 +72,23 @@ extern Void __init__38(Object * self);
 extern Object * new39(Object_Class * self);
 extern Integer puts(String);
 extern String_Class * class40(String self);
-extern Integer type_id41(String_Class * self);
-extern Options * option42(Options * self, String value);
-extern Float_Class * class43(Float self);
-extern Integer type_id44(Float_Class * self);
-extern Options * option45(Options * self, Float value);
-extern Options * foo46(Integer n);
-extern Integer type47(Options * self);
-extern String string48(Options * self);
-extern Float float49(Options * self);
+extern Options * option41(Options * self, String value);
+extern Float_Class * class42(Float self);
+extern Options * option43(Options * self, Float value);
+extern Options * foo44(Integer n);
+extern Pointer type45(Options * self);
+extern String string46(Options * self);
+extern Float float47(Options * self);
 extern Integer printf(String, ...);
-extern Integer dump50(Options * self);
+extern Integer dump48(Options * self);
+extern Integer a49(B_Class * self);
+extern Integer b50(Void);
 extern Integer a51(B_Class * self);
-extern Integer b52(Void);
-extern Integer a53(B_Class * self);
-extern Float a__asgn__54(B_Class * self, Float n);
-extern Float a55(B_Class * self);
-extern String a__asgn__56(B_Class * self, String n);
-extern UnionType a57(B_Class * self);
+extern Float a__asgn__52(B_Class * self, Float n);
+extern Float a53(B_Class * self);
+extern Bool __eq__54(Float_Class * self, String_Class * other);
+extern String a__asgn__55(B_Class * self, String n);
+extern UnionType a56(B_Class * self);
 Class_Class * __alloc__1(Class_Class * self)
 {
     Pointer result;
@@ -343,41 +342,29 @@ String_Class * class40(String self)
     result = Main_String;
     return result;
 }
-Integer type_id41(String_Class * self)
-{
-    Integer result;
-    result = 8;
-    return result;
-}
-Options * option42(Options * self, String value)
+Options * option41(Options * self, String value)
 {
     Options * result;
-    self->type = type_id41(class40(value));
+    self->type = (Pointer)class40(value);
     self->value.uString = value;
     result = self;
     return result;
 }
-Float_Class * class43(Float self)
+Float_Class * class42(Float self)
 {
     Float_Class * result;
     result = Main_Float;
     return result;
 }
-Integer type_id44(Float_Class * self)
-{
-    Integer result;
-    result = 6;
-    return result;
-}
-Options * option45(Options * self, Float value)
+Options * option43(Options * self, Float value)
 {
     Options * result;
-    self->type = type_id44(class43(value));
+    self->type = (Pointer)class42(value);
     self->value.uFloat = value;
     result = self;
     return result;
 }
-Options * foo46(Integer n)
+Options * foo44(Integer n)
 {
     Options * result;
     String a;
@@ -401,88 +388,94 @@ Options * foo46(Integer n)
     }
     if ((n > 0))
     {
-        result = option42(a1, "hello");
+        result = option41(a1, "hello");
     }
     else
     {
-        result = option45(a1, 1.5);
+        result = option43(a1, 1.5);
     }
     return result;
 }
-Integer type47(Options * self)
+Pointer type45(Options * self)
 {
-    Integer result;
+    Pointer result;
     result = self->type;
     return result;
 }
-String string48(Options * self)
+String string46(Options * self)
 {
     String result;
     result = self->value.uString;
     return result;
 }
-Float float49(Options * self)
+Float float47(Options * self)
 {
     Float result;
     result = self->value.uFloat;
     return result;
 }
-Integer dump50(Options * self)
+Integer dump48(Options * self)
 {
     Integer result;
-    if ((type47(self) == type_id41(Main_String)))
+    if ((type45(self) == Main_String))
     {
-        result = puts(string48(self));
+        result = puts(string46(self));
     }
     else
     {
-        if ((type47(self) == type_id44(Main_Float)))
+        if ((type45(self) == Main_Float))
         {
-            result = printf("%f\n", float49(self));
+            result = printf("%f\n", float47(self));
         }
     }
     return result;
 }
-Integer a51(B_Class * self)
+Integer a49(B_Class * self)
 {
     Integer result;
     Main_B->a.uInteger = 1;
     result = puts("a");
     return result;
 }
-Integer b52(Void)
+Integer b50(Void)
 {
     Integer result;
     result = puts("b");
     return result;
 }
-Integer a53(B_Class * self)
+Integer a51(B_Class * self)
 {
     Integer result;
     result = Main_B->a.uInteger;
     return result;
 }
-Float a__asgn__54(B_Class * self, Float n)
+Float a__asgn__52(B_Class * self, Float n)
 {
     Float result;
     Main_B->a.uFloat = n;
     result = Main_B->a.uFloat;
     return result;
 }
-Float a55(B_Class * self)
+Float a53(B_Class * self)
 {
     Float result;
     result = Main_B->a.uFloat;
     return result;
 }
-String a__asgn__56(B_Class * self, String n)
+Bool __eq__54(Float_Class * self, String_Class * other)
+{
+    Bool result;
+    result = ((Pointer)self == (Pointer)other);
+    return result;
+}
+String a__asgn__55(B_Class * self, String n)
 {
     String result;
     Main_B->a.uString = n;
     result = Main_B->a.uString;
     return result;
 }
-UnionType a57(B_Class * self)
+UnionType a56(B_Class * self)
 {
     UnionType result;
     result = Main_B->a;
@@ -503,24 +496,24 @@ Integer main(Void)
     Main_Options = new27(Main_Class);
     Main_A = new30(Main_Class);
     Main_B = new33(Main_Class);
-    a = foo46(5);
-    dump50(a);
-    a = foo46(-(1));
-    dump50(a);
-    a51(Main_B);
-    b52();
-    printf("%d\n", a53(Main_B));
-    a__asgn__54(Main_B, 5.1);
-    printf("%f\n", a55(Main_B));
-    if ((type_id44(class43(a55(Main_B))) == type_id41(Main_String)))
+    a = foo44(5);
+    dump48(a);
+    a = foo44(-(1));
+    dump48(a);
+    a49(Main_B);
+    b50();
+    printf("%d\n", a51(Main_B));
+    a__asgn__52(Main_B, 5.1);
+    printf("%f\n", a53(Main_B));
+    if (__eq__54(class42(a53(Main_B)), Main_String))
     {
-        a__asgn__56(Main_B, "Hello");
+        a__asgn__55(Main_B, "Hello");
     }
     else
     {
-        a__asgn__56(Main_B, "World");
+        a__asgn__55(Main_B, "World");
     }
-    puts(a57(Main_B).uString);
+    puts(a56(Main_B).uString);
     result = 0;
     return result;
 }

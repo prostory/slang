@@ -4,6 +4,20 @@ require_relative 'ast'
 require_relative 'parser'
 
 module SLang
+  class ParseError < StandardError
+    def initialize(message, source_code, line, column)
+      str = "Error: #{message}"
+      str << "at line #{line} column #{column}"
+      str << "\n\t"
+      str << source_code.lines.at(line - 1).chomp
+      str << "\n\t"
+      str << (' ' * (column - 1))
+      str << '^'
+      str << "\n"
+      super(str)
+    end
+  end
+
   class Parslet::Context
     def transform_call(t, obj)
       t[:name] = Call.new(t[:name], t[:args], obj)
@@ -171,11 +185,11 @@ module SLang
     end
   end
 
-  def self.parse(source)
-    parser = Parser.new
-    input = parser.parse(source)
-    Transform.new.apply input
-  rescue Parslet::ParseFailed => failure
-    puts failure.cause.ascii_tree
+  def parse(source)
+    Transform.new.apply Parser.new.parse(source)
+  rescue Parslet::ParseFailed => e
+    s = e.cause.children.last
+    line, column = s.source.line_and_column(s.pos)
+    raise ParseError.new(s.message, source, line, column)
   end
 end

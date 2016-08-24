@@ -1,12 +1,31 @@
+class Pointer
+end
+
+class Object
+  def as(type)
+    cast(type, self)
+  end
+end
+
 class Class
   def ==(other)
-    cast(Pointer, self) == cast(Pointer, other)
+    self.as(Pointer) == other.as(Pointer)
   end
+end
+
+class Point
+  def __init__(x, y)
+    @x = x
+    @y = y
+  end
+  
+  def x; @x end
+  def y; @y end
 end
 
 class Options
 	def option(value)
-		@type = cast(Pointer, value.class)
+		@type = value.class.as(Pointer)
 		@value = value
 		self
 	end
@@ -14,15 +33,12 @@ class Options
 	def type; @type end
 	def value; @value end
 	
-	def string; cast(String, @value) end
-	def float; cast(Float, @value) end
-	
 	def dump
 		case type
 		of String
-			puts string
+			puts value.as(String)
 		of Float
-			printf "%f\n", float
+			printf "%f\n", value.as(Float)
 		end
 	end
 end
@@ -77,5 +93,4 @@ if B.a.class == String
 else
   B.a = "World"
 end
-
-puts cast(String, B.a)
+puts B.a.as(String)

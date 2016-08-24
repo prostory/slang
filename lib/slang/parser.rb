@@ -193,7 +193,7 @@ module SLang
     end
 
     rule(:cast_stmt)            do
-      (cast_keyword >> lparen >> type >> comma >> expr.as(:value) >> rparen).as(:cast_stmt)
+      (cast_keyword >> lparen >> (const | variable).as(:type) >> comma >> expr.as(:value) >> rparen).as(:cast_stmt)
     end
     
     rule(:block_stmt)           do

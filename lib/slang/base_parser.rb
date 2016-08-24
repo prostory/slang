@@ -52,7 +52,7 @@ module SLang
             when :list
               ArrayLiteral.new(parse_args(exp[1..-1]))
             when :cast
-              Cast.new(exp[1], parse_obj(exp[2]))
+              Cast.new(parse_obj(exp[1]), parse_obj(exp[2]))
             when :static
               Function.new(exp[1], parse_params(exp[2]), parse_expression(exp[3]), exp[4], :self)
             when :typeof
@@ -68,7 +68,9 @@ module SLang
             else
               Call.new exp[0], parse_args(exp[2]), parse_obj(exp[1])
             end
-      obj.source_code = exp
+      source = exp.to_s
+      location = Location.new(source, 1, 1, source.length)
+      obj.location = location
       obj
     end
 

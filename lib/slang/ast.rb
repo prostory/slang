@@ -20,7 +20,7 @@ module SLang
 
 	class ASTNode
 		attr_accessor :parent
-		attr_accessor :source_code
+		attr_accessor :location
 
 		def self.inherited(klass)
 			name = klass.simple_name.underscore
@@ -59,6 +59,16 @@ module SLang
 
 		def replace(old, new)
 
+		end
+
+		def clone_without_location
+			self.class.new
+		end
+
+		def clone
+			node = clone_without_location
+			node.location = location
+			node
 		end
 	end
 
@@ -131,10 +141,8 @@ module SLang
       "(#{children.join ' '})"
     end
 
-		def clone
-			expresstions = self.class.new children.map(&:clone)
-			expresstions.source_code = source_code
-			expresstions
+		def clone_without_location
+			self.class.new children.map(&:clone)
 		end
 	end
 
@@ -156,7 +164,7 @@ module SLang
       value.to_s
     end
 
-		def clone
+		def clone_without_location
 			self.class.new value
 		end
 	end
@@ -197,10 +205,8 @@ module SLang
 			other.class == self.class && other.elements == elements
 		end
 
-		def clone
-			array = self.class.new elements.map(&:clone)
-			array.source_code = source_code
-			array
+		def clone_without_location
+			self.class.new elements.map(&:clone)
 		end
 	end
 
@@ -238,7 +244,7 @@ module SLang
       "(module #{name} #{body})"
     end
 
-		def clone
+		def clone_without_location
 			self.class.new name, body.clone
 		end
 	end
@@ -254,7 +260,7 @@ module SLang
 			other.class == self.class && other.modules == modules
 		end
 
-		def clone
+		def clone_without_location
 			self.class.new modules
 		end
 	end
@@ -286,7 +292,7 @@ module SLang
 			"(class #{name} #{superclass} #{body})"
 		end
 
-		def clone
+		def clone_without_location
 			self.class.new name, body.clone, superclass
 		end
 	end
@@ -308,7 +314,7 @@ module SLang
       name.to_s
     end
 
-		def clone
+		def clone_without_location
 			self.class.new name, type
 		end
 	end
@@ -327,7 +333,7 @@ module SLang
 				other.target == target
 		end
 
-		def clone
+		def clone_without_location
 			var = self.class.new name, type
 			var.target = target
 			var
@@ -357,7 +363,7 @@ module SLang
       name.to_s
     end
 
-		def clone
+		def clone_without_location
 			self.class.new name, target
 		end
 	end
@@ -396,10 +402,8 @@ module SLang
       "(#{name}:#{obj} #{args.join ' '})"
     end
 
-		def clone
-			call = self.class.new name, args.map(&:clone), obj&&obj.clone
-			call.source_code = source_code
-			call
+		def clone_without_location
+			self.class.new name, args.map(&:clone), obj&&obj.clone
 		end
 	end
 
@@ -481,11 +485,10 @@ module SLang
 			@owner != nil
 		end
 
-		def clone
+		def clone_without_location
 			function = self.class.new name, params.map(&:clone), body.clone, return_type, @owner
 			function.receiver = receiver
 			function.sequence = sequence
-			function.source_code = source_code
 			function
 		end
 	end
@@ -499,11 +502,10 @@ module SLang
       "(def (#{params.join ' '}) #{body})"
     end
 
-		def clone
+		def clone_without_location
 			lambda = self.class.new params.map(&:clone), body, return_type, @owner
 			lambda.receiver = receiver
 			lambda.sequence = sequence
-			lambda.source_code = source_code
 			lambda
 		end
 	end
@@ -520,7 +522,7 @@ module SLang
 			super && other.output_name == output_name
 		end
 
-		def clone
+		def clone_without_location
 			external = self.class.new name, output_name, params.map(&:clone), return_type, @owner
 			external.receiver = receiver
 			external.body = body
@@ -581,7 +583,7 @@ module SLang
       "(#{cond} #{@then} #{@else})"
     end
 
-		def clone
+		def clone_without_location
 			self.class.new cond.clone, @then.clone, @else.clone
 		end
 	end
@@ -615,7 +617,7 @@ module SLang
 			other.class == self.class && other.cond == cond && other.body == self.body
 		end
 
-		def clone
+		def clone_without_location
 			self.class.new cond.clone, body.clone
 		end
 	end
@@ -651,7 +653,7 @@ module SLang
 			other.class == self.class && other.values == values
 		end
 
-		def clone
+		def clone_without_location
 			self.class.new values.map(&:clone)
 		end
 	end
@@ -689,10 +691,8 @@ module SLang
 			other.class == self.class && other.target == target && other.value == value
 		end
 
-		def clone
-			assign = self.class.new target.clone, value.clone
-			assign.source_code = source_code
-			assign
+		def clone_without_location
+			self.class.new target.clone, value.clone
 		end
 	end
 
@@ -701,17 +701,19 @@ module SLang
 		attr_accessor :value
 
 		def initialize(type, value)
-			@cast_type = type.to_sym
+			@cast_type = type
+			@cast_type.parent = self
 			@value = value
 			@value.parent = self
 		end
 
 		def accept_children(visitor)
-			type.accept visitor
+			cast_type.accept visitor
 			value.accept visitor
 		end
 
 		def replace(old, new)
+			@cast_type = new if cast_type == old
 			@value = new if value == old
 		end
 
@@ -723,10 +725,8 @@ module SLang
 			other.class == self.class && other.cast_type == cast_type && other.value == value
 		end
 
-		def clone
-			assign = self.class.new cast_type, value.clone
-			assign.source_code = source_code
-			assign
+		def clone_without_location
+			self.class.new cast_type.clone, value.clone
 		end
 	end
 
@@ -750,7 +750,7 @@ module SLang
 			other.class == self.class && other.value == value
 		end
 
-		def clone
+		def clone_without_location
 			self.class.new value.clone
 		end
 	end
@@ -779,7 +779,7 @@ module SLang
 			"(sizeof #{value})"
 		end
 
-		def clone
+		def clone_without_location
 			self.class.new value.clone
 		end
 	end
@@ -804,7 +804,7 @@ module SLang
 			size.accept visitor
 		end
 
-		def clone
+		def clone_without_location
 			self.class.new size.clone
 		end
 	end
@@ -845,10 +845,8 @@ module SLang
 				other.value == value
 		end
 
-		def clone
-			node = self.class.new target.clone, index.clone, value.clone
-			node.source_code = source_code
-			node
+		def clone_without_location
+			self.class.new target.clone, index.clone, value.clone
 		end
 	end
 
@@ -881,7 +879,7 @@ module SLang
 			other.class == self.class && other.target == target && other.index == index
 		end
 
-		def clone
+		def clone_without_location
 			self.class.new target.clone, index.clone
 		end
 	end

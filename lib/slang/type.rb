@@ -323,7 +323,7 @@ module SLang
     end
 
     def despect
-      "<Object:#{name}>"
+      "#{name}"
     end
   end
 
@@ -408,7 +408,7 @@ module SLang
     end
 
     def despect
-      "<Class:#{name}>"
+      "#{name}:Class"
     end
   end
 
@@ -418,7 +418,7 @@ module SLang
     end
 
     def despect
-      "<Module:#{name}>"
+      "#{name}:Module"
     end
 
     def clone

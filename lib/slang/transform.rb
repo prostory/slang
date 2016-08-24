@@ -4,23 +4,13 @@ require_relative 'ast'
 require_relative 'parser'
 
 module SLang
-  class ParseError < StandardError
-    def initialize(message, source_code, line, column)
-      str = "Error: #{message}"
-      str << "at line #{line} column #{column}"
-      str << "\n\t"
-      str << source_code.lines.at(line - 1).chomp
-      str << "\n\t"
-      str << (' ' * (column - 1))
-      str << '^'
-      str << "\n"
-      super(str)
-    end
-  end
-
   class Parslet::Context
+    attr_accessor :source
+
     def transform_call(t, obj)
-      t[:name] = Call.new(t[:name], t[:args], obj)
+      call = Call.new(t[:name], t[:args], obj)
+      call.location = Location.from_slice(source, t[:name])
+      t[:name] = call
 
       if t[:call]
         t[:call] = transform_call(t[:call], t[:name])
@@ -34,16 +24,58 @@ module SLang
   end
 
   class Transform < Parslet::Transform
-    rule(:integer           => simple(:t))  { NumberLiteral.new(t.to_s.to_i(0)) }
-    rule(:float             => simple(:t))  { NumberLiteral.new(t.to_s.to_f) }
-    rule(:bool              => simple(:t))  { BoolLiteral.new(t.to_s == 'true') }
-    rule(:nil               => simple(:t))  { NilLiteral.new }
-    rule(:string            => simple(:t))        do
-      StringLiteral.new t.to_s
+    attr_accessor :source
+
+    def call_on_match(bindings, block)
+      if block
+        if block.arity == 1
+          return block.call(bindings)
+        else
+          context = Context.new(bindings)
+          context.source = source
+          return context.instance_eval(&block)
+        end
+      end
     end
-    rule(:array             => subtree(:t)) { ArrayLiteral.new t }
-    rule(:const             => simple(:t))  { Const.new(t) }
-    rule(:top_const         => subtree(:t)) { Const.new(t, Const.new(:Main))}
+
+    rule(:integer           => simple(:t))      do
+      node = NumberLiteral.new(t.to_s.to_i(0))
+      node.location = Location.from_slice(source, t)
+      node
+    end
+    rule(:float             => simple(:t))      do
+      node = NumberLiteral.new(t.to_s.to_f)
+      node.location = Location.from_slice(source, t)
+      node
+    end
+    rule(:bool              => simple(:t))      do
+      node = BoolLiteral.new(t.to_s == 'true')
+      node.location = Location.from_slice(source, t)
+      node
+    end
+    rule(:nil               => simple(:t))        do
+      node = NilLiteral.new
+      node.location = Location.from_slice(source, t)
+      node
+    end
+    rule(:string            => simple(:t))        do
+      node = StringLiteral.new t.to_s
+      node.location = Location.from_slice(source, t)
+      node
+    end
+    rule(:array             => subtree(:t))       do
+      ArrayLiteral.new t
+    end
+    rule(:const             => simple(:t))        do
+      node = Const.new(t)
+      node.location = Location.from_slice(source, t)
+      node
+    end
+    rule(:top_const         => subtree(:t))       do
+      node = Const.new(t, Const.new(:Main))
+      node.location = Location.from_slice(source, t)
+      node
+    end
     rule(:const_chain       => subtree(:t))       do
       target = t[0]
       t[1..-1].each do |const|
@@ -52,16 +84,30 @@ module SLang
       end
       t.last
     end
-    rule(:class_var         => subtree(:t)) { ClassVar.new(t[:name].to_s.gsub(/^@@/, ''), t[:type]) }
-    rule(:instance_var      => subtree(:t)) { Member.new(t[:name].to_s.gsub(/^@/, ''), t[:type]) }
-    rule(:variable          => subtree(:t)) { Variable.new(t[:name], t[:type]) }
+    rule(:class_var         => subtree(:t))       do
+      node = ClassVar.new(t[:name].to_s.gsub(/^@@/, ''), t[:type])
+      node.location = Location.from_slice(source, t[:name])
+      node
+    end
+    rule(:instance_var      => subtree(:t))       do
+      node = Member.new(t[:name].to_s.gsub(/^@/, ''), t[:type])
+      node.location = Location.from_slice(source, t[:name])
+      node
+    end
+    rule(:variable          => subtree(:t))       do
+      node = Variable.new(t[:name], t[:type])
+      node.location = Location.from_slice(source, t[:name])
+      node
+    end
     rule(:primary           => subtree(:t)) { t.primary = true; t }
     rule(:unary_operation   => subtree(:t))       do
-      if t[:operand].is_a?(NumberLiteral) && (t[:operator] == '++' || t[:operator] == '--')
+      node = if t[:operand].is_a?(NumberLiteral) && (t[:operator] == '++' || t[:operator] == '--')
         NumberLiteral.new(t[:operand].value + 1)
       else
         Call.new(t[:operator], [], t[:operand])
       end
+      node.location = Location.from_slice(source, t[:operand])
+      node
     end
     rule(:array_set_expr    => subtree(:t)) { ArraySet.new(t[:target], t[:index], t[:value]) }
     rule(:array_get_expr    => subtree(:t)) { ArrayGet.new(t[:target], t[:index]) }
@@ -83,7 +129,11 @@ module SLang
         Call.new(t[:operator], [t[:right]], t[:left])   
       end
     end
-    rule(:negative_expr     => subtree(:t)) { Call.new('-', [], t) }
+    rule(:negative_expr     => subtree(:t))       do
+      node = Call.new('-', [], t)
+      node.location = t.location
+      node
+    end
     rule(:access_expr       => subtree(:t)) { transform_call(t[:call], t[:obj]) }
     rule(:cast_stmt         => subtree(:t)) { Cast.new(t[:type], t[:value])}
     rule(:block_stmt        => subtree(:t)) { Do.from(t[:body]) }
@@ -143,7 +193,11 @@ module SLang
       Parameter.new(t[:name], type)
     end
     rule(:lambda            => subtree(:t)) { Lambda.new(t[:params], t[:body]) }
-    rule(:call_stmt         => subtree(:t)) { Call.new(t[:name], t[:args]) }
+    rule(:call_stmt         => subtree(:t))     do
+      node = Call.new(t[:name], t[:args])
+      node.location = Location.from_slice(source, t[:name])
+      node
+    end
     rule(:assign_stmt       => subtree(:t)) { Assign.new(t[:target], t[:value]) }
     rule(:return_stmt       => subtree(:t)) { Return.new(t[:args]) }
     #rule(:break_stmt   => subtree(:t)) { }
@@ -185,11 +239,21 @@ module SLang
     end
   end
 
+  def deepest_cause(cause)
+    if cause.children.any?
+      deepest_cause(cause.children.first)
+    else
+      cause
+    end
+  end
+
   def parse(source)
-    Transform.new.apply Parser.new.parse(source)
+    source = source.tab_to_space
+    transform = Transform.new
+    transform.source = source
+    transform.apply Parser.new.parse(source)
   rescue Parslet::ParseFailed => e
-    s = e.cause.children.last
-    line, column = s.source.line_and_column(s.pos)
-    raise ParseError.new(s.message, source, line, column)
+    cause = deepest_cause(e.cause)
+    raise ParseError.new(cause.message, Location.from_cause(source, cause))
   end
 end

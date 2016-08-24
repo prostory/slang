@@ -213,6 +213,7 @@ module SLang
       var = context.lookup_variable(node.name)
       if var.nil?
         call = Call.new(node.name)
+        call.location = node.location
         visit_call(call)
         node.parent.replace(node, call)
         return
@@ -230,7 +231,10 @@ module SLang
 
     def visit_member(node)
       var = context.lookup_instance_var(node.name)
-      raise "Bug: instance variable '#{node.name}' for #{context.scope.type} is not defined!" if var.nil?
+      if var.nil?
+        error = "undefined instance variable ' #{context.scope.type.despect}@#{node.name}'"
+        raise CompileError.new(error, node.location)
+      end
       node.type = var.type
       node.optional_type = node.type if var.optional?
       var << node
@@ -238,7 +242,11 @@ module SLang
     end
 
     def visit_class_var(node)
-      var = context.lookup_class_var(node.name) or raise "Bug: class variable '#{node.name}' is not defined!"
+      var = context.lookup_class_var(node.name)
+      if var.nil?
+        error = "undefined class variable '#{context.scope.type.despect}@@#{node.name}'"
+        raise CompileError.new(error, node.location)
+      end
       node.type = var.type
       node.optional_type = node.type if var.optional?
       var << node
@@ -252,7 +260,11 @@ module SLang
         return
       end
       const = lookup_const(node)
-      raise "uninitialized constant '#{node.name}' in #{node.target ? node.target.type : context.scope.type}" if const.nil?
+      if const.nil?
+        target = node.target ? node.target.type : context.scope.type
+        error = "uninitialized constant '#{target.despect}::#{node.name}'"
+        raise CompileError.new(error, node.location)
+      end
       node.type = const.type
       node.target = const.target
       false
@@ -347,9 +359,8 @@ module SLang
       untyped_fun = context.lookup_function(node.name, node.signature, node.obj) if untyped_fun.nil?
 
       if untyped_fun.nil?
-        error = "undefined function '#{node.name}'(#{types.map(&:despect).join ', '}), #{node.source_code}"
-        error << " for #{node.obj.type.despect}" if node.obj
-        raise error
+        error = "undefined function '#{node.obj.type.despect}##{node.name}(#{types.map(&:despect).join ', '})'"
+        raise CompileError.new(error, node.location)
       end
       if untyped_fun.receiver && untyped_fun.owner != untyped_fun.receiver
         untyped_fun.receiver.accept self
@@ -619,13 +630,11 @@ module SLang
       false
     end
 
-    def visit_cast(node)
-      node.value.accept self
-      node.type = Type.lookup(node.cast_type)
+    def end_visit_cast(node)
+      node.type = node.cast_type.type.object_type
       unless node.value.type.cast_of? node.type
         raise "can't case #{node.value.type.despect} to #{node.type.despect}"
       end
-      false
     end
 
     def end_visit_typeof(node)

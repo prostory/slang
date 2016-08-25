@@ -21,6 +21,7 @@ module SLang
 	class ASTNode
 		attr_accessor :parent
 		attr_accessor :location
+		attr_accessor :sequence
 
 		def self.inherited(klass)
 			name = klass.simple_name.underscore
@@ -68,6 +69,7 @@ module SLang
 		def clone
 			node = clone_without_location
 			node.location = location
+			node.sequence = sequence
 			node
 		end
 	end
@@ -413,7 +415,6 @@ module SLang
 		attr_accessor :body
 		attr_accessor :return_type
 		attr_accessor :receiver
-		attr_accessor :sequence
 
 		def initialize(name, params = [], body = [], return_type = :Any, owner = nil)
 			@name = name.to_sym
@@ -488,7 +489,6 @@ module SLang
 		def clone_without_location
 			function = self.class.new name, params.map(&:clone), body.clone, return_type, @owner
 			function.receiver = receiver
-			function.sequence = sequence
 			function
 		end
 	end
@@ -505,7 +505,6 @@ module SLang
 		def clone_without_location
 			lambda = self.class.new params.map(&:clone), body, return_type, @owner
 			lambda.receiver = receiver
-			lambda.sequence = sequence
 			lambda
 		end
 	end

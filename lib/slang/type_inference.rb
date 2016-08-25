@@ -37,6 +37,16 @@ module SLang
     def assign(target)
       Assign.new(target.clone, self)
     end
+
+    def parent_expressions
+      parent = self.parent
+      child = self
+      while !parent.is_a?(Expressions)
+        child = parent
+        parent = parent.parent
+      end
+      [parent, parent.children.index(child)]
+    end
   end
 
   class Expressions
@@ -77,12 +87,10 @@ module SLang
 
   class Variable
     attr_accessor :instances
-    attr_accessor :sequence
 
     def <<(instance)
       @instances ||= []
       @instances << instance
-      instance.sequence = sequence
     end
 
     def sequence
@@ -117,10 +125,37 @@ module SLang
       self
     end
 
+    def visit_as_assign_value(visitor, assign)
+      assign(assign.target).accept visitor
+      assign.target.accept visitor
+      assign.parent.replace(assign, assign.value)
+    end
+
+    def visit_as_call_arg(visitor, call, idx)
+      if_local = Variable.new(:if_local)
+      Assign.new(if_local, NilLiteral.new).accept visitor
+      assign(if_local).accept visitor
+      if_local.accept visitor
+      assign_if = call.args[idx]
+      parent, index = call.parent_expressions
+      parent.children.insert(index, assign_if)
+      call.args[idx] = if_local
+    end
+
     def assign(target)
       @then.assign target
       @else.assign target if @else
       self
+    end
+  end
+
+  class Assign
+    def visit_as_call_arg(visitor, call, idx)
+      accept visitor
+      assign = call.args[idx]
+      parent, index = call.parent_expressions
+      parent.children.insert(index, assign)
+      call.args[idx] = target
     end
   end
 
@@ -336,7 +371,13 @@ module SLang
         node.obj = Variable.new(:self, context.scope.type) if context.scope.type
       end
 
-      types = node.args.each {|arg| arg.accept self}.map(&:type)
+      types = node.args.each_with_index do |arg, idx|
+        if arg.respond_to?(:visit_as_call_arg)
+          arg.visit_as_call_arg(self, node, idx)
+        else
+          arg.accept self
+        end
+      end.map(&:type)
 
       if node.has_var_list?
         node.args.pop
@@ -562,10 +603,8 @@ module SLang
     end
 
     def visit_assign(node)   
-      if node.value.is_a? If
-        assign_if = node.value.assign(node.target)
-        node.parent.replace(node, assign_if)
-        assign_if.accept self
+      if node.value.respond_to?(:visit_as_assign_value)
+        node.value.visit_as_assign_value(self, node)
         return false
       end
 
@@ -620,7 +659,6 @@ module SLang
             end
             return false
           end
-          node.target.sequence = var.sequence + 1
         end
         context.define_variable node.target
       else
@@ -633,7 +671,8 @@ module SLang
     def end_visit_cast(node)
       node.type = node.cast_type.type.object_type
       unless node.value.type.cast_of? node.type
-        raise "can't case #{node.value.type.despect} to #{node.type.despect}"
+        error = "can't case #{node.value.type.despect} to #{node.type.despect}"
+        raise CompileError.new(error, node.location)
       end
     end
 

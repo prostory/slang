@@ -135,7 +135,11 @@ module SLang
       node
     end
     rule(:access_expr       => subtree(:t)) { transform_call(t[:call], t[:obj]) }
-    rule(:cast_stmt         => subtree(:t)) { Cast.new(t[:type], t[:value])}
+    rule(:cast_stmt         => subtree(:t))       do
+      node = Cast.new(t[:type], t[:value])
+      node.location = t[:type].location
+      node
+    end
     rule(:block_stmt        => subtree(:t)) { Do.from(t[:body]) }
     rule(:if_stmt           => subtree(:t))       do
       if t.is_a?(Array)
@@ -192,7 +196,10 @@ module SLang
       type = t[:type].to_sym if t[:type]
       Parameter.new(t[:name], type)
     end
-    rule(:lambda            => subtree(:t)) { Lambda.new(t[:params], t[:body]) }
+    rule(:lambda            => subtree(:t))     do
+      params = t[:params] || [Parameter.new(nil, :VarList)]
+      Lambda.new(params, t[:body], t[:return_type])
+    end
     rule(:call_stmt         => subtree(:t))     do
       node = Call.new(t[:name], t[:args])
       node.location = Location.from_slice(source, t[:name])

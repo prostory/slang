@@ -40,6 +40,7 @@ module SLang
         when Member, ClassVar
           @type << var
         else
+          var.sequence = @vars[var.name].sequence + 1 if @vars[var.name]
           @vars[var.name] = var
         end
         if @func && var.instance_of?(Variable)
